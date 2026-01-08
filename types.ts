@@ -1,0 +1,33 @@
+
+export type Role = 'Exec' | 'Operator' | 'Product';
+export type Industry = 'Auto' | 'Logistics' | 'Retail' | 'Manufacturing' | 'Finance' | 'Healthcare' | 'SaaS';
+
+export interface Signal {
+  id: string;
+  index: string;
+  title: string;
+  truth: string;
+  default_outcome_anchor?: string;
+  relatedIds?: string[]; // IDs of signals this compounds with visually on the grid
+}
+
+export interface OutcomeAnchor {
+  metric: string;
+  direction: 'up' | 'down';
+  note: string;
+}
+
+export interface GeneratedScenario {
+  scenario_title: string;
+  scenario: string;
+  why_it_matters: string;
+  outcome_anchors: OutcomeAnchor[];
+  hidden_failure_mode: string;
+  compounds_with: string[];
+}
+
+export interface SignalState {
+  selectedSignalId: string | null;
+  role: Role;
+  industry: Industry;
+}
