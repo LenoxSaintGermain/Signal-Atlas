@@ -1,7 +1,8 @@
 FROM node:20-slim
 
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    SKIP_FIRESTORE_CACHE=true
 
 WORKDIR /app
 
