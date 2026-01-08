@@ -91,7 +91,8 @@ const isValidRole = (r) => ['Exec', 'Operator', 'Product'].includes(r);
 const isValidIndustry = (i) => ['Auto', 'Logistics', 'Retail', 'Manufacturing', 'Finance', 'Healthcare', 'SaaS', 'Energy'].includes(i);
 
 // Sanitizer
-const sanitize = (val) => typeof val === 'string' ? val.replace(/<script.*?>.*?<\\/script>/gi, '').trim() : val;
+const SCRIPT_TAG_RE = /<script\b[^>]*>[\s\S]*?<\/script>/gi;
+const sanitize = (val) => typeof val === 'string' ? val.replace(SCRIPT_TAG_RE, '').trim() : val;
 
 const cacheKey = (signalId, role, industry) =>
   `${(signalId || 'unknown').toLowerCase()}|${role.toLowerCase()}|${industry.toLowerCase()}`;
