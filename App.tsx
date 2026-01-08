@@ -8,6 +8,7 @@ import { logEvent } from 'firebase/analytics';
 import { analytics } from './services/firebase';
 import EmailGateModal from './components/EmailGateModal';
 import { buildScenarioPdf, slugify } from './utils/pdf';
+import html2canvas from 'html2canvas';
 
 // Animation Phases
 type IntroPhase = 'init' | 'measuring' | 'stack' | 'expanding' | 'complete';
@@ -55,6 +56,9 @@ const App: React.FC = () => {
   } | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showEmailBriefModal, setShowEmailBriefModal] = useState(false);
+  const [sharingSignal, setSharingSignal] = useState<Signal | null>(null);
+  const [shareGenerating, setShareGenerating] = useState(false);
+  const shareCanvasRef = useRef<HTMLDivElement>(null);
 
   // Intro Orchestration State
   const [introPhase, setIntroPhase] = useState<IntroPhase>('init');
@@ -462,6 +466,44 @@ const App: React.FC = () => {
     }
   };
 
+  const copyShareCopy = (signal: Signal) => {
+    const text = `The average proprietary algorithm now has a mass-market equivalent within 18 months.\n\nYour moat isn't what you know. It's how fast you learn.\n\nSignal ${signal.index}: ${signal.title}\n→ https://thirdsignal.com/atlas\n\n#AI #Strategy #BusinessIntelligence`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+  };
+
+  const handleShareSignal = async (signal: Signal) => {
+    if (!shareCanvasRef.current) return;
+    setSharingSignal(signal);
+    setShareGenerating(true);
+    try {
+      await new Promise(res => setTimeout(res, 50));
+      const node = shareCanvasRef.current;
+      const canvas = await html2canvas(node, {
+        backgroundColor: '#0f1012',
+        width: 1200,
+        height: 628,
+        scale: 2,
+      });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Third-Signal-${signal.index}-${slugify(signal.title)}.png`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+      copyShareCopy(signal);
+    } catch (err) {
+      console.error('Share image failed', err);
+    } finally {
+      setShareGenerating(false);
+      setSharingSignal(null);
+    }
+  };
+
   return (
     <div className={`min-h-screen selection:bg-black selection:text-white font-light intro-container-transition overflow-hidden ${isIntroDark ? 'bg-[#111]' : 'bg-[#f5f5f5] text-[#1a1a1a]'}`}>
       
@@ -619,6 +661,15 @@ const App: React.FC = () => {
                     `}>
                         {signal.index}
                     </div>
+                    {!isStacking && introPhase === 'complete' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleShareSignal(signal); }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-black/60 hover:text-black"
+                        title="Share as image"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3m0 0 4 4m-4-4-4 4"/></svg>
+                      </button>
+                    )}
                     {isMobile && isHovered && introPhase === 'complete' && (
                       <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                           <span className="text-[8px] font-bold uppercase tracking-widest bg-black text-white px-2 py-1">Tap to Decode</span>
@@ -915,6 +966,14 @@ const App: React.FC = () => {
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z"/><path d="m4 4 8 8 8-8"/></svg>
                         Email this brief
                       </button>
+                      <button
+                        onClick={() => selectedSignal && handleShareSignal(selectedSignal)}
+                        disabled={shareGenerating}
+                        className="flex items-center gap-2 text-[11px] uppercase tracking-widest border border-black/10 px-3 py-2 rounded hover:border-black disabled:opacity-60"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3m0 0 4 4m-4-4-4 4"/></svg>
+                        {shareGenerating ? 'Rendering...' : 'Share as Image'}
+                      </button>
                     </div>
                     <span className="text-[10px] text-gray-400 text-right">AI output may vary. Evaluate critically.</span>
                   </div>
@@ -925,6 +984,47 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Hidden canvas for share image */}
+      <div
+        ref={shareCanvasRef}
+        style={{
+          position: 'fixed',
+          left: -2000,
+          top: 0,
+          width: '1200px',
+          height: '628px',
+          background: '#0f1012',
+          color: 'white',
+          fontFamily: 'Helvetica, Arial, sans-serif',
+          padding: '64px',
+        }}
+      >
+        {sharingSignal && (
+          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 14, letterSpacing: 2, opacity: 0.7, marginBottom: 16 }}>
+                SIGNAL {sharingSignal.index} / 20
+              </div>
+              <div style={{ fontSize: 56, lineHeight: '1.05', fontWeight: 700, textTransform: 'uppercase' }}>
+                {sharingSignal.title}
+              </div>
+              <div style={{ width: '50%', height: 2, background: '#2f2f36', margin: '24px 0' }} />
+              <div style={{ fontSize: 20, lineHeight: 1.5, fontStyle: 'italic', color: '#d3d4d8', maxWidth: '70%' }}>
+                “{sharingSignal.truth}”
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ border: '1px solid #2f2f36', padding: '12px 16px', fontSize: 14, letterSpacing: 1.2, textTransform: 'uppercase', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                <span>Tap to decode →</span>
+                <span>thirdsignal.com/atlas</span>
+              </div>
+              <div style={{ fontSize: 14, letterSpacing: 1.2, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Third Signal <span style={{ fontSize: 10 }}>▲</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
