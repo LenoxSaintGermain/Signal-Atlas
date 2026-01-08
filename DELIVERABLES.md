@@ -83,6 +83,26 @@ Guidelines:
 
 ---
 
+## E) Backend Code (Cloud Run / Node.js)
+
+The backend implementation is located in `backend/app.js`. It provides a REST API endpoint (`/generate`) that:
+1. Validates input parameters (Signal, Role, Industry).
+2. Constructs the prompt dynamically.
+3. Calls the Gemini API using `@google/genai` with a strict JSON schema.
+4. Returns the structured scenario or handles errors gracefully.
+
+---
+
+## F) Architecture & Hardening
+
+See `ARCHITECTURE.md` for the complete production hardening checklist, including:
+- Cloud Run configuration (Concurrency, Timeouts, Autoscaling).
+- Rate Limiting and Error Handling strategies.
+- Caching policies (Firestore).
+- Monitoring and Security best practices.
+
+---
+
 ## G) Framer Integration Instructions
 
 1. **Deploy Backend:**

@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /gems/{document=**} {
+      // ---------------------------------------------------------
+      // SIGNAL ATLAS RULES
+      // ---------------------------------------------------------
+      // Since this application does not use Firebase Authentication 
+      // (it uses a simple email gate), we must allow public access 
+      // so the client can write and read gems.
+      //
+      // COPY THESE RULES TO THE "RULES" TAB IN YOUR FIREBASE CONSOLE.
+      // ---------------------------------------------------------
+      allow read, write: if true;
+    }
+  }
+}

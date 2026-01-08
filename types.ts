@@ -26,6 +26,28 @@ export interface GeneratedScenario {
   compounds_with: string[];
 }
 
+export interface Gem {
+  id?: string; // Optional because Firestore generates it
+  user_email: string;
+  created_at: any; // Firestore Timestamp
+  
+  // Signal Context
+  signal_id: string;
+  signal_title: string;
+  signal_truth: string;
+  
+  // Generation Context
+  role: Role;
+  industry: Industry;
+  
+  // Full Scenario
+  scenario: GeneratedScenario;
+  
+  // Metadata
+  generation_model: string;
+  generation_latency_ms: number;
+}
+
 export interface SignalState {
   selectedSignalId: string | null;
   role: Role;
