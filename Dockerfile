@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 ENV NODE_ENV=production \
     PORT=8080
@@ -7,7 +7,8 @@ WORKDIR /app
 
 # Install dependencies from backend manifest
 COPY backend/package.json backend/package-lock.json* ./backend/
-RUN cd backend && npm ci --omit=dev --ignore-scripts
+# Remove --ignore-scripts to allow gRPC/Firestore binary download
+RUN cd backend && npm ci --omit=dev
 
 # Copy backend source
 COPY backend/. ./backend
@@ -15,9 +16,8 @@ COPY backend/. ./backend
 # Switch workdir to backend app
 WORKDIR /app/backend
 
-# Non-root user
-RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
-USER app
+# Use existing non-root 'node' user
+USER node
 
 EXPOSE 8080
 STOPSIGNAL SIGTERM
