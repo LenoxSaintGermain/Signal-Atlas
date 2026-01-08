@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { SIGNALS, ROLES, INDUSTRIES } from './constants';
-import { Signal, Role, Industry, GeneratedScenario, Gem } from './types';
+import { Signal, Role, Industry, GeneratedScenario, Gem, Lead } from './types';
 import { generateSignalScenario } from './services/geminiService';
 import { saveGem, getUserGems, deleteGem } from './services/gemService';
+import { saveLead } from './services/leadService';
+import { logEvent } from 'firebase/analytics';
+import { analytics } from './services/firebase';
+import EmailGateModal from './components/EmailGateModal';
 
 // Animation Phases
 type IntroPhase = 'init' | 'measuring' | 'stack' | 'expanding' | 'complete';
@@ -20,17 +24,34 @@ const App: React.FC = () => {
   
   // Analytics State
   const [generationLatency, setGenerationLatency] = useState<number>(0);
+  // Access / Session State
+  const [hasUnlockedAccess, setHasUnlockedAccess] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('hasUnlockedAccess') === 'true';
+  });
+  const [generationCount, setGenerationCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    const stored = sessionStorage.getItem('generationCount');
+    return stored ? parseInt(stored, 10) || 0 : 0;
+  });
 
   // User / Gems State
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [showEmailGate, setShowEmailGate] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  const [emailGateOpen, setEmailGateOpen] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
+  const [gateLoading, setGateLoading] = useState(false);
   const [myGems, setMyGems] = useState<Gem[]>([]);
   const [currentView, setCurrentView] = useState<AppView>('grid');
   const [savingGem, setSavingGem] = useState(false);
   const [gemSavedSuccess, setGemSavedSuccess] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
   const [lastSavedGemId, setLastSavedGemId] = useState<string | null>(null);
+  const [welcomeToast, setWelcomeToast] = useState(false);
+  const [pendingGate, setPendingGate] = useState<{
+    action: 'generate' | 'save-gem';
+    payload?: { signal: Signal; role: Role; industry: Industry };
+  } | null>(null);
 
   // Intro Orchestration State
   const [introPhase, setIntroPhase] = useState<IntroPhase>('init');
@@ -55,6 +76,16 @@ const App: React.FC = () => {
       loadGems(storedEmail);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('hasUnlockedAccess', hasUnlockedAccess ? 'true' : 'false');
+  }, [hasUnlockedAccess]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem('generationCount', generationCount.toString());
+  }, [generationCount]);
 
   // Preload animation state
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -116,13 +147,108 @@ const App: React.FC = () => {
 
   // --- APP LOGIC ---
 
+  const trackEvent = (name: string, params?: Record<string, any>) => {
+    try {
+      if (analytics) {
+        logEvent(analytics, name, params);
+      }
+    } catch (err) {
+      console.debug('Analytics unavailable', err);
+    }
+  };
+
+  const getUtmParams = (): Lead['utm_params'] => {
+    if (typeof window === 'undefined') return {};
+    const params = new URLSearchParams(window.location.search);
+    return {
+      source: params.get('utm_source') || undefined,
+      medium: params.get('utm_medium') || undefined,
+      campaign: params.get('utm_campaign') || undefined,
+    };
+  };
+
+  const openEmailGate = (context?: {
+    action: 'generate' | 'save-gem';
+    payload?: { signal: Signal; role: Role; industry: Industry };
+  }) => {
+    setPendingGate(context || null);
+    setEmailGateOpen(true);
+    trackEvent('email_gate_shown', {
+      source_signal: context?.payload?.signal?.title || selectedSignal?.title || null,
+    });
+  };
+
+  const closeEmailGate = () => {
+    setEmailGateOpen(false);
+    setGateError(null);
+    setGateLoading(false);
+    setPendingGate(null);
+    trackEvent('email_gate_dismissed');
+  };
+
+  const unlockAccess = (email: string) => {
+    localStorage.setItem('third_signal_email', email);
+    setUserEmail(email);
+    setHasUnlockedAccess(true);
+    setWelcomeToast(true);
+    setTimeout(() => setWelcomeToast(false), 2000);
+  };
+
+  const resumePendingFlow = (email: string) => {
+    if (pendingGate?.action === 'generate' && pendingGate.payload) {
+      runScenarioGeneration(
+        pendingGate.payload.signal,
+        pendingGate.payload.role,
+        pendingGate.payload.industry
+      );
+    } else if (pendingGate?.action === 'save-gem') {
+      executeSaveGem(email);
+    }
+    setPendingGate(null);
+  };
+
+  const handleGateSubmit = async () => {
+    const trimmedEmail = emailInput.trim();
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    if (!emailPattern.test(trimmedEmail)) {
+      setGateError('Enter a valid email.');
+      return;
+    }
+
+    setGateLoading(true);
+    setGateError(null);
+
+    const targetSignal = pendingGate?.payload?.signal || selectedSignal;
+    const lead: Lead = {
+      email: trimmedEmail,
+      source_signal: targetSignal?.title || 'unknown',
+      source_role: pendingGate?.payload?.role || role,
+      source_industry: pendingGate?.payload?.industry || industry,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
+      referrer: typeof document !== 'undefined' ? document.referrer || window.location.href : 'direct',
+      utm_params: getUtmParams(),
+    };
+
+    try {
+      await saveLead(lead);
+    } catch (e) {
+      console.error('Lead capture failed; unlocking anyway', e);
+    } finally {
+      unlockAccess(trimmedEmail);
+      setEmailGateOpen(false);
+      trackEvent('email_gate_completed', { source_signal: lead.source_signal });
+      resumePendingFlow(trimmedEmail);
+      setGateLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedSignal) {
       setIsModalVisible(true);
       setGemSavedSuccess(false); // Reset save state on new open
       if (!scenarioData || scenarioData.scenario_title !== selectedSignal.title) {
         // Only generate if we don't have data or it's new
-        handleGenerate(selectedSignal, role, industry);
+        requestScenarioGeneration(selectedSignal, role, industry);
       }
     } else {
       setIsModalVisible(false);
@@ -177,10 +303,22 @@ const App: React.FC = () => {
       setLoading(false);
     }
   };
+  const runScenarioGeneration = (s: Signal, r: Role, i: Industry) => {
+    setGenerationCount((count) => count + 1);
+    handleGenerate(s, r, i);
+  };
+
+  const requestScenarioGeneration = (s: Signal, r: Role, i: Industry) => {
+    if (!hasUnlockedAccess && generationCount >= 1) {
+      openEmailGate({ action: 'generate', payload: { signal: s, role: r, industry: i } });
+      return;
+    }
+    runScenarioGeneration(s, r, i);
+  };
 
   const handleReshuffle = () => {
     if (selectedSignal) {
-      handleGenerate(selectedSignal, role, industry);
+      requestScenarioGeneration(selectedSignal, role, industry);
     }
   };
 
@@ -196,24 +334,13 @@ const App: React.FC = () => {
 
   const handleSaveClick = () => {
     if (!userEmail) {
-      setShowEmailGate(true);
-    } else {
-      executeSaveGem(userEmail);
+      openEmailGate({ 
+        action: 'save-gem', 
+        payload: selectedSignal ? { signal: selectedSignal, role, industry } : undefined 
+      });
+      return;
     }
-  };
-
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (emailInput && emailInput.includes('@')) {
-      localStorage.setItem('third_signal_email', emailInput);
-      setUserEmail(emailInput);
-      setShowEmailGate(false);
-      loadGems(emailInput);
-      // If modal is open, proceed to save
-      if (selectedSignal && scenarioData) {
-        executeSaveGem(emailInput);
-      }
-    }
+    executeSaveGem(userEmail);
   };
 
   const executeSaveGem = async (email: string) => {
@@ -318,29 +445,21 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* EMAIL GATE MODAL */}
-      {showEmailGate && (
-         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-[#111] border border-white/20 p-8 w-full max-w-md shadow-2xl relative">
-               <button onClick={() => setShowEmailGate(false)} className="absolute top-4 right-4 text-white/40 hover:text-white">✕</button>
-               <h3 className="text-white text-xl font-editorial italic mb-2">Initialize Personal Atlas</h3>
-               <p className="text-white/60 text-xs mb-6 leading-relaxed">To save scenarios to your permanent collection, please identify yourself. We use this strictly to index your Gems.</p>
-               <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
-                  <input 
-                    type="email" 
-                    placeholder="ENTER YOUR EMAIL" 
-                    autoFocus
-                    className="bg-transparent border-b border-white/30 text-white py-2 text-sm focus:border-white outline-none placeholder-white/20 tracking-widest uppercase font-mono"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    required
-                  />
-                  <button type="submit" className="bg-white text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-colors mt-2">
-                    Access My Gems
-                  </button>
-               </form>
-            </div>
-         </div>
+      <EmailGateModal
+        isOpen={emailGateOpen}
+        email={emailInput}
+        onEmailChange={setEmailInput}
+        onSubmit={handleGateSubmit}
+        onClose={closeEmailGate}
+        loading={gateLoading}
+        error={gateError}
+      />
+      {welcomeToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white text-black px-4 py-2 shadow-2xl border border-black/5 text-[11px] uppercase tracking-[0.2em] rounded-full">
+            Welcome to the Atlas
+          </div>
+        </div>
       )}
 
       {/* SCENE 2: TITLE OVERLAY */}
@@ -574,7 +693,10 @@ const App: React.FC = () => {
                     {ROLES.map(r => (
                       <button 
                         key={r}
-                        onClick={() => { setRole(r); if(!loading) handleGenerate(selectedSignal, r, industry); }}
+                        onClick={() => { 
+                          setRole(r); 
+                          if(!loading && selectedSignal) requestScenarioGeneration(selectedSignal, r, industry); 
+                        }}
                         className={`px-4 py-1.5 text-xs border transition-all dur-sm ease-exit ${role === r ? 'bg-white text-black border-white' : 'border-white/20 text-white hover:border-white hover:bg-white/5'}`}
                       >
                         {r}
@@ -588,7 +710,10 @@ const App: React.FC = () => {
                     {INDUSTRIES.map(i => (
                       <button 
                         key={i}
-                        onClick={() => { setIndustry(i); if(!loading) handleGenerate(selectedSignal, role, i); }}
+                        onClick={() => { 
+                          setIndustry(i); 
+                          if(!loading && selectedSignal) requestScenarioGeneration(selectedSignal, role, i); 
+                        }}
                         className={`px-4 py-1.5 text-xs border transition-all dur-sm ease-exit ${industry === i ? 'bg-white text-black border-white' : 'border-white/20 text-white hover:border-white hover:bg-white/5'}`}
                       >
                         {i}

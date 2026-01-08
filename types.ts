@@ -53,3 +53,20 @@ export interface SignalState {
   role: Role;
   industry: Industry;
 }
+
+export interface LeadUtmParams {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+}
+
+export interface Lead {
+  email: string;
+  captured_at?: any; // Firestore Timestamp injected on write
+  source_signal: string;
+  source_role: string;
+  source_industry: string;
+  user_agent: string;
+  referrer: string;
+  utm_params: LeadUtmParams;
+}
