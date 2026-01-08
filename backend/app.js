@@ -23,8 +23,19 @@ const port = process.env.PORT || 8080;
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
 
 // Firestore (uses Cloud Run default service account / ADC)
-const firestore = new Firestore({
-  ignoreUndefinedProperties: true,
+let firestore = null;
+try {
+  if (process.env.SKIP_FIRESTORE_CACHE !== 'true') {
+    firestore = new Firestore({
+      ignoreUndefinedProperties: true,
+    });
+  }
+} catch (err) {
+  console.warn('[WARN] Firestore unavailable, cache disabled', err);
+}
+
+process.on('unhandledRejection', (err) => {
+  console.error('[FATAL] Unhandled rejection', err);
 });
 const CACHE_COLLECTION = 'cache';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -73,6 +84,7 @@ const cacheKey = (signalId, role, industry) =>
   `${(signalId || 'unknown').toLowerCase()}|${role.toLowerCase()}|${industry.toLowerCase()}`;
 
 const getCachedScenario = async (key) => {
+  if (!firestore) return null;
   const docRef = firestore.collection(CACHE_COLLECTION).doc(`scenario_${key}`);
   const snap = await docRef.get();
   if (!snap.exists) return null;
@@ -84,8 +96,9 @@ const getCachedScenario = async (key) => {
 };
 
 const setCachedScenario = async (key, payload) => {
+  if (!firestore) return null;
   const docRef = firestore.collection(CACHE_COLLECTION).doc(`scenario_${key}`);
-  await docRef.set({
+  return docRef.set({
     payload,
     created_at: Timestamp.now(),
   }, { merge: true });
@@ -192,11 +205,14 @@ app.post('/generate', async (req, res) => {
     };
 
     // Save to cache (fire-and-forget)
-    setCachedScenario(key, sanitized).catch(err => console.warn('[CACHE] set failed', err));
+    try {
+      await setCachedScenario(key, sanitized);
+    } catch (err) {
+      console.warn('[CACHE] set failed', err);
+    }
 
     console.log(`[OK] ${signal_title} latency=${Date.now() - requestStart}ms`);
     res.json({ ...sanitized, _meta: { cached: false, latency_ms: Date.now() - requestStart } });
-    res.json(data);
 
   } catch (error) {
     console.error("[ERR] Gemini API Error:", error);
