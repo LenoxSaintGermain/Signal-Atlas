@@ -20,7 +20,20 @@ const port = process.env.PORT || 8080;
 
 // Initialize Gemini
 // NOTE: Ensure GEMINI_API_KEY is set in Cloud Run environment variables
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
+const getAiClient = () => {
+  const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  if (!key) {
+    console.warn("GEMINI_API_KEY not provided");
+    return null;
+  }
+  try {
+    return new GoogleGenAI({ apiKey: key });
+  } catch (e) {
+    console.error("Failed to initialize Gemini client", e);
+    return null;
+  }
+};
+const aiClient = getAiClient();
 
 // Firestore (uses Cloud Run default service account / ADC)
 let firestore = null;
@@ -179,6 +192,12 @@ app.post('/generate', async (req, res) => {
       - Scenario should feel real, not generic. Use specific terminology relevant to ${industry}.
   `;
 
+  const ai = aiClient || getAiClient();
+  if (!ai) {
+    console.error("Gemini client not available");
+    return res.status(500).json({ error: "AI service unavailable" });
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -240,6 +259,6 @@ app.post('/generate', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Signal Atlas backend listening on port ${port}`);
 });
