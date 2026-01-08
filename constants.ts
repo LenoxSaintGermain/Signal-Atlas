@@ -2,7 +2,7 @@
 import { Signal } from './types';
 
 export const ROLES = ['Exec', 'Operator', 'Product'] as const;
-export const INDUSTRIES = ['Auto', 'Logistics', 'Retail', 'Manufacturing', 'Finance', 'Healthcare', 'SaaS'] as const;
+export const INDUSTRIES = ['Auto', 'Logistics', 'Retail', 'Manufacturing', 'Finance', 'Healthcare', 'SaaS', 'Energy'] as const;
 
 export const SIGNALS: Signal[] = [
   {

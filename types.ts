@@ -1,6 +1,6 @@
 
 export type Role = 'Exec' | 'Operator' | 'Product';
-export type Industry = 'Auto' | 'Logistics' | 'Retail' | 'Manufacturing' | 'Finance' | 'Healthcare' | 'SaaS';
+export type Industry = 'Auto' | 'Logistics' | 'Retail' | 'Manufacturing' | 'Finance' | 'Healthcare' | 'SaaS' | 'Energy';
 
 export interface Signal {
   id: string;
