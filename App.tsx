@@ -7,6 +7,7 @@ import { saveLead } from './services/leadService';
 import { logEvent } from 'firebase/analytics';
 import { analytics } from './services/firebase';
 import EmailGateModal from './components/EmailGateModal';
+import { buildScenarioPdf, slugify } from './utils/pdf';
 
 // Animation Phases
 type IntroPhase = 'init' | 'measuring' | 'stack' | 'expanding' | 'complete';
@@ -52,6 +53,8 @@ const App: React.FC = () => {
     action: 'generate' | 'save-gem';
     payload?: { signal: Signal; role: Role; industry: Industry };
   } | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [showEmailBriefModal, setShowEmailBriefModal] = useState(false);
 
   // Intro Orchestration State
   const [introPhase, setIntroPhase] = useState<IntroPhase>('init');
@@ -430,6 +433,35 @@ const App: React.FC = () => {
 
   const isIntroDark = introPhase === 'init' || introPhase === 'stack' || introPhase === 'measuring';
 
+  const handleDownloadPdf = async () => {
+    if (!selectedSignal || !scenarioData) return;
+    trackEvent('pdf_download_initiated', {
+      signal_id: selectedSignal.id,
+      role,
+      industry,
+    });
+    setGeneratingPdf(true);
+    try {
+      const blob = await buildScenarioPdf(selectedSignal, scenarioData, role, industry);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const slug = slugify(selectedSignal.title);
+      link.href = url;
+      link.download = `Signal-Atlas-${selectedSignal.index}-${slug}-${industry}.pdf`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      trackEvent('pdf_download_completed', {
+        signal_id: selectedSignal.id,
+        role,
+        industry,
+      });
+    } catch (err) {
+      console.error('PDF generation failed', err);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen selection:bg-black selection:text-white font-light intro-container-transition overflow-hidden ${isIntroDark ? 'bg-[#111]' : 'bg-[#f5f5f5] text-[#1a1a1a]'}`}>
       
@@ -454,6 +486,37 @@ const App: React.FC = () => {
         loading={gateLoading}
         error={gateError}
       />
+      {showEmailBriefModal && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowEmailBriefModal(false)}
+              className="absolute top-3 right-3 text-black/50 hover:text-black"
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-editorial mb-2">Email this brief</h3>
+            <p className="text-sm text-black/60 mb-4">
+              Attach the downloaded PDF to your email. (Server-side send not wired yet.)
+            </p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="email"
+                defaultValue={userEmail || ''}
+                className="border border-black/10 px-3 py-2 text-sm"
+                placeholder="you@company.com"
+                disabled
+              />
+              <button
+                onClick={() => setShowEmailBriefModal(false)}
+                className="bg-black text-white px-3 py-2 text-xs uppercase tracking-widest"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {welcomeToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="bg-white text-black px-4 py-2 shadow-2xl border border-black/5 text-[11px] uppercase tracking-[0.2em] rounded-full">
@@ -832,11 +895,28 @@ const App: React.FC = () => {
 
                   {/* Footer */}
                   <div className="flex justify-between items-center border-t border-gray-100 pt-8 opacity-60 hover:opacity-100 transition-opacity dur-md animate-fade-up" style={{ animationDelay: '600ms' }}>
-                    <button onClick={handleReshuffle} className="flex items-center gap-2 text-xs uppercase tracking-widest hover:text-black transition-colors group">
-                      <svg className="group-hover:rotate-180 transition-transform dur-md ease-spring-soft" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                      Shuffle Scenario
-                    </button>
-                    <span className="text-[10px] text-gray-400">AI output may vary. Evaluate critically.</span>
+                    <div className="flex gap-3 flex-wrap">
+                      <button onClick={handleReshuffle} className="flex items-center gap-2 text-xs uppercase tracking-widest hover:text-black transition-colors group">
+                        <svg className="group-hover:rotate-180 transition-transform dur-md ease-spring-soft" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                        Shuffle Scenario
+                      </button>
+                      <button
+                        onClick={handleDownloadPdf}
+                        disabled={generatingPdf}
+                        className="flex items-center gap-2 text-xs uppercase tracking-widest bg-black text-white px-3 py-2 rounded hover:bg-black/90 disabled:opacity-60"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v14m0 0l-5-5m5 5l5-5"/><path d="M5 21h14"/></svg>
+                        {generatingPdf ? 'Preparing...' : 'Save Intelligence Brief'}
+                      </button>
+                      <button
+                        onClick={() => setShowEmailBriefModal(true)}
+                        className="flex items-center gap-2 text-[11px] uppercase tracking-widest border border-black/10 px-3 py-2 rounded hover:border-black"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z"/><path d="m4 4 8 8 8-8"/></svg>
+                        Email this brief
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-gray-400 text-right">AI output may vary. Evaluate critically.</span>
                   </div>
 
                 </div>
