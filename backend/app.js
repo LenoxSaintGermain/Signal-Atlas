@@ -16,8 +16,8 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Initialize Gemini
-// NOTE: Ensure process.env.API_KEY is set in Cloud Run environment variables
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// NOTE: Ensure GEMINI_API_KEY is set in Cloud Run environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
 
 app.use(express.json());
 
