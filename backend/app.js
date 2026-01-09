@@ -11,6 +11,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
+const fs = require('fs');
 const { GoogleGenAI, Type } = require("@google/genai");
 const { Firestore, Timestamp } = require('@google-cloud/firestore');
 require('dotenv').config();
@@ -56,7 +58,8 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 app.use(express.json());
 
 // Security headers
-app.use(helmet({ crossOriginResourcePolicy: false }));
+// NOTE: Disable CSP because the frontend uses CDN scripts/importmaps.
+app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
 
 // Trust proxy for real IP (Cloud Run)
 app.set('trust proxy', 1);
@@ -72,19 +75,33 @@ app.use(cors({
   }
 }));
 
-// Rate limiting: 20 requests/hour per IP
-app.use(rateLimit({
+// Rate limiting: 20 generations/hour per IP
+const generateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
   message: { error: "You're exploring fast! Take a breath and try again in a few minutes." },
   standardHeaders: true,
   legacyHeaders: false,
-}));
+});
 
 // Health Check
-app.get('/healthz', (req, res) => {
+// NOTE: /healthz appears to be intercepted by some Google frontends in certain setups.
+// Use /__health for debugging.
+app.get('/__health', (req, res) => {
   res.status(200).send('OK');
 });
+
+// Serve frontend static assets (built) if present.
+const staticDirCandidates = [
+  // Docker image (we copy Vite dist here)
+  path.join(__dirname, '..', 'public'),
+  // Local dev / fallback
+  path.join(__dirname, '..', 'dist'),
+];
+const staticDir = staticDirCandidates.find(dir => fs.existsSync(path.join(dir, 'index.html')));
+if (staticDir) {
+  app.use(express.static(staticDir));
+}
 
 // Validation Helper
 const isValidRole = (r) => ['Exec', 'Operator', 'Product'].includes(r);
@@ -119,7 +136,7 @@ const setCachedScenario = async (key, payload) => {
 };
 
 // Generator Endpoint
-app.post('/generate', async (req, res) => {
+app.post('/generate', generateLimiter, async (req, res) => {
   const { signal_id, signal_title, truth, role, industry, all_signals } = req.body;
 
   // 1. Validation
@@ -259,6 +276,13 @@ app.post('/generate', async (req, res) => {
     res.status(500).json({ error: "Failed to generate intelligence" });
   }
 });
+
+// SPA fallback
+if (staticDir) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
+}
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Signal Atlas backend listening on port ${port}`);

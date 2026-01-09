@@ -1,3 +1,15 @@
+# --- Frontend build ---
+FROM node:20-slim AS frontend-build
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# --- Backend runtime ---
 FROM node:20-slim
 
 ENV NODE_ENV=production \
@@ -6,15 +18,16 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# Install dependencies from backend manifest
+# Install backend dependencies
 COPY backend/package.json backend/package-lock.json* ./backend/
-# Remove --ignore-scripts to allow gRPC/Firestore binary download
 RUN cd backend && npm ci --omit=dev
 
 # Copy backend source
 COPY backend/. ./backend
 
-# Switch workdir to backend app
+# Copy frontend build output
+COPY --from=frontend-build /app/dist ./public
+
 WORKDIR /app/backend
 
 # Use existing non-root 'node' user
