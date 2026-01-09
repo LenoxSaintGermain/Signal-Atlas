@@ -216,7 +216,7 @@ const App: React.FC = () => {
 
   const handleGateSubmit = async () => {
     const trimmedEmail = emailInput.trim();
-    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(trimmedEmail)) {
       setGateError('Enter a valid email.');
       return;
@@ -522,7 +522,10 @@ const App: React.FC = () => {
       <EmailGateModal
         isOpen={emailGateOpen}
         email={emailInput}
-        onEmailChange={setEmailInput}
+        onEmailChange={(value) => {
+          setEmailInput(value);
+          if (gateError) setGateError(null);
+        }}
         onSubmit={handleGateSubmit}
         onClose={closeEmailGate}
         loading={gateLoading}
