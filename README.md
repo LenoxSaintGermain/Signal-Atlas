@@ -1,18 +1,22 @@
 # SIGNAL ATLAS
 
+> Try it live: **https://thirdsignal.com/atlas**
+>
+> Share it: export a PDF “Intelligence Brief” or a LinkedIn-ready image.
+
 ## The Opposite of a Glossary
 
 Most AI content on LinkedIn follows a predictable formula: **define 20 terms → add icons → collect engagement → change nothing**.
 
-The audience learns what "RAG" stands for. They still can't explain to their board why the AI initiative is stalled.
+The audience learns what “RAG” stands for. They still can’t explain to their board why the AI initiative is stalled.
 
 This is the vocabulary fallacy: the belief that naming things creates understanding.
 
-It doesn't.
+It doesn’t.
 
 **Understanding comes from consequence.** From seeing how a concept bends the trajectory of a decision. From watching what breaks when you ignore it.
 
-Signal Atlas began with a simple observation: the most viral AI content on LinkedIn is also the least useful. Glossaries get saved. Strategies get skipped. Definitions get likes. Decisions get delayed.
+Signal Atlas began with a simple observation: the most viral AI content is often the least useful. Glossaries get saved. Strategies get skipped. Definitions get likes. Decisions get delayed.
 
 We built the opposite.
 
@@ -22,18 +26,18 @@ We built the opposite.
 
 Signal Atlas is a **strategic provocation engine** disguised as an interactive grid.
 
-Twenty signals. Each one a lens for examining how AI transforms business outcomes—not through technology, but through leverage, failure modes, and second-order effects.
+Twenty signals. Each one a lens for examining how AI transforms business outcomes — not through technology, but through leverage, failure modes, and second‑order effects.
 
-The interaction is simple:
+The interaction is intentionally simple:
 1. You see a grid of signals
 2. You tap one
-3. An LLM generates a scenario specific to your role and industry
-4. You see what happens when this signal is ignored
-5. You see what metrics move when it's understood
+3. The system generates a scenario specific to your role and industry
+4. You see what fails if you ignore the signal
+5. You see which outcomes move when you act on it
 
-No definitions. No jargon glossary. No "AI 101."
+No definitions. No jargon glossary. No “AI 101.”
 
-Just consequences.
+Just consequence.
 
 ---
 
@@ -53,28 +57,26 @@ We mapped these failure modes. Named them. Made them interactive.
 
 The result is a tool that does something unusual: it proves capability before the sales conversation begins.
 
-When a VP of Operations generates a scenario for "Workflow Inertia" in manufacturing, they see exactly how we think. They experience our strategic lens applied to their context. They forward the PDF to their COO.
-
-The marketing asset becomes the product demo.
+When someone generates “Workflow Inertia” for manufacturing, they experience the lens — and then they forward the brief. The marketing asset becomes the product demo.
 
 ---
 
-## Why It Works (The Behavioral Economics)
+## Why It Works (Behavioral Economics)
 
-### 1. The IKEA Effect
-Users generate their own scenarios. They select the role. They choose the industry. The output feels like *theirs*—because it partially is. Participation creates ownership. Ownership creates sharing.
+### 1) The IKEA Effect
+Users select role and industry. The output feels like *theirs* — because part of it is. Participation creates ownership. Ownership creates sharing.
 
-### 2. Loss Aversion Over Gain Framing
-Every signal includes a "Hidden Failure Mode"—the specific trap that smart people fall into when they ignore this lens. Humans are twice as motivated by avoiding loss as achieving gain. We weaponized that.
+### 2) Loss Aversion Over Gain Framing
+Every signal includes a “Hidden Failure Mode” — the specific trap smart teams fall into when they ignore the lens. Loss aversion is a feature, not a bug.
 
-### 3. The Specificity Heuristic  
-Generic advice ("leverage AI for efficiency") triggers skepticism. Specific scenarios ("your credit-scoring algorithm's half-life just dropped to 18 months") trigger recognition. The more specific the claim, the more credible it feels—even when generated.
+### 3) The Specificity Heuristic
+Generic advice (“leverage AI for efficiency”) triggers skepticism. Specific scenarios trigger recognition. Specificity feels like credibility.
 
-### 4. Social Proof Through Artifact
-The exportable PDF isn't a feature. It's a distribution mechanism. Executives share documents internally. Each shared PDF carries our brand, our lens, our URL into organizations we'll never cold-call.
+### 4) Social Proof Through Artifact
+The exportable PDF isn’t a feature. It’s a distribution mechanism. Executives share documents internally. Each shared brief carries our brand, our lens, and our URL into organizations we’ll never cold‑call.
 
-### 5. The Curiosity Gap
-Twenty signals in a grid. You can only see titles. The "truth" and scenario require a tap. Incomplete information creates tension. Tension creates clicks. This is the same mechanic that makes headlines work.
+### 5) The Curiosity Gap
+Twenty signals in a grid. Titles only. The “truth” and scenario require a tap. Incomplete information creates tension. Tension creates clicks.
 
 ---
 
@@ -82,40 +84,35 @@ Twenty signals in a grid. You can only see titles. The "truth" and scenario requ
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         FRAMER                              │
+│                         BROWSER                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ Signal Grid │→ │ Reveal Modal│→ │ Generated Scenario  │ │
-│  │   (CMS)     │  │  (React)    │  │   (LLM Output)      │ │
+│  │ Signal Grid │→ │ Reveal Modal│→ │ Export (PDF / PNG)  │ │
+│  │   (React)   │  │  (React)    │  │  + Save (Gems)      │ │
 │  └─────────────┘  └──────┬──────┘  └─────────────────────┘ │
-│                          │                                  │
+│                          │ POST /generate                    │
 └──────────────────────────┼──────────────────────────────────┘
-                           │ POST /generate
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      CLOUD RUN                              │
+│                      CLOUD RUN (Express)                    │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │  Validate   │→ │  Generate   │→ │   Return JSON       │ │
-│  │  + Cache    │  │  (Gemini)   │  │   + Log Metrics     │ │
+│  │ Serve SPA   │  │  Validate   │→ │  Generate (Gemini)  │ │
+│  │ + API       │  │  + RateLimit│  │  + Return JSON      │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-                           │
+└──────────────────────────┬──────────────────────────────────┘
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       FIREBASE                              │
+│                       FIRESTORE                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Leads     │  │    Gems     │  │   Scenario Cache    │ │
-│  │ (Captured)  │  │  (Saved)    │  │   (Cost Control)    │ │
+│  │   Leads     │  │    Gems     │  │  Scenario Cache     │ │
+│  │ (Captured)  │  │  (Saved)    │  │  (Optional)         │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Frontend:** Vite/React (this repo) or Framer variant  
-**Backend:** Cloud Run (Node.js/Express, stateless, auto-scaling)  
-**AI:** Gemini 3 Flash / 1.5 Pro (structured JSON output, scenario generation)  
-**Storage:** Firebase Firestore (leads, saved gems, optional caching)  
-**Export:** PDF via react-pdf, PNG via html2canvas  
+**Frontend:** Vite/React  
+**Backend:** Cloud Run (Node.js/Express)  
+**AI:** Gemini (structured JSON output)  
+**Storage:** Firestore (leads, saved gems, optional caching)
 
 ---
 
@@ -148,31 +145,31 @@ Twenty signals in a grid. You can only see titles. The "truth" and scenario requ
 
 ## What We Learned Building This
 
-### 1. Glossaries Are Comfort Food
-The original LinkedIn infographic (our inspiration) had 191 likes. People *saved* it. But saving isn't using. The "20 AI Terms You Should Know" format is optimized for the **feeling** of learning, not actual capability development. We didn't want saves. We wanted forwards.
+### 1) Glossaries Are Comfort Food
+The “20 AI Terms You Should Know” format is optimized for the **feeling** of learning, not capability development. We didn’t want saves. We wanted forwards.
 
-### 2. Generation Creates Ownership
-When users select their role and industry, then watch a scenario materialize, they've participated in creating the insight. This small act of configuration transforms passive consumption into active engagement. The scenario feels *theirs*—even though they wrote none of it.
+### 2) Generation Creates Ownership
+Choosing role + industry turns passive reading into participation. The scenario feels personal — and personal gets shared.
 
-### 3. Fear Outperforms Aspiration
-Our highest-engagement element isn't the scenario. It's the "Hidden Failure Mode"—a single sentence describing what goes wrong when you ignore this signal. Loss aversion is a feature, not a bug.
+### 3) Fear Outperforms Aspiration
+The highest‑engagement element isn’t the scenario. It’s the “Hidden Failure Mode” — a single sentence describing what breaks when you ignore the signal.
 
-### 4. PDFs Still Win in Enterprise
-Despite predictions of their demise, PDFs remain the primary format for internal knowledge sharing in enterprises. Our "Download Intelligence Brief" feature has a 23% click rate. Those PDFs travel places our ads never could.
+### 4) PDFs Still Win in Enterprise
+PDF export isn’t a feature. It’s a delivery vehicle. Documents travel inside organizations more reliably than links.
 
-### 5. The Grid Is the Hook
-A wall of 20 cards creates both completeness and choice paralysis. Users feel compelled to explore multiple signals because the full picture requires it. Average session depth: 4.3 signals. That's 4.3 opportunities to demonstrate how we think.
+### 5) The Grid Is the Hook
+A wall of 20 cards creates both completeness and choice paralysis. Users explore multiple signals per session because the full picture requires it.
 
 ---
 
-## The Meta-Point
+## The Meta‑Point
 
-This README is a demonstration of the copywriting approach we use for Third Signal content.
+This README is a demonstration of the Third Signal writing approach.
 
-Notice what we didn't do:
+Notice what we didn’t do:
 - Lead with features
 - List technical specifications first
-- Use phrases like "cutting-edge" or "revolutionary"
+- Use phrases like “cutting‑edge” or “revolutionary”
 - Explain what an LLM is
 - Apologize for anything
 
@@ -181,50 +178,44 @@ Notice what we did:
 - Named the conventional approach and explained why it fails
 - Showed consequence before capability
 - Used behavioral economics as proof, not decoration
-- Made the reader feel clever for following along
-
-This is the Signal Atlas voice. This is what the copywriting agent generates.
-
-The README is the case study.
 
 ---
 
 ## Running Locally
 
-### Frontend (Vite)
-```bash
-npm install
-npm run dev
-```
-
-Environment:
-- Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY`.
-- If no key is present, the app will fall back to a deterministic mock scenario so the UI still works.
-
-### Backend (Cloud Run target)
+### Backend
 ```bash
 cd backend
 npm install
-cp .env.example .env   # set GEMINI_API_KEY
-npm run dev            # or npm start
+GEMINI_API_KEY=... npm start   # listens on 8080
 ```
 
-Deploy with the provided Dockerfile; Cloud Run expects port 8080.
+### Frontend
+```bash
+npm install
+npm run dev                    # Vite on 3000
+```
+
+Notes:
+- The frontend calls `POST /generate`.
+- In dev, Vite proxies `/generate` → `http://localhost:8080`.
 
 ---
 
 ## Deployment
 
+### Single service (Cloud Run: frontend + API)
 ```bash
-# Backend to Cloud Run
 gcloud run deploy signal-atlas \
-  --source ./backend \
-  --region us-central1 \
+  --source . \
+  --region us-west1 \
   --allow-unauthenticated \
-  --set-env-vars "GEMINI_API_KEY=${GEMINI_API_KEY}"
+  --set-env-vars "GEMINI_API_KEY=YOUR_KEY"
 ```
 
-Frontend can ship via Framer, Firebase Hosting, or any static host (`npm run build`).
+Optional hardening:
+- `ALLOWED_ORIGINS` (comma‑separated) to lock CORS
+- `SKIP_FIRESTORE_CACHE=false` to enable Firestore caching
 
 ---
 
@@ -232,33 +223,25 @@ Frontend can ship via Framer, Firebase Hosting, or any static host (`npm run bui
 
 Proprietary. Third Signal, 2025.
 
-The strategic frameworks, signal definitions, and scenario generation prompts are intellectual property of Third Signal.
-
-You may fork this for personal learning. You may not deploy a competing commercial product.
+The strategic frameworks, signal definitions, and prompts are intellectual property of Third Signal.
 
 ---
 
 ## The Invitation
 
-If you've read this far, you understand something most people miss:
+If you’ve read this far, you understand something most people miss:
 
 **The packaging is the product.**
 
-A README that reads like a case study. A marketing tool that functions as a capability demo. A glossary replacement that generates strategic scenarios.
+A grid that invites curiosity. A scenario that feels personal. A failure mode that creates urgency. An artifact that moves inside organizations.
 
-These aren't clever tricks. They're what happens when you apply the same rigor to distribution that you apply to development.
+If you want to see this rigor applied to your AI initiatives:
 
-If you want to see what this rigor looks like applied to your AI initiatives:
-
-**thirdsignal.com/atlas**
+**https://thirdsignal.com/atlas**
 
 Tap a signal. See how we think.
 
-Then imagine that lens applied to your roadmap.
-
 ---
 
-*"The opposite of a good idea can also be a good idea."*  
+*“The opposite of a good idea can also be a good idea.”*  
 *— Rory Sutherland*
-
-We built the opposite of a glossary. It might be better.

@@ -60,6 +60,10 @@ const App: React.FC = () => {
   const [shareGenerating, setShareGenerating] = useState(false);
   const shareCanvasRef = useRef<HTMLDivElement>(null);
 
+  // Outro
+  const [showOutroOverlay, setShowOutroOverlay] = useState(false);
+  const outroTimeoutRef = useRef<number | null>(null);
+
   // Intro Orchestration State
   const [introPhase, setIntroPhase] = useState<IntroPhase>('init');
   const [showTitleOverlay, setShowTitleOverlay] = useState(false);
@@ -93,6 +97,14 @@ const App: React.FC = () => {
     if (typeof window === 'undefined') return;
     sessionStorage.setItem('generationCount', generationCount.toString());
   }, [generationCount]);
+
+  useEffect(() => {
+    return () => {
+      if (outroTimeoutRef.current) {
+        window.clearTimeout(outroTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Preload animation state
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -329,12 +341,40 @@ const App: React.FC = () => {
     }
   };
 
-  const handleClose = () => {
+  const triggerOutro = () => {
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem('atlas_outro_seen') === 'true') return;
+
+    sessionStorage.setItem('atlas_outro_seen', 'true');
+    setShowOutroOverlay(true);
+
+    if (outroTimeoutRef.current) {
+      window.clearTimeout(outroTimeoutRef.current);
+    }
+
+    outroTimeoutRef.current = window.setTimeout(() => {
+      setShowOutroOverlay(false);
+      outroTimeoutRef.current = null;
+    }, 4200);
+  };
+
+  const closeModal = (options?: { showOutro?: boolean }) => {
+    const shouldShowOutro = options?.showOutro ?? true;
+    const hadScenario = Boolean(scenarioData);
+
     setIsModalVisible(false);
     setTimeout(() => {
       setSelectedSignal(null);
-      setScenarioData(null); 
-    }, 100); 
+      setScenarioData(null);
+    }, 100);
+
+    if (shouldShowOutro && hadScenario) {
+      triggerOutro();
+    }
+  };
+
+  const handleClose = (_e?: React.MouseEvent) => {
+    closeModal();
   };
 
   // --- GEM LOGIC ---
@@ -374,7 +414,7 @@ const App: React.FC = () => {
 
       // UX: Wait for user to see "Saved", then close modal and scroll to gem
       setTimeout(() => {
-        handleClose();
+        closeModal({ showOutro: false });
         setCurrentView('gems');
         setLastSavedGemId(newGemId);
       }, 1000);
@@ -566,6 +606,32 @@ const App: React.FC = () => {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="bg-white text-black px-4 py-2 shadow-2xl border border-black/5 text-[11px] uppercase tracking-[0.2em] rounded-full">
             Welcome to the Atlas
+          </div>
+        </div>
+      )}
+
+      {showOutroOverlay && (
+        <div className="fixed inset-0 z-[85] bg-[#0b0b0b] text-white flex items-center justify-center p-8 animate-in fade-in duration-700">
+          <button
+            onClick={() => setShowOutroOverlay(false)}
+            className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors"
+            aria-label="Close outro"
+          >
+            ✕
+          </button>
+          <div className="max-w-2xl w-full text-center">
+            <div className="text-[10px] uppercase tracking-[0.35em] text-white/40 mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
+              Third Signal
+            </div>
+            <div className="text-3xl md:text-4xl font-editorial italic leading-tight mb-4 animate-fade-up" style={{ animationDelay: '250ms' }}>
+              Definitions don’t move outcomes.
+            </div>
+            <p className="text-white/55 text-sm md:text-base leading-relaxed max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '400ms' }}>
+              If one signal changed the way you see a decision, imagine twenty applied to your roadmap.
+            </p>
+            <div className="mt-10 text-[10px] font-mono tracking-widest text-white/35 animate-fade-up" style={{ animationDelay: '550ms' }}>
+              thirdsignal.com/atlas
+            </div>
           </div>
         </div>
       )}
