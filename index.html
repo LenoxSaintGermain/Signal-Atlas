@@ -128,6 +128,19 @@
       .animate-construct {
         animation: construct 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
+
+      /* Mobile Interaction Pulse */
+      @keyframes mobilePulse {
+        0% { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); transform: scale(1.025); border-color: transparent; }
+        50% { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); transform: scale(1.04); border-color: rgba(0,0,0,0.05); }
+        100% { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); transform: scale(1.025); border-color: transparent; }
+      }
+
+      .mobile-active-card {
+        animation: mobilePulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        background-color: white !important;
+        z-index: 30 !important;
+      }
       
     </style>
   <script type="importmap">
@@ -147,6 +160,5 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

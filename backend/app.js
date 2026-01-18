@@ -9,134 +9,32 @@
 
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const path = require('path');
-const fs = require('fs');
 const { GoogleGenAI, Type } = require("@google/genai");
-const { Firestore, Timestamp } = require('@google-cloud/firestore');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 8080;
 
 // Initialize Gemini
-// NOTE: Ensure GEMINI_API_KEY is set in Cloud Run environment variables
-const getAiClient = () => {
-  const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  if (!key) {
-    console.warn("GEMINI_API_KEY not provided");
-    return null;
-  }
-  try {
-    return new GoogleGenAI({ apiKey: key });
-  } catch (e) {
-    console.error("Failed to initialize Gemini client", e);
-    return null;
-  }
-};
-const aiClient = getAiClient();
-
-// Firestore (uses Cloud Run default service account / ADC)
-let firestore = null;
-try {
-  if (process.env.SKIP_FIRESTORE_CACHE !== 'true') {
-    firestore = new Firestore({
-      ignoreUndefinedProperties: true,
-    });
-  }
-} catch (err) {
-  console.warn('[WARN] Firestore unavailable, cache disabled', err);
-}
-
-process.on('unhandledRejection', (err) => {
-  console.error('[FATAL] Unhandled rejection', err);
-});
-const CACHE_COLLECTION = 'cache';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// NOTE: Ensure process.env.API_KEY is set in Cloud Run environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 app.use(express.json());
 
-// Security headers
-// NOTE: Disable CSP because the frontend uses CDN scripts/importmaps.
-app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
-
-// Trust proxy for real IP (Cloud Run)
-app.set('trust proxy', 1);
-
-// CORS: lock to allowed origins (comma-separated). In development, allow all.
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || process.env.NODE_ENV === 'development' || allowedOrigins.length === 0) {
-      return callback(null, true);
-    }
-    return allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error('CORS blocked'), false);
-  }
-}));
-
-// Rate limiting: 20 generations/hour per IP
-const generateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 20,
-  message: { error: "You're exploring fast! Take a breath and try again in a few minutes." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Allow requests from Framer (configure exact domain in production)
+app.use(cors({ origin: '*' })); 
 
 // Health Check
-// NOTE: /healthz appears to be intercepted by some Google frontends in certain setups.
-// Use /__health for debugging.
-app.get('/__health', (req, res) => {
+app.get('/healthz', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Serve frontend static assets (built) if present.
-const staticDirCandidates = [
-  // Docker image (we copy Vite dist here)
-  path.join(__dirname, '..', 'public'),
-  // Local dev / fallback
-  path.join(__dirname, '..', 'dist'),
-];
-const staticDir = staticDirCandidates.find(dir => fs.existsSync(path.join(dir, 'index.html')));
-if (staticDir) {
-  app.use(express.static(staticDir));
-}
-
 // Validation Helper
 const isValidRole = (r) => ['Exec', 'Operator', 'Product'].includes(r);
-const isValidIndustry = (i) => ['Auto', 'Logistics', 'Retail', 'Manufacturing', 'Finance', 'Healthcare', 'SaaS', 'Energy'].includes(i);
-
-// Sanitizer
-const SCRIPT_TAG_RE = /<script\b[^>]*>[\s\S]*?<\/script>/gi;
-const sanitize = (val) => typeof val === 'string' ? val.replace(SCRIPT_TAG_RE, '').trim() : val;
-
-const cacheKey = (signalId, role, industry) =>
-  `${(signalId || 'unknown').toLowerCase()}|${role.toLowerCase()}|${industry.toLowerCase()}`;
-
-const getCachedScenario = async (key) => {
-  if (!firestore) return null;
-  const docRef = firestore.collection(CACHE_COLLECTION).doc(`scenario_${key}`);
-  const snap = await docRef.get();
-  if (!snap.exists) return null;
-  const data = snap.data();
-  if (!data || !data.payload || !data.created_at) return null;
-  const ageMs = Date.now() - data.created_at.toMillis();
-  if (ageMs > CACHE_TTL_MS) return null;
-  return data.payload;
-};
-
-const setCachedScenario = async (key, payload) => {
-  if (!firestore) return null;
-  const docRef = firestore.collection(CACHE_COLLECTION).doc(`scenario_${key}`);
-  return docRef.set({
-    payload,
-    created_at: Timestamp.now(),
-  }, { merge: true });
-};
+const isValidIndustry = (i) => ['Auto', 'Logistics', 'Retail', 'Manufacturing', 'Finance', 'Healthcare', 'SaaS'].includes(i);
 
 // Generator Endpoint
-app.post('/generate', generateLimiter, async (req, res) => {
+app.post('/generate', async (req, res) => {
   const { signal_id, signal_title, truth, role, industry, all_signals } = req.body;
 
   // 1. Validation
@@ -148,21 +46,7 @@ app.post('/generate', generateLimiter, async (req, res) => {
   }
 
   // 2. Logging
-  const requestStart = Date.now();
   console.log(`[REQ] Generate for ${signal_title} (${role}/${industry})`);
-
-  const key = cacheKey(signal_id || signal_title || truth, role, industry);
-
-  // 2.5 Cache lookup
-  try {
-    const cached = await getCachedScenario(key);
-    if (cached) {
-      console.log(`[CACHE] hit for ${key}`);
-      return res.json({ ...cached, _meta: { cached: true, age_ms: Date.now() - requestStart } });
-    }
-  } catch (err) {
-    console.warn('[CACHE] lookup failed', err);
-  }
 
   // 3. Schema Definition
   const responseSchema = {
@@ -210,12 +94,6 @@ app.post('/generate', generateLimiter, async (req, res) => {
       - Scenario should feel real, not generic. Use specific terminology relevant to ${industry}.
   `;
 
-  const ai = aiClient || getAiClient();
-  if (!ai) {
-    console.error("Gemini client not available");
-    return res.status(500).json({ error: "AI service unavailable" });
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -227,63 +105,16 @@ app.post('/generate', generateLimiter, async (req, res) => {
         temperature: 0.7,
       },
     });
+
     const data = JSON.parse(response.text);
-    const sanitized = {
-      scenario_title: sanitize(data.scenario_title),
-      scenario: sanitize(data.scenario),
-      why_it_matters: sanitize(data.why_it_matters),
-      outcome_anchors: Array.isArray(data.outcome_anchors) ? data.outcome_anchors.map(a => ({
-        metric: sanitize(a.metric),
-        direction: a.direction,
-        note: sanitize(a.note),
-      })) : [],
-      hidden_failure_mode: sanitize(data.hidden_failure_mode),
-      compounds_with: Array.isArray(data.compounds_with) ? data.compounds_with.map(sanitize) : [],
-    };
-
-    // Save to cache (fire-and-forget)
-    try {
-      await setCachedScenario(key, sanitized);
-    } catch (err) {
-      console.warn('[CACHE] set failed', err);
-    }
-
-    console.log(`[OK] ${signal_title} latency=${Date.now() - requestStart}ms`);
-    res.json({ ...sanitized, _meta: { cached: false, latency_ms: Date.now() - requestStart } });
+    res.json(data);
 
   } catch (error) {
     console.error("[ERR] Gemini API Error:", error);
-    // Try cached fallback
-    try {
-      const cached = await getCachedScenario(key);
-      if (cached) {
-        console.warn('[DEGRADE] returning cached due to generation failure');
-        return res.status(200).json({ ...cached, _meta: { degraded: true, reason: 'generation_error_cached' } });
-      }
-    } catch (cacheErr) {
-      console.warn('[CACHE] fallback lookup failed', cacheErr);
-    }
-
-    // Graceful degradation by error type
-    const code = error?.code || error?.response?.status;
-    if (code === 'RESOURCE_EXHAUSTED' || code === 429) {
-      return res.status(429).json({ error: "Quota exhausted. Please retry shortly.", _meta: { degraded: true, reason: 'quota' } });
-    }
-    if (code === 'DEADLINE_EXCEEDED' || code === 'ETIMEDOUT') {
-      return res.status(504).json({ error: "Generation timeout. Please retry.", _meta: { degraded: true, reason: 'timeout' } });
-    }
-
     res.status(500).json({ error: "Failed to generate intelligence" });
   }
 });
 
-// SPA fallback
-if (staticDir) {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(staticDir, 'index.html'));
-  });
-}
-
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, () => {
   console.log(`Signal Atlas backend listening on port ${port}`);
 });

@@ -1,6 +1,6 @@
 
 export type Role = 'Exec' | 'Operator' | 'Product';
-export type Industry = 'Auto' | 'Logistics' | 'Retail' | 'Manufacturing' | 'Finance' | 'Healthcare' | 'SaaS' | 'Energy';
+export type Industry = 'Auto' | 'Logistics' | 'Retail' | 'Manufacturing' | 'Finance' | 'Healthcare' | 'SaaS';
 
 export interface Signal {
   id: string;
@@ -52,21 +52,4 @@ export interface SignalState {
   selectedSignalId: string | null;
   role: Role;
   industry: Industry;
-}
-
-export interface LeadUtmParams {
-  source?: string;
-  medium?: string;
-  campaign?: string;
-}
-
-export interface Lead {
-  email: string;
-  captured_at?: any; // Firestore Timestamp injected on write
-  source_signal: string;
-  source_role: string;
-  source_industry: string;
-  user_agent: string;
-  referrer: string;
-  utm_params: LeadUtmParams;
 }
