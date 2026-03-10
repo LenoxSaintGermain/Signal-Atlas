@@ -262,7 +262,7 @@ const App: React.FC = () => {
     [brand, openModule]
   );
   const shellHeaderDimmed = openModuleId !== null || shellScrollDepth > 56;
-  const modalHeaderCollapsed = modalScrollDepth > 36;
+  const modalHeaderCollapsed = openModule?.id !== 'intake' && modalScrollDepth > 36;
 
   const isLocked = (m: SuiteModule) => {
     if (m.id === 'intake' || m.id === 'roadmap') return false;

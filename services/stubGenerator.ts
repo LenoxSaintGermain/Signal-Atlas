@@ -536,14 +536,39 @@ export const generateSuiteDistilledDoc = (
   answers: IntakeAnswers
 ): SuiteDistilledContent => {
   const target = resolveTargetRole(answers);
+  const learned =
+    Array.isArray(brief?.learned) && brief.learned.length
+      ? brief.learned
+      : Array.isArray(brief?.executive_summary) && brief.executive_summary.length
+        ? brief.executive_summary
+        : [
+            `Your profile needs tighter packaging for ${target}.`,
+            'The market is rewarding proof, scope, and clarity over broad activity.',
+            'A smaller number of higher-signal moves will outperform generic volume.',
+          ];
+  const next72 =
+    Array.isArray(brief?.next_72_hours) && brief.next_72_hours.length
+      ? brief.next_72_hours
+          .map((task, index) => ({
+            id: String(task?.id || `distilled-${index + 1}`),
+            label: String(task?.label || '').trim(),
+            done: Boolean(task?.done),
+          }))
+          .filter((task) => task.label)
+      : [
+          { id: 'distilled-1', label: 'Build a verified evidence list with outcomes, scope, and metrics.', done: false },
+          { id: 'distilled-2', label: 'Choose one target lane and remove adjacent noise.', done: false },
+          { id: 'distilled-3', label: 'Draft a concise positioning statement for stakeholder-facing use.', done: false },
+        ];
+
   return {
-    what_i_learned: brief.learned,
+    what_i_learned: learned,
     what_needs_to_happen: [
       `Package your profile for ${target} in language the hiring panel already trusts.`,
       'Convert noisy activity into a tight leverage sequence.',
       'Run one high-signal outreach cycle per week with explicit asks.',
     ],
-    next_to_do: brief.next_72_hours,
+    next_to_do: next72,
   };
 };
 
