@@ -43,25 +43,25 @@ const gradeFromScore = (score: number) => {
 const styleTone = (tone: string) =>
   tone === 'strong'
     ? {
-        border: 'border-[#2d7b6a]/25',
-        bg: 'bg-[#102f31]',
-        surface: 'bg-[#15393b]',
-        text: 'text-[#b9f1e2]',
-        accent: 'bg-[#5ed3b4]',
+        border: 'border-[#5FAF95]/35',
+        bg: 'bg-[#28211E]',
+        surface: 'bg-[#F4F1EB]',
+        text: 'text-[#5FAF95]',
+        accent: 'bg-[#8DD9BF]',
       }
     : tone === 'watch'
       ? {
-          border: 'border-amber-500/25',
-          bg: 'bg-[#322515]',
-          surface: 'bg-[#43311a]',
-          text: 'text-[#ffd89d]',
+          border: 'border-[#b8893a]/35',
+          bg: 'bg-[#28211E]',
+          surface: 'bg-[#FBF8F2]',
+          text: 'text-[#9f7640]',
           accent: 'bg-[#f0b14a]',
         }
       : {
-          border: 'border-red-500/25',
-          bg: 'bg-[#341c20]',
-          surface: 'bg-[#44242a]',
-          text: 'text-[#ffb4b8]',
+          border: 'border-[#b56565]/35',
+          bg: 'bg-[#28211E]',
+          surface: 'bg-[#FBF3F0]',
+          text: 'text-[#a25555]',
           accent: 'bg-[#f2757b]',
         };
 
@@ -253,7 +253,7 @@ export const buildProfileTelemetry = (profile: ProfileContent) => {
 
 export const EditorialList = ({ items, accent = 'teal' }: { items: string[]; accent?: 'teal' | 'amber' | 'red' | 'ink' }) => {
   const dotClass =
-    accent === 'amber' ? 'bg-amber-500' : accent === 'red' ? 'bg-red-500' : accent === 'ink' ? 'bg-[#0d1417]' : 'bg-[#5ed3b4]';
+    accent === 'amber' ? 'bg-[#b8893a]' : accent === 'red' ? 'bg-[#a25555]' : accent === 'ink' ? 'bg-[#28211E]' : 'bg-[#5FAF95]';
   return (
     <ul className="space-y-3 text-sm leading-7 text-black/72 font-body">
       {items.map((item, index) => (
@@ -267,19 +267,19 @@ export const EditorialList = ({ items, accent = 'teal' }: { items: string[]; acc
 };
 
 export const DnaCommandBar = ({ items }: { items: DnaSignalStripItem[] }) => (
-  <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#081217] text-[#f2efe8] shadow-[0_35px_90px_-45px_rgba(8,18,23,0.9)]">
-    <div className="flex flex-wrap items-center gap-x-0 gap-y-4 divide-y divide-white/8 sm:divide-y-0 sm:divide-x">
+  <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)]">
+    <div className="flex flex-wrap items-center gap-x-0 gap-y-4 divide-y divide-white/8 sm:divide-y-0 sm:divide-x sm:divide-white/8">
       {items.map((item) => {
         const tone = styleTone(item.tone);
         return (
           <div key={item.id} className="min-w-[160px] flex-1 px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2">
-              {item.id === 'live_dossier' ? <span className="h-2.5 w-2.5 rounded-full bg-[#5ed3b4] shadow-[0_0_12px_rgba(94,211,180,0.8)]" /> : null}
+              {item.id === 'live_dossier' ? <span className="h-2.5 w-2.5 rounded-full bg-[#8DD9BF] shadow-[0_0_12px_rgba(141,217,191,0.5)]" /> : null}
               <div className="text-[10px] uppercase tracking-[0.3em] text-white/45 font-data">{item.label}</div>
             </div>
             <div className="mt-3 flex items-baseline gap-3">
               <div className="text-3xl font-data tracking-tight text-white">{item.value}</div>
-              <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] ${tone.border} ${tone.text}`}>
+              <span className={`border px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] ${tone.border} ${tone.text}`}>
                 {item.tone}
               </span>
             </div>
@@ -305,10 +305,10 @@ const buildPolyline = (points: { score: number }[], width = 420, height = 180, p
 export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) => {
   const polyline = buildPolyline(signal.trajectory);
   return (
-    <section className="rounded-[32px] border border-[#0b171c] bg-[#081217] p-6 text-[#f2efe8] md:p-8">
+    <section className="border border-[#28211E]/12 bg-[#28211E] p-6 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] md:p-8">
       <div className="flex items-start justify-between gap-6">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-[#79d6bf] font-data">Career Market Signal</div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-[#8DD9BF] font-data">Career Market Signal</div>
           <div className="mt-4 text-5xl font-data tracking-tight text-white">+{signal.composite_score}</div>
           <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45 font-data">{signal.momentum_label}</div>
         </div>
@@ -318,12 +318,12 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
         </div>
       </div>
 
-      <div className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+      <div className="mt-6 border border-white/8 bg-white/[0.03] p-4">
         <svg viewBox="0 0 420 180" className="h-[180px] w-full">
           <defs>
             <linearGradient id="dna-signal-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="rgba(94,211,180,0.35)" />
-              <stop offset="100%" stopColor="rgba(94,211,180,0.02)" />
+              <stop offset="0%" stopColor="rgba(141,217,191,0.35)" />
+              <stop offset="100%" stopColor="rgba(141,217,191,0.02)" />
             </linearGradient>
           </defs>
           {[25, 50, 75].map((grid) => {
@@ -337,13 +337,13 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
                 fill="url(#dna-signal-fill)"
                 opacity="0.7"
               />
-              <polyline points={polyline} fill="none" stroke="#5ed3b4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <polyline points={polyline} fill="none" stroke="#8DD9BF" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" />
             </>
           ) : null}
           {signal.trajectory.map((point, index) => {
             const x = 18 + (index * (420 - 36)) / Math.max(signal.trajectory.length - 1, 1);
             const y = 180 - 18 - ((clampScore(point.score) / 100) * (180 - 36));
-            return <circle key={point.label} cx={x} cy={y} r="5" fill="#f2efe8" stroke="#5ed3b4" strokeWidth="2" />;
+            return <rect key={point.label} x={x - 4} y={y - 4} width="8" height="8" fill="#f7f1e8" stroke="#8DD9BF" strokeWidth="2" />;
           })}
         </svg>
         <div className="mt-3 grid grid-cols-4 gap-3 text-[10px] uppercase tracking-[0.22em] text-white/42 font-data">
@@ -360,13 +360,13 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
         {signal.breakdown.map((item) => {
           const tone = styleTone(item.tone);
           return (
-            <div key={item.id} className={`rounded-[22px] border p-4 ${tone.border} ${tone.surface}`}>
+            <div key={item.id} className={`border p-4 ${tone.border} ${tone.surface}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">{item.label}</div>
-                <span className={`rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${tone.text}`}>{item.score}</span>
+                <span className={`px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${tone.text}`}>{item.score}</span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-                <div className={`h-full rounded-full ${tone.accent}`} style={{ width: `${item.score}%` }} />
+              <div className="mt-3 h-2 overflow-hidden bg-white/10">
+                <div className={`h-full ${tone.accent}`} style={{ width: `${item.score}%` }} />
               </div>
               <div className="mt-3 text-xs leading-5 text-white/60 font-body">{item.rationale}</div>
             </div>
@@ -384,7 +384,7 @@ export const DnaDemandAnalysisPanel = ({
   summary: string;
   environments: DnaMarketDemandEnvironment[];
 }) => (
-  <section className="rounded-[30px] border border-black/10 bg-white p-6 shadow-[0_25px_80px_-55px_rgba(8,18,23,0.6)] md:p-8">
+  <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
     <div className="flex items-start justify-between gap-6">
       <div>
         <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">Market Demand Analysis</div>
@@ -393,7 +393,7 @@ export const DnaDemandAnalysisPanel = ({
     </div>
     <div className="mt-8 space-y-5">
       {environments.map((environment) => (
-        <div key={environment.id} className="rounded-[24px] border border-black/10 bg-[#fbf7ef] p-5">
+        <div key={environment.id} className="border border-black/10 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-base text-[#09161a] font-editorial">{environment.label}</div>
@@ -409,9 +409,9 @@ export const DnaDemandAnalysisPanel = ({
               <span>Demand</span>
               <span>{environment.demand_score}</span>
             </div>
-            <div className="relative mt-2 h-3 rounded-full bg-[#ddd5c6]">
-              <div className="h-full rounded-full bg-[#0b1a21]" style={{ width: `${environment.demand_score}%` }} />
-              <div className="absolute inset-y-[-4px] w-[2px] rounded-full bg-[#f0b14a] shadow-[0_0_10px_rgba(240,177,74,0.8)]" style={{ left: `${environment.fit_score}%` }} />
+            <div className="relative mt-2 h-3 bg-[#ddd5c6]">
+              <div className="h-full bg-[#28211E]" style={{ width: `${environment.demand_score}%` }} />
+              <div className="absolute inset-y-[-4px] w-[2px] bg-[#b8893a]" style={{ left: `${environment.fit_score}%` }} />
             </div>
             <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-black/40 font-data">
               <span>Fit</span>
@@ -434,11 +434,11 @@ export const DnaCompensationLadderPanel = ({
   ladder: DnaCompensationLadderRung[];
   receipt: string[];
 }) => (
-  <section className="rounded-[30px] border border-[#0b171c] bg-[#09161a] p-6 text-[#f2efe8] shadow-[0_25px_80px_-50px_rgba(8,18,23,0.8)] md:p-8">
-    <div className="text-[10px] uppercase tracking-[0.3em] text-[#79d6bf] font-data">{title}</div>
+  <section className="border border-[#28211E]/12 bg-[#28211E] p-6 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] md:p-8">
+    <div className="text-[10px] uppercase tracking-[0.3em] text-[#8DD9BF] font-data">{title}</div>
     <div className="mt-6 grid gap-4 md:grid-cols-3">
       {ladder.map((rung) => (
-        <div key={rung.id} className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
+        <div key={rung.id} className="border border-white/10 bg-white/[0.04] p-4">
           <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">{rung.label}</div>
           <div className="mt-3 text-4xl font-data tracking-tight text-white">{rung.grade}</div>
           <div className="mt-3 text-sm leading-6 text-white/62 font-body">{rung.detail}</div>
@@ -446,7 +446,7 @@ export const DnaCompensationLadderPanel = ({
       ))}
     </div>
     {receipt.length ? (
-      <div className="mt-6 rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
+      <div className="mt-6 border border-white/10 bg-white/[0.03] p-5">
         <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">Needle Movers</div>
         <div className="mt-4">
           <EditorialList items={receipt} />
@@ -462,7 +462,7 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
   const labelForTimebox = (timebox?: string) => (timebox === 'do_now' ? 'Do Now' : timebox === '48h' ? '48H' : '72H');
 
   return (
-    <section className="rounded-[30px] border border-black/10 bg-white p-6 shadow-[0_24px_80px_-56px_rgba(8,18,23,0.6)] md:p-8">
+    <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
       <div className="flex items-start justify-between gap-6">
         <div>
           <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">72-Hour War Room</div>
@@ -471,7 +471,7 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
       </div>
       <div className="mt-6 grid gap-4 xl:grid-cols-3">
         {tasks.map((task) => (
-          <div key={task.id} className={`rounded-[22px] border border-black/10 border-l-4 bg-[#fbf7ef] p-5 ${accentForTimebox(task.timebox)}`}>
+          <div key={task.id} className={`border border-black/10 border-l-4 bg-white p-5 ${accentForTimebox(task.timebox)}`}>
             <div className="text-[10px] uppercase tracking-[0.24em] text-black/45 font-data">{labelForTimebox(task.timebox)}</div>
             <div className="mt-3 text-lg leading-8 text-[#09161a] font-editorial">{task.label}</div>
             {task.rationale ? <div className="mt-3 text-sm leading-6 text-black/68 font-body">{task.rationale}</div> : null}
@@ -485,7 +485,7 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
 export const DnaEvidenceNodeGrid = ({ nodes }: { nodes: DnaEvidenceNode[] }) => (
   <div className="grid gap-4 lg:grid-cols-3">
     {nodes.map((node) => (
-      <div key={node.id} className="rounded-[24px] border border-black/10 bg-[#fbf7ef] p-5">
+      <div key={node.id} className="border border-black/10 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="text-[10px] uppercase tracking-[0.22em] text-black/42 font-data">{node.class}</div>
           <div className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-data">{node.confidence}</div>
@@ -504,7 +504,7 @@ export const DnaEvidenceNodeGrid = ({ nodes }: { nodes: DnaEvidenceNode[] }) => 
 );
 
 export const DnaTickerBar = ({ ticker }: { ticker: DnaReportTicker }) => (
-  <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#081217] px-5 py-4 text-[#f2efe8]">
+  <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] px-5 py-4 text-[#f7f1e8] shadow-[0_18px_50px_-44px_rgba(40,33,30,0.4)]">
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] uppercase tracking-[0.26em] text-white/48 font-data">
       <span>Report generated {ticker.generated_at}</span>
       <span>Model {ticker.model_version}</span>
