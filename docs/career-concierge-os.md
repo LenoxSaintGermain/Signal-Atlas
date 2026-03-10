@@ -114,12 +114,12 @@ It uses:
 - a control-tower summary as the read-only operating surface
 - one active workspace at a time for generation, media, brand, voice, or governance edits
 - a single-column editorial content stack so controls do not compress or overlap on medium-width laptop views
+- a compact command header on smaller viewports so laptop and tablet operators still see active section context before the form fields
 - a lane-readiness voice studio that treats Gemini Live as the active rail, Sesame as explicitly gated off, and ElevenLabs/Manus as planned future lanes
 - Cloud Run API env staging for Manus credentials plus ElevenLabs agent metadata so Admin can report external-lane readiness without mislabeling those lanes as live providers
 - the public concierge intake can now mount the configured ElevenLabs Chief of Staff widget from API-served public config, and admin exposes a dedicated public-intake lane selector so operators can flip between Gemini and ElevenLabs without touching env vars
 - the intake concierge step itself now shows a live lane switcher when ElevenLabs is available so the team can choose between Gemini and ElevenLabs in-session
 - the public-intake lane selector is now the persisted global default, so `/v1/public/config` reflects the saved admin choice instead of forcing Gemini when ElevenLabs is available
-- a top-command admin layout instead of a permanent desktop side rail so the operating canvas scales on laptop-width modals
 - a top-command client module shell instead of the old split left-rail modal so episodes, TV, and artifact modules have a wider presentation canvas
 - the client module shell now collapses its large editorial header once the user scrolls into the module body so cinematic surfaces are not covered by persistent chrome
 - mobile and tablet module shells now retreat secondary chrome so the narrative stage stays primary when media is present

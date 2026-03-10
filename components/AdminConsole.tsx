@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_INTENTS, FOCUS_PREFS, PACE_PREFS } from '../constants';
 import {
   AdminMediaPipelineOverview,
@@ -25,6 +26,12 @@ import {
   saveAdminConfig,
   updateAdminConciergeRequestStatus,
 } from '../services/adminApi';
+import {
+  GEMINI_IMAGE_MODEL_OPTIONS,
+  GEMINI_ROUTE_PRESETS,
+  GEMINI_TEXT_MODEL_OPTIONS,
+  GEMINI_VIDEO_MODEL_OPTIONS,
+} from '../config/geminiModels.js';
 import { MEDIA_LIBRARY_TAXONOMY_GROUPS, mergeMediaTags } from '../config/mediaLibraryTaxonomy';
 import { STARTER_MEDIA_LIBRARY_PACK } from '../config/starterMediaLibrary';
 import {
@@ -59,6 +66,12 @@ type AdminSectionId =
   | 'brand'
   | 'voice'
   | 'governance';
+
+type SelectOption = {
+  value: string;
+  label?: string;
+  description?: string;
+};
 
 const cloneConfig = (config: AppConfig): AppConfig => JSON.parse(JSON.stringify(config));
 
@@ -192,12 +205,44 @@ const signalTone = (active: boolean) =>
     ? 'border-brand-teal/25 bg-brand-soft text-brand-teal'
     : 'border-black/10 bg-white text-black/45';
 
+const describeAdminMutationError = (error: unknown, fallback: string) => {
+  const message =
+    error && typeof error === 'object' && 'message' in error ? String((error as { message?: unknown }).message ?? '') : '';
+  if (/401|invalid_token|missing_bearer_token/i.test(message)) {
+    return 'Admin session expired. Refresh the app and sign in again before saving.';
+  }
+  if (/403|admin_required/i.test(message)) {
+    return 'This account is authenticated but is not allowed to write admin configuration.';
+  }
+  if (/permission_denied|PERMISSION_DENIED|Missing or insufficient permissions/i.test(message)) {
+    return 'The API can read the admin console, but the current runtime still lacks write permission for this action.';
+  }
+  if (/503|Failed to fetch|Load failed|NetworkError/i.test(message)) {
+    return 'The admin action could not reach the API cleanly. Retry after the live service settles or refresh the session.';
+  }
+  return message || fallback;
+};
+
 const mediaPipelineTone = (status: string) => {
   if (status === 'completed' || status === 'approved' || status === 'scheduled') return 'border-emerald-500/25 bg-emerald-50 text-emerald-800';
   if (status === 'reviewed') return 'border-brand-teal/25 bg-brand-soft text-brand-teal';
   if (status === 'queued' || status === 'needs_review') return 'border-amber-500/25 bg-amber-50 text-amber-800';
   if (status === 'degraded' || status === 'rejected') return 'border-red-500/25 bg-red-50 text-red-800';
   return 'border-black/10 bg-white text-black/60';
+};
+
+const humanizePipelineAssetNote = (note: string | undefined, kind: 'image' | 'video') => {
+  const value = String(note ?? '').trim();
+  if (!value) return '';
+  if (/enhanceprompt parameter is not supported/i.test(value)) {
+    return kind === 'image'
+      ? 'Image generation hit an API-option mismatch. The job was preserved and the route now needs a config-safe retry.'
+      : 'Media generation hit an API-option mismatch. The job was preserved and the route now needs a config-safe retry.';
+  }
+  if (/queued\. use refresh to poll operation status/i.test(value)) {
+    return 'Render queued successfully. Use refresh after a short delay to pull the finished asset.';
+  }
+  return value.replace(/^Image generation unavailable:\s*/i, '').replace(/^Video generation unavailable:\s*/i, '');
 };
 
 const sectionCopy: Record<
@@ -254,11 +299,11 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-5">
-      <header className="space-y-2 border-b border-black/10 pb-4">
+    <section className="space-y-4">
+      <header className="space-y-2">
         <div className="text-[10px] uppercase tracking-[0.26em] text-brand-teal">{eyebrow}</div>
-        <h3 className="text-[28px] font-editorial italic leading-none text-[#08161a]">{title}</h3>
-        <p className="max-w-3xl text-sm leading-6 text-black/60">{description}</p>
+        <h3 className="text-[26px] font-editorial italic leading-none text-[#08161a] md:text-[30px]">{title}</h3>
+        <p className="max-w-3xl text-sm leading-6 text-black/58">{description}</p>
       </header>
       {children}
     </section>
@@ -279,7 +324,7 @@ function Panel({
   dense?: boolean;
 }) {
   return (
-    <section className="border border-black/10 bg-white/95 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.32)]">
+    <section className="overflow-hidden border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,247,241,0.98))] shadow-[0_24px_54px_-42px_rgba(0,0,0,0.32)]">
       <div className={`border-b border-black/10 ${dense ? 'px-4 py-3' : 'px-5 py-4 md:px-6'}`}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
@@ -325,6 +370,24 @@ function MetricCard({
         {meta}
       </div>
     </article>
+  );
+}
+
+function AdminStatCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: React.ReactNode;
+  detail?: string;
+}) {
+  return (
+    <div className="border border-black/8 bg-white/62 px-3 py-3 shadow-[0_14px_32px_-28px_rgba(0,0,0,0.22)]">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">{label}</div>
+      <div className="mt-2 text-2xl font-editorial leading-none text-[#09161a]">{value}</div>
+      {detail ? <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-black/35">{detail}</div> : null}
+    </div>
   );
 }
 
@@ -395,9 +458,14 @@ function SelectField({
 }: {
   label: string;
   value: string;
-  options: string[];
+  options: string[] | SelectOption[];
   onChange: (value: string) => void;
 }) {
+  const normalizedOptions = options.map((option) =>
+    typeof option === 'string'
+      ? { value: option, label: labelize(option) }
+      : { value: option.value, label: option.label || labelize(option.value) }
+  );
   return (
     <label className="space-y-2">
       <div className="text-xs text-gray-700">{label}</div>
@@ -406,9 +474,9 @@ function SelectField({
         onChange={(e) => onChange(e.target.value)}
         className="w-full border-b border-black/10 bg-transparent py-2 text-sm outline-none transition-colors focus:border-brand-teal"
       >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {labelize(option)}
+        {normalizedOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
@@ -439,6 +507,7 @@ function ToggleField({
 }
 
 export function AdminConsole({ open, onClose, onSaved }: Props) {
+  const prefersReducedMotion = useReducedMotion();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -546,6 +615,29 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     });
   };
 
+  const applyModelPreset = (presetId: string) => {
+    const preset = GEMINI_ROUTE_PRESETS.find((entry) => entry.id === presetId);
+    if (!preset) return;
+    setConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        generation: {
+          ...prev.generation,
+          suite_model: preset.suite_model,
+          binge_model: preset.binge_model,
+        },
+        media: {
+          ...prev.media,
+          image_model: preset.image_model,
+          video_model: preset.video_model,
+        },
+      };
+    });
+    setSuccess(`Routing preset applied: ${preset.label}. Save config to publish it.`);
+    setError(null);
+  };
+
   const updateMediaItem = (index: number, updater: (item: CuratedMediaItem) => CuratedMediaItem) => {
     setConfig((prev) => {
       if (!prev) return prev;
@@ -626,7 +718,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
       setSuccess('Configuration saved.');
       onSaved?.();
     } catch (e: any) {
-      setError(e?.message ?? 'Unable to save config.');
+      setError(describeAdminMutationError(e, 'Unable to save config.'));
     } finally {
       setSaving(false);
     }
@@ -1083,18 +1175,45 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         <div className="grid gap-5">
           <Panel title="Generation routing" eyebrow="Models" meta="Primary rails">
             <div className="grid gap-5">
-              <TextField
+              <div className="grid gap-3">
+                <div className="text-xs text-gray-700">Routing presets</div>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {GEMINI_ROUTE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => applyModelPreset(preset.id)}
+                      className="border border-black/10 bg-[#fbfcfa] p-4 text-left transition-colors hover:border-brand-teal"
+                    >
+                      <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{preset.label}</div>
+                      <div className="mt-2 text-base font-editorial leading-tight text-[#09161a]">{preset.summary}</div>
+                      <div className="mt-3 text-xs leading-5 text-black/55">
+                        Suite: {preset.suite_model} | Episodes: {preset.binge_model}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <SelectField
                 label="Suite model"
                 value={config.generation.suite_model}
+                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
                 onChange={(value) =>
                   setConfig((prev) =>
                     prev ? { ...prev, generation: { ...prev.generation, suite_model: value } } : prev
                   )
                 }
               />
-              <TextField
+              <SelectField
                 label="Binge model"
                 value={config.generation.binge_model}
+                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
                 onChange={(value) =>
                   setConfig((prev) =>
                     prev ? { ...prev, generation: { ...prev.generation, binge_model: value } } : prev
@@ -1119,6 +1238,9 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 value={config.generation.binge_temperature}
                 onChange={(value) => setNumber('binge_temperature', Number(value))}
               />
+            </div>
+            <div className="mt-5 border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
+              Public docs currently favor stable `Gemini 2.5` routes for production. `Gemini 3.x` stays exposed here for controlled testing and migration work, not as the default.
             </div>
           </Panel>
 
@@ -1275,16 +1397,24 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         <div className="grid gap-5">
           <Panel title="Media routing stack" eyebrow="Generation" meta="Primary configuration">
             <div className="grid gap-5">
-              <TextField
+              <SelectField
                 label="Image model"
                 value={config.media.image_model}
+                options={GEMINI_IMAGE_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
                 onChange={(value) =>
                   setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, image_model: value } } : prev))
                 }
               />
-              <TextField
+              <SelectField
                 label="Video model"
                 value={config.media.video_model}
+                options={GEMINI_VIDEO_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
                 onChange={(value) =>
                   setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, video_model: value } } : prev))
                 }
@@ -1328,6 +1458,9 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, narrative_lens: value } } : prev))
                 }
               />
+            </div>
+            <div className="mt-5 border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
+              Episodes still generate one image route and one video route per pack today. The client now stages them per beat, but the backend scene-asset plan is still a follow-up item.
             </div>
           </Panel>
 
@@ -1432,7 +1565,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                           </div>
                           <div className="mt-2 font-mono text-[11px] text-[#09161a]">{asset.model || 'unknown model'}</div>
                           {asset.storage_path ? <div className="mt-1 font-mono text-[10px] text-black/45">{asset.storage_path}</div> : null}
-                          {asset.note ? <div className="mt-2 leading-5">{asset.note}</div> : null}
+                          {asset.note ? <div className="mt-2 leading-5">{humanizePipelineAssetNote(asset.note, asset.kind)}</div> : null}
                         </div>
                       ))}
                     </div>
@@ -1933,7 +2066,15 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
 
   const renderVoice = () => {
     if (!config) return null;
-    const providerOptions = config.voice.sesame_enabled ? ['gemini_live', 'sesame'] : ['gemini_live'];
+    const providerOptions = [
+      'gemini_live',
+      ...(overview?.runtime.elevenlabs_agent_configured ? (['elevenlabs'] as const) : []),
+      ...(config.voice.sesame_enabled ? (['sesame'] as const) : []),
+    ];
+    const publicPanelOptions = [
+      'gemini_live',
+      ...(overview?.runtime.elevenlabs_agent_configured ? (['elevenlabs'] as const) : []),
+    ];
     const selectedVoiceMeta =
       GEMINI_LIVE_VOICE_OPTIONS.find((voice) => voice.name === config.voice.gemini_voice_name) ??
       GEMINI_LIVE_VOICE_OPTIONS.find((voice) => voice.name === 'Aoede');
@@ -1973,7 +2114,11 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             {VOICE_RUNTIME_LANES.map((lane) => {
               const isSelected = lane.id === config.voice.provider;
               const stateLabel =
-                lane.id === 'sesame'
+                lane.id === 'elevenlabs'
+                  ? overview?.runtime.elevenlabs_agent_configured
+                    ? 'agent ready'
+                    : 'missing'
+                  : lane.id === 'sesame'
                   ? config.voice.sesame_enabled
                     ? 'flagged on'
                     : 'flagged off'
@@ -2049,7 +2194,30 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                           ...prev,
                           voice: {
                             ...prev.voice,
-                            provider: value === 'sesame' && prev.voice.sesame_enabled ? 'sesame' : 'gemini_live',
+                            provider:
+                              value === 'elevenlabs'
+                                ? 'elevenlabs'
+                                : value === 'sesame' && prev.voice.sesame_enabled
+                                  ? 'sesame'
+                                  : 'gemini_live',
+                          },
+                        }
+                      : prev
+                  )
+                }
+              />
+              <SelectField
+                label="Public intake lane"
+                value={config.voice.public_panel_provider}
+                options={publicPanelOptions}
+                onChange={(value) =>
+                  setConfig((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          voice: {
+                            ...prev.voice,
+                            public_panel_provider: value === 'elevenlabs' ? 'elevenlabs' : 'gemini_live',
                           },
                         }
                       : prev
@@ -2061,6 +2229,8 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   label={
                     config.voice.provider === 'sesame'
                       ? 'Sesame API URL (Cerebrium endpoint)'
+                      : config.voice.provider === 'elevenlabs'
+                        ? 'ElevenLabs route notes'
                       : 'Gemini Live route notes'
                   }
                   value={config.voice.api_url}
@@ -2070,6 +2240,8 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   placeholder={
                     config.voice.provider === 'sesame'
                       ? 'https://api.cortex.cerebrium.ai/v4/PROJECT/APP/generate_audio'
+                      : config.voice.provider === 'elevenlabs'
+                        ? 'Widget route is handled by ELEVENLABS_AGENT_ID via /v1/public/config.'
                       : 'Optional operator note. Live route is handled by Gemini config below.'
                   }
                 />
@@ -2090,7 +2262,10 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               <SelectField
                 label="Gemini Live model"
                 value={config.voice.gemini_live_model}
-                options={GEMINI_LIVE_MODEL_OPTIONS.map((option) => option.id)}
+                options={GEMINI_LIVE_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
                 onChange={(value) =>
                   setConfig((prev) => (prev ? { ...prev, voice: { ...prev.voice, gemini_live_model: value } } : prev))
                 }
@@ -2794,23 +2969,27 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
   };
 
   const sectionMeta = sectionCopy[activeSection];
+  const shellStats = [
+    { label: 'Pending', value: overview?.queue.pending_count ?? '—', detail: 'approval rail' },
+    { label: 'Agents', value: overview?.agents.count ?? '—', detail: 'registry' },
+    { label: 'Media', value: overview?.config_summary.curated_library_enabled_count ?? '—', detail: 'enabled routes' },
+    { label: 'Revision', value: overview?.runtime.revision ?? '—', detail: 'active Cloud Run' },
+  ];
+  const sectionIndex = navSections.findIndex((section) => section.id === activeSection);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-3">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative flex h-[94vh] w-full max-w-[1360px] flex-col overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)]">
-        <header className="border-b border-black/10 bg-[rgba(245,242,233,0.94)] px-3 py-3 backdrop-blur md:px-4">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-2">
-              <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">Admin OS · {sectionMeta.eyebrow}</div>
-              <h2 className="text-[28px] font-editorial italic leading-none text-[#08161a] md:text-[34px]">
-                {sectionMeta.title}
-              </h2>
-              <p className="max-w-4xl text-sm leading-6 text-black/60">{sectionMeta.description}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex border border-black/10 bg-white px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
+      <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] xl:flex xl:flex-col">
+          <div className="border-b border-black/10 p-5">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">Admin OS</div>
+            <div className="mt-3 text-[34px] font-editorial italic leading-none text-[#08161a]">Control tower.</div>
+            <p className="mt-3 text-sm leading-6 text-black/58">
+              Runtime posture, editing rails, and operator policy, compressed into one disciplined surface.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
                 {loading ? 'Loading' : 'Live config'}
               </span>
               <span
@@ -2822,88 +3001,50 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               >
                 {hasUnsavedChanges ? 'Unsaved changes' : 'Saved state'}
               </span>
-              <button
-                onClick={onClose}
-                className="border border-black/10 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black"
-              >
-                Close
-              </button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              {shellStats.map((card) => (
+                <AdminStatCard key={card.label} label={card.label} value={card.value} detail={card.detail} />
+              ))}
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="border border-black/10 bg-white/80 px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Pending</div>
-              <div className="mt-2 text-2xl font-editorial text-[#09161a]">{overview?.queue.pending_count ?? '—'}</div>
+          <nav className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              {navSections.map((section, index) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  disabled={saving}
+                  className={`w-full border px-4 py-3 text-left transition-all ${
+                    activeSection === section.id
+                      ? 'border-[#08242a] bg-[#08242a] text-white shadow-[0_18px_36px_-28px_rgba(0,0,0,0.45)]'
+                      : 'border-black/10 bg-white/72 text-[#09161a] hover:border-black/20'
+                  } disabled:cursor-not-allowed disabled:opacity-55`}
+                >
+                  <div
+                    className={`text-[10px] uppercase tracking-[0.24em] ${
+                      activeSection === section.id ? 'text-brand-teal' : 'text-black/38'
+                    }`}
+                  >
+                    {String(index + 1).padStart(2, '0')} {section.shortLabel}
+                  </div>
+                  <div className="mt-2 text-[18px] font-editorial leading-tight">{section.title}</div>
+                  <div className={`mt-2 text-sm leading-6 ${activeSection === section.id ? 'text-white/72' : 'text-black/52'}`}>
+                    {section.description}
+                  </div>
+                </button>
+              ))}
             </div>
-            <div className="border border-black/10 bg-white/80 px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Agents</div>
-              <div className="mt-2 text-2xl font-editorial text-[#09161a]">{overview?.agents.count ?? '—'}</div>
-            </div>
-            <div className="border border-black/10 bg-white/80 px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Media</div>
-              <div className="mt-2 text-2xl font-editorial text-[#09161a]">
-                {overview?.config_summary.curated_library_enabled_count ?? '—'}
-              </div>
-            </div>
-            <div className="border border-black/10 bg-white/80 px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Revision</div>
-              <div className="mt-2 truncate text-xs uppercase tracking-[0.18em] text-[#09161a]">
-                {overview?.runtime.revision ?? '—'}
-              </div>
-            </div>
-          </div>
-
-          <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {navSections.map((section, index) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setActiveSection(section.id)}
-                disabled={saving}
-                className={`whitespace-nowrap border px-3 py-2.5 text-left transition-all ${
-                  activeSection === section.id
-                    ? 'border-[#08242a] bg-[#08242a] text-white shadow-[0_16px_30px_-24px_rgba(0,0,0,0.45)]'
-                    : 'border-black/10 bg-white text-[#09161a] hover:border-black/20'
-                } disabled:cursor-not-allowed disabled:opacity-55`}
-              >
-                <div className={`text-[10px] uppercase tracking-[0.24em] ${activeSection === section.id ? 'text-brand-teal' : 'text-black/40'}`}>
-                  {String(index + 1).padStart(2, '0')} {section.shortLabel}
-                </div>
-                <div className="mt-2 text-sm font-editorial leading-tight">{section.title}</div>
-              </button>
-            ))}
           </nav>
-        </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-8 md:px-5 md:py-5 md:pb-10">
-          {loading ? (
-            <div className="text-[10px] uppercase tracking-[0.3em] opacity-40 animate-pulse">Loading…</div>
-          ) : null}
-          {error ? (
-            <div className="mb-5 border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-700">{error}</div>
-          ) : null}
-          {success ? (
-            <div className="mb-5 border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-700">
-              {success}
+          <div className="border-t border-black/10 p-4">
+            <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Operator save rail</div>
+            <div className="mt-2 text-sm leading-6 text-black/56">
+              Save only when the active rail and the control-tower summary match the intended runtime posture.
             </div>
-          ) : null}
-          {isReady && config ? (
-            <fieldset disabled={saving} className={saving ? 'opacity-70 transition-opacity' : undefined}>
-              {renderActiveSection()}
-            </fieldset>
-          ) : null}
-        </div>
-
-        <footer className="border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-4 py-3 backdrop-blur md:px-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Operator save rail</div>
-              <div className="text-sm text-black/58">
-                Save only after the current section and the control tower read match the intended operating posture.
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
+            <div className="mt-4 grid gap-2">
               <button
                 onClick={requestReload}
                 disabled={loading || saving}
@@ -2918,9 +3059,139 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               >
                 {saving ? 'Saving…' : 'Save Config'}
               </button>
+              <button
+                onClick={onClose}
+                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black"
+              >
+                Close
+              </button>
             </div>
           </div>
-        </footer>
+        </aside>
+
+        <div className="min-w-0 flex min-h-0 flex-col">
+          <header className="border-b border-black/10 bg-[rgba(245,242,233,0.94)] px-3 py-3 backdrop-blur md:px-4 md:py-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-2">
+                <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">
+                  Admin OS · {sectionMeta.eyebrow} · {String(sectionIndex + 1).padStart(2, '0')}
+                </div>
+                <h2 className="text-[28px] font-editorial italic leading-none text-[#08161a] md:text-[36px]">
+                  {sectionMeta.title}
+                </h2>
+                <p className="max-w-4xl text-sm leading-6 text-black/60">{sectionMeta.description}</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
+                  Revision {overview?.runtime.revision ?? '—'}
+                </span>
+                <span
+                  className={`inline-flex border px-3 py-2 text-[10px] uppercase tracking-[0.18em] ${
+                    hasUnsavedChanges
+                      ? 'border-amber-500/25 bg-amber-50 text-amber-800'
+                      : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
+                  }`}
+                >
+                  {hasUnsavedChanges ? 'Unsaved changes' : 'Saved state'}
+                </span>
+                <button
+                  onClick={onClose}
+                  className="border border-black/10 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black xl:hidden"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:hidden">
+              {shellStats.map((card) => (
+                <AdminStatCard key={card.label} label={card.label} value={card.value} detail={card.detail} />
+              ))}
+            </div>
+
+            <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 xl:hidden">
+              {navSections.map((section, index) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  disabled={saving}
+                  className={`whitespace-nowrap border px-3 py-2.5 text-left transition-all ${
+                    activeSection === section.id
+                      ? 'border-[#08242a] bg-[#08242a] text-white shadow-[0_16px_30px_-24px_rgba(0,0,0,0.45)]'
+                      : 'border-black/10 bg-white text-[#09161a] hover:border-black/20'
+                  } disabled:cursor-not-allowed disabled:opacity-55`}
+                >
+                  <div
+                    className={`text-[10px] uppercase tracking-[0.24em] ${
+                      activeSection === section.id ? 'text-brand-teal' : 'text-black/40'
+                    }`}
+                  >
+                    {String(index + 1).padStart(2, '0')} {section.shortLabel}
+                  </div>
+                  <div className="mt-2 text-sm font-editorial leading-tight">{section.title}</div>
+                </button>
+              ))}
+            </nav>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-8 md:px-5 md:py-5 md:pb-10">
+          {loading ? (
+            <div className="text-[10px] uppercase tracking-[0.3em] opacity-40 animate-pulse">Loading…</div>
+          ) : null}
+          {error ? (
+            <div className="mb-5 border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-700">{error}</div>
+          ) : null}
+          {success ? (
+            <div className="mb-5 border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-700">
+              {success}
+            </div>
+          ) : null}
+          {isReady && config ? (
+            <fieldset disabled={saving} className={saving ? 'opacity-70 transition-opacity' : undefined}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {renderActiveSection()}
+                </motion.div>
+              </AnimatePresence>
+            </fieldset>
+          ) : null}
+          </div>
+
+          <footer className="border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-4 py-3 backdrop-blur md:px-5 xl:hidden">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Operator save rail</div>
+                <div className="text-sm text-black/58">
+                  Save only after the current section and the control tower read match the intended operating posture.
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={requestReload}
+                  disabled={loading || saving}
+                  className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black disabled:opacity-30"
+                >
+                  Reload
+                </button>
+                <button
+                  onClick={save}
+                  disabled={!isReady || saving || !hasUnsavedChanges}
+                  className="btn-brand px-5 py-3 text-[10px] uppercase tracking-[0.25em] transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Config'}
+                </button>
+              </div>
+            </div>
+          </footer>
+        </div>
       </div>
     </div>
   );

@@ -161,8 +161,17 @@ Optional external-lane envs in the API deploy file:
 - `MANUS_API_KEY`
 - `MANUS_API_URL`
 
-These currently stage Cloud Run runtime metadata and admin readiness visibility only.
-They do not make ElevenLabs or Manus selectable live voice providers until adapter work ships.
+These now support a live public-intake ElevenLabs lane plus Manus readiness visibility.
+They do not replace the internal Gemini Live runtime path until a separate adapter ships.
+
+Current public-intake behavior:
+
+- if `ELEVENLABS_AGENT_ID` is present, `/v1/public/config` exposes the public agent ID
+- admin voice controls expose a `Public intake lane` selector with `gemini_live` and `elevenlabs`
+- `/v1/public/config` now follows the saved `voice.public_panel_provider` default from Firestore
+- the intake concierge step follows that selector and mounts the ElevenLabs conversational widget when `elevenlabs` is selected and a public agent ID is available
+- the intake concierge step also exposes a visible lane switcher so operators can flip between the two rails live without reopening Admin
+- Gemini Live remains the internal native-audio session path used by the existing live panel and token route
 
 Current default admin list in the deploy template includes:
 
@@ -389,14 +398,22 @@ The admin modal is intentionally structured as an operator workspace now:
 - left rail for section switching
 - control-tower summary for runtime and queue visibility
 - one active edit surface at a time
+- compact command header on smaller viewports so section identity and save posture stay visible before the edit fields
 - single-column section layouts so controls do not compress on laptop-width views
 - persistent save rail with unsaved-state feedback
 - collapsible media-library editing for lower scroll overhead
 - taxonomy shortcut chips for faster structured media tagging
+- Brand Studio preview now mirrors the live shell + module overlay instead of the legacy left-rail proof
+- the module overlay header collapses on scroll in the client shell so cinematic content is not pinned under persistent chrome
+- Episodes client view now assigns stage treatment per beat and falls back to designed placeholder stills/cards when a routed media asset is missing
 
 If the console regresses into a single stacked form, treat that as a UX bug, not a cosmetic preference.
 While a save request is in flight, the active edit surface is now locked to prevent silent overwrite of later keystrokes, and reload now explicitly confirms before discarding unsaved admin edits.
 The admin API client now retries transient `502`/`503`/`504` and browser-level fetch failures before surfacing an operator error.
+Cloud Run service account requirement: the API runtime service account must have `roles/datastore.user` in `ssai-f6191`; without it, `GET /v1/admin/media-pipeline`, `GET /v1/admin/orchestration-control-plane`, `GET /v1/admin/sample-personas`, and `PUT /v1/admin/config` will fail with Firestore `PERMISSION_DENIED`.
+Admin model routing now uses a shared Gemini/Veo catalog plus three fast presets: `Demo Quality`, `Balanced Production`, and `High Throughput`.
+Production defaults were moved to stable `Gemini 2.5` routes for suite, episodes, and still-generation work. Preview `Gemini 3.x` and `3.1` ids stay operator-selectable for controlled migration testing only.
+Operator guidance: do not present Episodes as fully scene-native yet. The player is beat-aware, but the backend media pack still emits one image route and one video route per episode.
 
 ## Brand Studio Operating Notes
 
@@ -480,10 +497,14 @@ Use the reset workflow instead of repeating blind imports.
 - suite generation
 - live token generation
 - Gemini Live should remain the active real-time voice provider for demo readiness
+- ElevenLabs can be the active public-intake presentation lane for demo readiness when the team wants the Chief of Staff widget instead of Gemini Live
 - Sesame should remain feature-flagged off until its dedicated Cloud Run service exists
 - SkillSync AI TV should render an actual staged viewing surface in client mode, not only metadata cards
 - if no curated library has been saved yet, the API should fall back to the shipped starter pack, which now includes local Veo-generated clips under `public/demo-media/`
+- Episodes should continue to load routed curated media for free-tier/demo users so the sample journey still feels cinematic
+- if a beat has no routed clip or still, the player should show a designed fallback stage rather than repeat one unrelated companion asset across the whole episode
 - Gemini API Veo requests should omit unsupported Gemini-API-only fields such as `generateAudio` and `enhancePrompt`
+- admin queue and pipeline UI should translate known provider/config mismatches into operator-safe guidance instead of surfacing raw SDK option strings
 - CJS upload/review/strategy flow
 - free-tier dashboard should only expose Intake, Episodes, and AI Readiness
 - Assets ledger summary + decision flow

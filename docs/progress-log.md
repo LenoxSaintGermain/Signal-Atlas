@@ -6,6 +6,21 @@ Update both files in each delivery pass so roadmap visuals and implementation st
 
 ## 2026-03-09
 
+### Delivery: Admin Console Hierarchy + Operator Shell Hardening
+
+- Reframed the admin console as a true operator shell instead of a stacked modal:
+  - persistent desktop left rail
+  - compact command header on smaller viewports
+  - active section transitions
+  - desktop save rail anchored inside the nav shell
+- Tightened hierarchy so operators now see:
+  - section identity
+  - runtime revision
+  - queue pressure
+  - save posture
+  before the deeper form controls
+- Refined the shared admin panel styling so section cards feel lighter, more editorial, and less like a dense debug dashboard.
+
 ### Delivery: Premium Flash Cards Stage + Plan-Wired Review Rooms
 
 - Rebuilt `Flash Cards` from a static local grid into a staged review surface:
