@@ -531,6 +531,8 @@ Use the reset workflow instead of repeating blind imports.
 - sample persona launch/reseed/proof controls in Roadmap validation
 - shared sample-persona password visible in Roadmap validation for direct manual login
 - validation now explicitly instructs operators to reseed first, then launch, and only use manual login after a successful reseed
+- the sample persona fixture file must live under `api/config/demo/persona-fixtures.json` because the API Cloud Run deploy packages `./api` as the service source
+- Smart Start Intake now normalizes seeded sample-persona answers before operator autofill so the intake module stays stable during launch/reseed walkthroughs
 - admin/operator intake now supports `Autofill intake`, `Autofill + jump`, and `Autofill + prepare suite` for seeded persona speed runs
 - public Smart Start request intake on login surface
 - admin concierge-request review and status updates

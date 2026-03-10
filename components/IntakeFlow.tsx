@@ -109,6 +109,24 @@ const secondaryButtonClass =
   'border border-[var(--intake-border)] bg-transparent px-4 py-3 font-intake-mono text-[10px] uppercase tracking-[0.12em] text-[#1B1E1C] transition-colors hover:border-[var(--intake-teal)]';
 const primaryButtonClass =
   'bg-[var(--intake-teal)] px-4 py-3 font-intake-mono text-[10px] uppercase tracking-[0.16em] text-white transition-colors hover:bg-[var(--intake-teal-dim)] disabled:opacity-50';
+const headlineClass =
+  'font-intake-body text-[3rem] font-medium leading-[1.04] tracking-[-0.015em] text-[#1B1E1C] md:text-[4rem] md:leading-[1.02]';
+const sectionHeadlineClass =
+  'font-intake-body text-[2.6rem] font-medium leading-[1.05] tracking-[-0.012em] text-[#1B1E1C] md:text-[3.2rem] md:leading-[1.03]';
+const seededArrayFieldIds = new Set([
+  'outcomes_goals',
+  'enterprise_context',
+  'foundational_interests',
+  'advanced_interests',
+  'learning_modalities',
+  'voice_extracted_fields',
+]);
+const seededBooleanFieldIds = new Set([
+  'benefits_under_review',
+  'bio_alignment_requested',
+  'voice_session_completed',
+  'synthesis_approval',
+]);
 
 const isValueFilled = (value: IntakeAnswerValue | undefined) => {
   if (typeof value === 'string') return Boolean(value.trim());
@@ -118,6 +136,37 @@ const isValueFilled = (value: IntakeAnswerValue | undefined) => {
 };
 
 const dedupeStrings = (values: string[]) => Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+const normalizeSeededAnswers = (incoming: IntakeAnswers | undefined): IntakeAnswers => {
+  const normalized: IntakeAnswers = {};
+  const source = incoming ?? {};
+
+  Object.entries(source).forEach(([key, value]) => {
+    if (value == null) return;
+    if (seededArrayFieldIds.has(key)) {
+      normalized[key] = Array.isArray(value)
+        ? value.map((entry) => String(entry ?? '').trim()).filter(Boolean)
+        : typeof value === 'string'
+          ? [value].filter(Boolean)
+          : [];
+      return;
+    }
+    if (seededBooleanFieldIds.has(key)) {
+      normalized[key] = value === true;
+      return;
+    }
+    if (Array.isArray(value)) {
+      normalized[key] = value.map((entry) => String(entry ?? '').trim()).filter(Boolean);
+      return;
+    }
+    if (typeof value === 'boolean') {
+      normalized[key] = value;
+      return;
+    }
+    normalized[key] = String(value);
+  });
+
+  return normalized;
+};
 
 const mapIntentToIntakeType = (intent: ClientIntent) =>
   intent === 'current_role' ? 'STAY_SHARP' : intent === 'target_role' ? 'SPECIFIC_MOVE' : 'DESIGN_DIRECTION';
@@ -329,7 +378,7 @@ export function IntakeFlow(props: {
   };
 
   const buildProfileAutofillState = () => {
-    const seededAnswers = props.client?.intake?.answers ?? {};
+    const seededAnswers = normalizeSeededAnswers(props.client?.intake?.answers);
     const demoProfile = props.client?.demo_profile ?? {};
     const inferredAnswers: IntakeAnswers = {
       ...seededAnswers,
@@ -644,7 +693,7 @@ export function IntakeFlow(props: {
     <section className="space-y-6">
       <div className={cardClass}>
         <div className={labelClass}>Screen 01 · Positioning</div>
-        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+        <h2 className={`mt-4 ${sectionHeadlineClass}`}>
           {titleFromIntent(intent)}
         </h2>
         <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
@@ -769,7 +818,7 @@ export function IntakeFlow(props: {
     <section className="space-y-6">
       <div className={cardClass}>
         <div className={labelClass}>Screen 02 · Context</div>
-        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+        <h2 className={`mt-4 ${sectionHeadlineClass}`}>
           Where are you now?
         </h2>
         <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
@@ -850,7 +899,7 @@ export function IntakeFlow(props: {
     <section className="space-y-6">
       <div className={cardClass}>
         <div className={labelClass}>Screen 03 · Inputs</div>
-        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+        <h2 className={`mt-4 ${sectionHeadlineClass}`}>
           What are we working with?
         </h2>
         <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
@@ -945,7 +994,7 @@ export function IntakeFlow(props: {
     <section className="space-y-6">
       <div className={cardClass}>
         <div className={labelClass}>Screen 04 · Constraints</div>
-        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+        <h2 className={`mt-4 ${sectionHeadlineClass}`}>
           What do we need to know?
         </h2>
         <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
@@ -1092,7 +1141,7 @@ export function IntakeFlow(props: {
 
       <section className="space-y-4">
         <div className={labelClass}>Smart Start Intake</div>
-        <h1 className="font-editorial text-5xl font-black tracking-tight text-[#1B1E1C]">A concierge conversation, tailored to you.</h1>
+        <h1 className={headlineClass}>A concierge conversation, tailored to you.</h1>
         <p className="max-w-3xl font-intake-body text-xl leading-relaxed text-[var(--intake-muted)]">
           No tests. No quiz energy. This is a serious intake that turns context into signal before we prepare the suite.
         </p>
@@ -1118,7 +1167,7 @@ export function IntakeFlow(props: {
         <section className="space-y-6 border border-[var(--intake-border)] bg-[var(--intake-cream)] p-5 md:p-6">
           <div>
             <div className={labelClass}>Preparing your suite</div>
-            <div className="mt-4 font-editorial text-4xl font-black leading-[0.96] tracking-tight text-[#1B1E1C]">
+            <div className={`mt-4 ${sectionHeadlineClass}`}>
               We are preparing your suite now.
             </div>
             <p className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">

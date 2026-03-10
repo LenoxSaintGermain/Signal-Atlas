@@ -889,7 +889,10 @@ const adminEmailSet = new Set(
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
 );
-const SAMPLE_PERSONA_FIXTURE_URL = new URL('../config/demo/persona-fixtures.json', import.meta.url);
+const SAMPLE_PERSONA_FIXTURE_URLS = [
+  new URL('./config/demo/persona-fixtures.json', import.meta.url),
+  new URL('../config/demo/persona-fixtures.json', import.meta.url),
+];
 let samplePersonaFixtureCache = null;
 let bootstrapAdminUsersPromise = null;
 
@@ -1905,10 +1908,21 @@ const buildSamplePersonaInteraction = (persona) => ({
 
 const loadSamplePersonaFixtures = async () => {
   if (samplePersonaFixtureCache) return samplePersonaFixtureCache;
-  const raw = await readFile(SAMPLE_PERSONA_FIXTURE_URL, 'utf8');
-  const parsed = JSON.parse(raw);
-  samplePersonaFixtureCache = Array.isArray(parsed?.personas) ? parsed.personas : [];
-  return samplePersonaFixtureCache;
+  let lastError = null;
+
+  for (const fixtureUrl of SAMPLE_PERSONA_FIXTURE_URLS) {
+    try {
+      const raw = await readFile(fixtureUrl, 'utf8');
+      const parsed = JSON.parse(raw);
+      samplePersonaFixtureCache = Array.isArray(parsed?.personas) ? parsed.personas : [];
+      return samplePersonaFixtureCache;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error('Sample persona fixtures are unavailable.');
 };
 
 const baseMeta = (mode, degraded, extra = {}) => ({

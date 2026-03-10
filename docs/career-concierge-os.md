@@ -125,6 +125,8 @@ The admin console is the operational control plane for:
 - roadmap/spec progress visibility
 - concierge request review
 - sample persona launch/reset/proof operations
+- sample persona fixtures now ship inside the API source so the Roadmap validation harness works in Cloud Run deployments
+- Smart Start Intake now normalizes seeded persona answers before autofill so launch/reseed demos do not crash on sparse or mixed-shape intake payloads
 
 This console is part of the product operating system.
 It is not a temporary debug panel and should be documented and designed as a first-class surface.
