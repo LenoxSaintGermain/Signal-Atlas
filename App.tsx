@@ -112,12 +112,13 @@ const App: React.FC = () => {
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const launchQueryHandledRef = useRef(false);
   const [shellScrollDepth, setShellScrollDepth] = useState(0);
-  const [modalScrollDepth, setModalScrollDepth] = useState(0);
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -147,22 +148,6 @@ const App: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    const node = modalScrollRef.current;
-    if (!node || !openModuleId) {
-      setModalScrollDepth(0);
-      return;
-    }
-
-    const handleScroll = () => {
-      setModalScrollDepth(node.scrollTop || 0);
-    };
-
-    handleScroll();
-    node.addEventListener('scroll', handleScroll, { passive: true });
-    return () => node.removeEventListener('scroll', handleScroll);
-  }, [openModuleId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -262,7 +247,6 @@ const App: React.FC = () => {
     [brand, openModule]
   );
   const shellHeaderDimmed = openModuleId !== null || shellScrollDepth > 56;
-  const modalHeaderCollapsed = openModule?.id !== 'intake' && modalScrollDepth > 36;
 
   const isLocked = (m: SuiteModule) => {
     if (m.id === 'intake' || m.id === 'roadmap') return false;
@@ -621,9 +605,7 @@ const App: React.FC = () => {
             style={{ backgroundColor: brand.colors.surface_background }}
           >
             <div
-              className={`pointer-events-none absolute right-4 top-4 z-20 flex items-center gap-3 transition-all duration-400 ${
-                modalHeaderCollapsed ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'
-              }`}
+              className="pointer-events-none absolute right-4 top-4 z-20 flex items-center gap-3 transition-all duration-400 opacity-100 translate-y-0"
             >
               <div
                 className="hidden border px-3 py-2 text-[10px] uppercase tracking-[0.18em] sm:block"
@@ -650,11 +632,7 @@ const App: React.FC = () => {
               </button>
             </div>
             <header
-              className={`shrink-0 overflow-hidden border-b border-black/10 px-4 transition-all duration-500 sm:px-5 md:px-6 ${
-                modalHeaderCollapsed
-                  ? 'max-h-0 border-b-0 py-0 opacity-0 -translate-y-4 pointer-events-none'
-                  : 'max-h-[250px] py-2.5 opacity-100 translate-y-0 sm:py-3'
-              }`}
+              className="shrink-0 overflow-hidden border-b border-black/10 px-4 py-2.5 transition-all duration-500 sm:px-5 sm:py-3 md:px-6"
               style={{
                 background:
                   brand.hierarchy.overlay_style === 'cinematic'

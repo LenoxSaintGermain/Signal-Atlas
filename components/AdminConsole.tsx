@@ -231,6 +231,105 @@ const mediaPipelineTone = (status: string) => {
   return 'border-black/10 bg-white text-black/60';
 };
 
+const EXPERIENCE_GUIDE_CARDS = [
+  {
+    eyebrow: 'How it works',
+    title: 'Change the lane, then save once.',
+    description:
+      'Edits in this rail change model routing, prompt overlays, and client-visible posture. Nothing publishes until Save Config is used.',
+  },
+  {
+    eyebrow: 'Safe default',
+    title: 'Adjust switches before prompts.',
+    description:
+      'Use preset routing, toggles, and dossier section controls first. Reach for appendices only when the default system behavior needs a deliberate operator override.',
+  },
+  {
+    eyebrow: 'Operator note',
+    title: 'Professional DNA updates downstream.',
+    description:
+      'The DNA lane enriches Brief and Profile after intake. Section choices affect both report depth and the order the dossier renders in the client UI.',
+  },
+];
+
+const PROMPT_OVERLAY_FIELDS = [
+  {
+    key: 'suite_appendix',
+    eyebrow: 'Suite generation',
+    label: 'Suite prompt appendix',
+    description: 'Use for additional system guidance that should affect suite-wide artifact generation.',
+    minHeight: 'min-h-[144px]',
+  },
+  {
+    key: 'binge_appendix',
+    eyebrow: 'Episodes',
+    label: 'Binge prompt appendix',
+    description: 'Steers the episode rail and learning-session tone without changing the rest of the suite.',
+    minHeight: 'min-h-[144px]',
+  },
+  {
+    key: 'rom_appendix',
+    eyebrow: 'Core ROM',
+    label: 'Core ROM overlay',
+    description: 'Appends operator posture to the core counselor model when the base ROM needs stronger instruction.',
+    minHeight: 'min-h-[144px]',
+  },
+  {
+    key: 'live_appendix',
+    eyebrow: 'Live voice and video',
+    label: 'Live voice / video overlay',
+    description: 'Applies only to the live interaction layer for Gemini Live and operator-facing voice behaviors.',
+    minHeight: 'min-h-[144px]',
+  },
+  {
+    key: 'art_director_appendix',
+    eyebrow: 'Art direction',
+    label: 'Art director overlay',
+    description: 'Controls higher-touch creative framing for visuals, cinematic assets, and experiential scenes.',
+    minHeight: 'min-h-[176px]',
+  },
+] as const;
+
+const DNA_SECTION_OPTIONS: SelectOption[] = [
+  { value: 'case_summary', label: 'Case Summary', description: 'Opening thesis and core framing for the dossier.' },
+  { value: 'genome_markers', label: 'Genome Markers', description: 'Primary career traits, signal markers, and durable strengths.' },
+  { value: 'behavioral_propensities', label: 'Behavioral Propensities', description: 'Observed and inferred ways this client tends to operate.' },
+  { value: 'pressure_response', label: 'Pressure Response', description: 'How the client reacts under ambiguity, urgency, or stress.' },
+  { value: 'environmental_fit', label: 'Environmental Fit', description: 'Where this person is likely to perform best or degrade fastest.' },
+  { value: 'market_climate', label: 'Market Climate', description: 'Demand context, hiring temperature, and market conditions.' },
+  { value: 'compensation_position', label: 'Compensation Position', description: 'Current pricing posture, ceiling, and ask justification.' },
+  { value: 'extinction_risks', label: 'Extinction Risks', description: 'Behaviors or gaps the market is most likely to punish.' },
+  { value: 'adaptive_assets', label: 'Adaptive Assets', description: 'Portable strengths that increase resilience and transition power.' },
+  { value: 'lean_into', label: 'Lean Into', description: 'Patterns the client should amplify right now.' },
+  { value: 'let_go', label: 'Let Go', description: 'Narratives, habits, or role assumptions that now cost them value.' },
+  { value: 'build_next', label: 'Build Next', description: 'Assets or proof the client should develop next.' },
+  { value: 'evolution_path_90_days', label: '90-Day Evolution Path', description: 'Short-horizon adaptation plan for the next quarter.' },
+];
+
+const DNA_RESEARCH_DOMAIN_OPTIONS: SelectOption[] = [
+  { value: 'labor_market', label: 'Labor Market', description: 'BLS, JOLTS, and top-line labor health indicators.' },
+  { value: 'occupation_outlook', label: 'Occupation Outlook', description: 'Role-family demand and employment-projection posture.' },
+  { value: 'geography', label: 'Geography', description: 'Regional demand, relocation logic, and market concentration.' },
+  { value: 'compensation', label: 'Compensation', description: 'Market-rate signals, pay bands, and ask-receipt posture.' },
+  { value: 'company_posture', label: 'Company Posture', description: 'Directional notes on employer behavior, churn, and pay style.' },
+  { value: 'supply_shifts', label: 'Supply Shifts', description: 'Layoffs, talent gluts, and role-level supply pressure.' },
+  { value: 'regulatory_demand', label: 'Regulatory Demand', description: 'Demand created by compliance, policy, or new regulation.' },
+];
+
+const normalizeList = (values: string[]) => Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+
+const toggleListValue = (values: string[], value: string) =>
+  values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value];
+
+const moveListValue = (values: string[], index: number, direction: 'up' | 'down') => {
+  const nextIndex = direction === 'up' ? index - 1 : index + 1;
+  if (index < 0 || nextIndex < 0 || nextIndex >= values.length) return values;
+  const next = [...values];
+  const [moved] = next.splice(index, 1);
+  next.splice(nextIndex, 0, moved);
+  return next;
+};
+
 const humanizePipelineAssetNote = (note: string | undefined, kind: 'image' | 'video') => {
   const value = String(note ?? '').trim();
   if (!value) return '';
@@ -503,6 +602,154 @@ function ToggleField({
         {hint ? <span className="block text-xs leading-5 text-black/55">{hint}</span> : null}
       </span>
     </label>
+  );
+}
+
+function GuideCard({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <article className="border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,244,236,0.98))] px-4 py-4 shadow-[0_18px_42px_-34px_rgba(0,0,0,0.22)]">
+      <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{eyebrow}</div>
+      <h5 className="mt-3 text-lg font-editorial leading-tight text-[#09161a]">{title}</h5>
+      <p className="mt-2 text-sm leading-6 text-black/58">{description}</p>
+    </article>
+  );
+}
+
+function FieldCard({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-black/10 bg-[#fcfbf7] p-4 shadow-[0_16px_36px_-32px_rgba(0,0,0,0.2)]">
+      <div className="space-y-2">
+        {eyebrow ? <div className="text-[10px] uppercase tracking-[0.2em] text-brand-teal">{eyebrow}</div> : null}
+        <div className="text-base font-editorial leading-tight text-[#09161a]">{title}</div>
+        {description ? <p className="text-sm leading-6 text-black/56">{description}</p> : null}
+      </div>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+function ChipToggleGroup({
+  label,
+  description,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  description?: string;
+  options: SelectOption[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-xs text-gray-700">{label}</div>
+        {description ? <div className="mt-1 text-xs leading-5 text-black/50">{description}</div> : null}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((option) => {
+          const active = selected.includes(option.value);
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onToggle(option.value)}
+              className={`border px-3 py-3 text-left transition-colors ${
+                active
+                  ? 'border-brand-teal bg-brand-soft text-brand-teal'
+                  : 'border-black/10 bg-white text-[#09161a] hover:border-brand-teal'
+              }`}
+            >
+              <div className="text-[10px] uppercase tracking-[0.2em]">{option.label || labelize(option.value)}</div>
+              {option.description ? <div className="mt-2 text-xs leading-5 opacity-80">{option.description}</div> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function OrderedListField({
+  label,
+  description,
+  values,
+  options,
+  onMove,
+}: {
+  label: string;
+  description?: string;
+  values: string[];
+  options: SelectOption[];
+  onMove: (index: number, direction: 'up' | 'down') => void;
+}) {
+  const optionMap = new Map(options.map((option) => [option.value, option]));
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-xs text-gray-700">{label}</div>
+        {description ? <div className="mt-1 text-xs leading-5 text-black/50">{description}</div> : null}
+      </div>
+      <div className="space-y-2">
+        {values.length === 0 ? (
+          <div className="border border-dashed border-black/12 bg-white/70 px-4 py-4 text-sm text-black/45">
+            No enabled sections yet.
+          </div>
+        ) : (
+          values.map((value, index) => {
+            const option = optionMap.get(value);
+            return (
+              <div key={`${value}-${index}`} className="flex items-center gap-3 border border-black/10 bg-white px-3 py-3">
+                <div className="w-7 text-[10px] uppercase tracking-[0.18em] text-black/35">{String(index + 1).padStart(2, '0')}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-[#09161a]">
+                    {option?.label || labelize(value)}
+                  </div>
+                  {option?.description ? <div className="mt-1 text-xs leading-5 text-black/50">{option.description}</div> : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, 'up')}
+                    disabled={index === 0}
+                    className="border border-black/10 bg-[#fcfbf7] px-2.5 py-2 text-[10px] uppercase tracking-[0.16em] text-black/55 transition-colors hover:border-brand-teal disabled:opacity-35"
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, 'down')}
+                    disabled={index === values.length - 1}
+                    className="border border-black/10 bg-[#fcfbf7] px-2.5 py-2 text-[10px] uppercase tracking-[0.16em] text-black/55 transition-colors hover:border-brand-teal disabled:opacity-35"
+                  >
+                    Down
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1170,329 +1417,471 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
 
   const renderExperience = () => {
     if (!config) return null;
+    const knownDnaSectionIds = DNA_SECTION_OPTIONS.map((option) => option.value);
+    const customEnabledSections = normalizeList(
+      config.professional_dna.enabled_sections.filter((section) => !knownDnaSectionIds.includes(section))
+    );
+    const knownEnabledSections = normalizeList(
+      config.professional_dna.enabled_sections.filter((section) => knownDnaSectionIds.includes(section))
+    );
+    const effectiveSectionOrder = normalizeList([
+      ...config.professional_dna.section_order.filter((section) =>
+        [...knownEnabledSections, ...customEnabledSections].includes(section)
+      ),
+      ...knownEnabledSections,
+      ...customEnabledSections,
+    ]);
+    const knownResearchDomains = DNA_RESEARCH_DOMAIN_OPTIONS.map((option) => option.value);
+    const customResearchDomains = normalizeList(
+      config.professional_dna.research_domains.filter((domain) => !knownResearchDomains.includes(domain))
+    );
+    const selectedResearchDomains = normalizeList([
+      ...config.professional_dna.research_domains.filter((domain) => knownResearchDomains.includes(domain)),
+      ...customResearchDomains,
+    ]);
+
     return (
       <SectionShell {...sectionCopy.experience}>
-        <div className="grid gap-5">
-          <Panel title="Generation routing" eyebrow="Models" meta="Primary rails">
-            <div className="grid gap-5">
-              <div className="grid gap-3">
-                <div className="text-xs text-gray-700">Routing presets</div>
-                <div className="grid gap-3 lg:grid-cols-3">
-                  {GEMINI_ROUTE_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => applyModelPreset(preset.id)}
-                      className="border border-black/10 bg-[#fbfcfa] p-4 text-left transition-colors hover:border-brand-teal"
-                    >
-                      <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{preset.label}</div>
-                      <div className="mt-2 text-base font-editorial leading-tight text-[#09161a]">{preset.summary}</div>
-                      <div className="mt-3 text-xs leading-5 text-black/55">
-                        Suite: {preset.suite_model} | Episodes: {preset.binge_model}
-                      </div>
-                    </button>
-                  ))}
+        <div className="mx-auto grid max-w-[1120px] gap-5">
+          <div className="grid gap-3 lg:grid-cols-3">
+            {EXPERIENCE_GUIDE_CARDS.map((card) => (
+              <GuideCard
+                key={card.title}
+                eyebrow={card.eyebrow}
+                title={card.title}
+                description={card.description}
+              />
+            ))}
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+            <Panel title="Generation routing" eyebrow="Models" meta="Primary rails">
+              <div className="grid gap-4">
+                <FieldCard
+                  eyebrow="Preset routes"
+                  title="Start with a routing preset."
+                  description="Preset routes align suite, episodes, and media models together before you fine-tune individual fields."
+                >
+                  <div className="grid gap-3 lg:grid-cols-3">
+                    {GEMINI_ROUTE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyModelPreset(preset.id)}
+                        className="border border-black/10 bg-white p-4 text-left transition-colors hover:border-brand-teal"
+                      >
+                        <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{preset.label}</div>
+                        <div className="mt-2 text-base font-editorial leading-tight text-[#09161a]">{preset.summary}</div>
+                        <div className="mt-3 text-xs leading-5 text-black/55">
+                          Suite: {preset.suite_model} | Episodes: {preset.binge_model}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </FieldCard>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <FieldCard
+                    eyebrow="Primary suite"
+                    title="Suite model"
+                    description="Controls Brief, Plan, Profile, and the baseline artifact pass."
+                  >
+                    <SelectField
+                      label="Active suite model"
+                      value={config.generation.suite_model}
+                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                        value: option.id,
+                        label: option.label,
+                      }))}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, generation: { ...prev.generation, suite_model: value } } : prev
+                        )
+                      }
+                    />
+                  </FieldCard>
+                  <FieldCard
+                    eyebrow="Learning rail"
+                    title="Episodes model"
+                    description="Controls the binge-learning rail and flash-card-adjacent generation paths."
+                  >
+                    <SelectField
+                      label="Active episodes model"
+                      value={config.generation.binge_model}
+                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                        value: option.id,
+                        label: option.label,
+                      }))}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, generation: { ...prev.generation, binge_model: value } } : prev
+                        )
+                      }
+                    />
+                  </FieldCard>
+                  <FieldCard
+                    eyebrow="Precision"
+                    title="Suite temperature"
+                    description="Lower values tighten structure and reduce creative drift."
+                  >
+                    <TextField
+                      label="Suite temperature"
+                      type="number"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={config.generation.suite_temperature}
+                      onChange={(value) => setNumber('suite_temperature', Number(value))}
+                    />
+                  </FieldCard>
+                  <FieldCard
+                    eyebrow="Momentum"
+                    title="Episodes temperature"
+                    description="Higher values allow more texture and motion in learning content."
+                  >
+                    <TextField
+                      label="Episodes temperature"
+                      type="number"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={config.generation.binge_temperature}
+                      onChange={(value) => setNumber('binge_temperature', Number(value))}
+                    />
+                  </FieldCard>
+                </div>
+                <div className="border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
+                  Production still defaults toward stable `Gemini 2.5` routes. `Gemini 3.x` stays exposed here for
+                  controlled operator testing, not as the implied default.
                 </div>
               </div>
-              <SelectField
-                label="Suite model"
-                value={config.generation.suite_model}
-                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, generation: { ...prev.generation, suite_model: value } } : prev
-                  )
-                }
-              />
-              <SelectField
-                label="Binge model"
-                value={config.generation.binge_model}
-                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, generation: { ...prev.generation, binge_model: value } } : prev
-                  )
-                }
-              />
-              <TextField
-                label="Suite temperature"
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={config.generation.suite_temperature}
-                onChange={(value) => setNumber('suite_temperature', Number(value))}
-              />
-              <TextField
-                label="Binge temperature"
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={config.generation.binge_temperature}
-                onChange={(value) => setNumber('binge_temperature', Number(value))}
-              />
-            </div>
-            <div className="mt-5 border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
-              Public docs currently favor stable `Gemini 2.5` routes for production. `Gemini 3.x` stays exposed here for controlled testing and migration work, not as the default.
-            </div>
-          </Panel>
+            </Panel>
 
-          <Panel title="Client-facing toggles" eyebrow="Surface posture" meta="Immediate switches">
-            <div className="grid gap-3">
-              <ToggleField
-                checked={config.ui.show_prologue}
-                onChange={(checked) =>
-                  setConfig((prev) => (prev ? { ...prev, ui: { ...prev.ui, show_prologue: checked } } : prev))
-                }
-                label="Show prologue"
-                hint="Controls the introductory editorial entry sequence."
-              />
-              <ToggleField
-                checked={config.ui.episodes_enabled}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, ui: { ...prev.ui, episodes_enabled: checked } } : prev
-                  )
-                }
-                label="Episodes module enabled"
-                hint="Hides or reveals the cinematic learning rail."
-              />
-              <ToggleField
-                checked={config.operations.cjs_enabled}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, operations: { ...prev.operations, cjs_enabled: checked } } : prev
-                  )
-                }
-                label="ConciergeJobSearch enabled"
-                hint="Keeps the operator search execution surface active."
-              />
-              <ToggleField
-                checked={config.safety.tone_guard_enabled}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, safety: { ...prev.safety, tone_guard_enabled: checked } } : prev
-                  )
-                }
-                label="Tone guard enabled"
-                hint="Applies brand and policy checks before content leaves the rail."
-              />
-            </div>
-          </Panel>
+            <Panel title="Client-facing toggles" eyebrow="Surface posture" meta="Immediate switches">
+              <div className="grid gap-4">
+                <FieldCard
+                  eyebrow="Intro"
+                  title="Entry posture"
+                  description="Use these switches when you want to reshape how a client first enters the suite."
+                >
+                  <div className="grid gap-3">
+                    <ToggleField
+                      checked={config.ui.show_prologue}
+                      onChange={(checked) =>
+                        setConfig((prev) => (prev ? { ...prev, ui: { ...prev.ui, show_prologue: checked } } : prev))
+                      }
+                      label="Show prologue"
+                      hint="Controls the introductory editorial entry sequence."
+                    />
+                    <ToggleField
+                      checked={config.ui.episodes_enabled}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, ui: { ...prev.ui, episodes_enabled: checked } } : prev
+                        )
+                      }
+                      label="Episodes module enabled"
+                      hint="Hides or reveals the cinematic learning rail."
+                    />
+                  </div>
+                </FieldCard>
+                <FieldCard
+                  eyebrow="Operations"
+                  title="Operator-visible surfaces"
+                  description="These switches control whether execution and safeguards remain visible in the live product."
+                >
+                  <div className="grid gap-3">
+                    <ToggleField
+                      checked={config.operations.cjs_enabled}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, operations: { ...prev.operations, cjs_enabled: checked } } : prev
+                        )
+                      }
+                      label="ConciergeJobSearch enabled"
+                      hint="Keeps the operator search execution surface active."
+                    />
+                    <ToggleField
+                      checked={config.safety.tone_guard_enabled}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, safety: { ...prev.safety, tone_guard_enabled: checked } } : prev
+                        )
+                      }
+                      label="Tone guard enabled"
+                      hint="Applies brand and policy checks before content leaves the rail."
+                    />
+                  </div>
+                </FieldCard>
+              </div>
+            </Panel>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+            <Panel title="Prompt overlays" eyebrow="Prompt stack" meta="Appendices">
+              <div className="grid gap-4 xl:grid-cols-2">
+                {PROMPT_OVERLAY_FIELDS.map((field) => (
+                  <FieldCard
+                    key={field.key}
+                    eyebrow={field.eyebrow}
+                    title={field.label}
+                    description={field.description}
+                  >
+                    <textarea
+                      value={config.prompts[field.key]}
+                      onChange={(event) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                prompts: {
+                                  ...prev.prompts,
+                                  [field.key]: event.target.value,
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                      className={`w-full ${field.minHeight} border border-black/10 bg-white p-3 text-sm leading-relaxed outline-none transition-colors focus:border-brand-teal`}
+                    />
+                  </FieldCard>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Professional DNA" eyebrow="Research lane" meta="Configurable dossier">
+              <div className="grid gap-4">
+                <FieldCard
+                  eyebrow="Activation"
+                  title="Post-intake research pass"
+                  description="Runs a dedicated dossier enrichment step for Brief and Profile after the base suite is generated."
+                >
+                  <div className="grid gap-3">
+                    <ToggleField
+                      checked={config.professional_dna.enabled}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, enabled: checked } } : prev
+                        )
+                      }
+                      label="Professional DNA research enabled"
+                      hint="Disable only if you need the suite to skip the dossier enrichment pass."
+                    />
+                    <ToggleField
+                      checked={config.professional_dna.company_posture_notes_enabled}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: {
+                                  ...prev.professional_dna,
+                                  company_posture_notes_enabled: checked,
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                      label="Include company posture notes"
+                      hint="Allows the report to include directional notes on pay posture, churn, and environment tradeoffs."
+                    />
+                  </div>
+                </FieldCard>
+
+                <div className="grid gap-4">
+                  <FieldCard
+                    eyebrow="Model routing"
+                    title="Baseline dossier model"
+                    description="Used for the structured dossier synthesis and final artifact merge."
+                  >
+                    <SelectField
+                      label="DNA base model"
+                      value={config.professional_dna.base_model}
+                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                        value: option.id,
+                        label: option.label,
+                      }))}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: value } } : prev
+                        )
+                      }
+                    />
+                  </FieldCard>
+                  <FieldCard
+                    eyebrow="Research model"
+                    title="Evidence-heavy analysis model"
+                    description="Used when the dossier needs a deeper research posture and more synthesis depth."
+                  >
+                    <SelectField
+                      label="DNA research model"
+                      value={config.professional_dna.research_model}
+                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                        value: option.id,
+                        label: option.label,
+                      }))}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: value } } : prev
+                        )
+                      }
+                    />
+                  </FieldCard>
+                  <FieldCard
+                    eyebrow="Refresh cadence"
+                    title="Refresh window"
+                    description="Controls the max age of the dossier before the lane should be refreshed again."
+                  >
+                    <TextField
+                      label="Refresh window (days)"
+                      type="number"
+                      min={1}
+                      max={90}
+                      step={1}
+                      value={config.professional_dna.refresh_window_days}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: {
+                                  ...prev.professional_dna,
+                                  refresh_window_days: Math.max(1, Math.min(90, Number(value) || 14)),
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </FieldCard>
+                </div>
+
+                <FieldCard
+                  eyebrow="Prompt appendix"
+                  title="Professional DNA operator notes"
+                  description="Use this for extra research posture, client-type instructions, or sector-specific criteria."
+                >
+                  <textarea
+                    value={config.professional_dna.prompt_appendix}
+                    onChange={(event) =>
+                      setConfig((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              professional_dna: {
+                                ...prev.professional_dna,
+                                prompt_appendix: event.target.value,
+                              },
+                            }
+                          : prev
+                      )
+                    }
+                    className="min-h-[176px] w-full border border-black/10 bg-white p-3 text-sm leading-relaxed outline-none transition-colors focus:border-brand-teal"
+                  />
+                </FieldCard>
+
+                <FieldCard
+                  eyebrow="Section selection"
+                  title="Enabled dossier sections"
+                  description="Turn sections on or off without editing raw keys. Existing custom keys remain preserved in config."
+                >
+                  <ChipToggleGroup
+                    label="Enabled sections"
+                    description="These sections will be available to the dossier generator and renderer."
+                    options={DNA_SECTION_OPTIONS}
+                    selected={knownEnabledSections}
+                    onToggle={(value) =>
+                      setConfig((prev) => {
+                        if (!prev) return prev;
+                        const nextKnownEnabled = normalizeList(toggleListValue(knownEnabledSections, value));
+                        const nextEnabledSections = normalizeList([...nextKnownEnabled, ...customEnabledSections]);
+                        const nextSectionOrder = normalizeList([
+                          ...effectiveSectionOrder.filter((section) => nextEnabledSections.includes(section)),
+                          ...nextEnabledSections,
+                        ]);
+                        return {
+                          ...prev,
+                          professional_dna: {
+                            ...prev.professional_dna,
+                            enabled_sections: nextEnabledSections,
+                            section_order: nextSectionOrder,
+                          },
+                        };
+                      })
+                    }
+                  />
+                  {customEnabledSections.length ? (
+                    <div className="mt-3 border border-dashed border-black/12 bg-white/65 px-4 py-3 text-xs leading-5 text-black/52">
+                      Custom section keys preserved: {customEnabledSections.join(', ')}
+                    </div>
+                  ) : null}
+                </FieldCard>
+
+                <FieldCard
+                  eyebrow="Render order"
+                  title="Section order"
+                  description="Reorder enabled sections without editing a newline list."
+                >
+                  <OrderedListField
+                    label="Current section order"
+                    description="This order controls how the dossier renders in the client-facing report."
+                    values={effectiveSectionOrder}
+                    options={DNA_SECTION_OPTIONS}
+                    onMove={(index, direction) =>
+                      setConfig((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              professional_dna: {
+                                ...prev.professional_dna,
+                                section_order: moveListValue(effectiveSectionOrder, index, direction),
+                              },
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </FieldCard>
+
+                <FieldCard
+                  eyebrow="Research coverage"
+                  title="Active research domains"
+                  description="These domains determine which market lenses the Professional DNA agent is allowed to use."
+                >
+                  <ChipToggleGroup
+                    label="Research domains"
+                    description="Reduce this set only if you want a narrower dossier posture for a specific deployment."
+                    options={DNA_RESEARCH_DOMAIN_OPTIONS}
+                    selected={selectedResearchDomains.filter((domain) => knownResearchDomains.includes(domain))}
+                    onToggle={(value) =>
+                      setConfig((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              professional_dna: {
+                                ...prev.professional_dna,
+                                research_domains: normalizeList([
+                                  ...toggleListValue(
+                                    selectedResearchDomains.filter((domain) => knownResearchDomains.includes(domain)),
+                                    value
+                                  ),
+                                  ...customResearchDomains,
+                                ]),
+                              },
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                  {customResearchDomains.length ? (
+                    <div className="mt-3 border border-dashed border-black/12 bg-white/65 px-4 py-3 text-xs leading-5 text-black/52">
+                      Custom research domains preserved: {customResearchDomains.join(', ')}
+                    </div>
+                  ) : null}
+                </FieldCard>
+              </div>
+            </Panel>
+          </div>
         </div>
-
-        <Panel title="Prompt overlays" eyebrow="Prompt stack" meta="Appendices">
-          <div className="grid gap-5">
-            <TextAreaField
-              label="Suite prompt appendix"
-              value={config.prompts.suite_appendix}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, prompts: { ...prev.prompts, suite_appendix: value } } : prev
-                )
-              }
-            />
-            <TextAreaField
-              label="Binge prompt appendix"
-              value={config.prompts.binge_appendix}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, prompts: { ...prev.prompts, binge_appendix: value } } : prev
-                )
-              }
-            />
-            <TextAreaField
-              label="Core ROM overlay"
-              value={config.prompts.rom_appendix}
-              onChange={(value) =>
-                setConfig((prev) => (prev ? { ...prev, prompts: { ...prev.prompts, rom_appendix: value } } : prev))
-              }
-            />
-            <TextAreaField
-              label="Live voice / video overlay"
-              value={config.prompts.live_appendix}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, prompts: { ...prev.prompts, live_appendix: value } } : prev
-                )
-              }
-            />
-            <div className="xl:col-span-2">
-              <TextAreaField
-                label="Art director overlay"
-                value={config.prompts.art_director_appendix}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, prompts: { ...prev.prompts, art_director_appendix: value } } : prev
-                  )
-                }
-                minHeight="min-h-28"
-              />
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="Professional DNA" eyebrow="Research lane" meta="Configurable dossier">
-          <div className="grid gap-5">
-            <ToggleField
-              checked={config.professional_dna.enabled}
-              onChange={(checked) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, professional_dna: { ...prev.professional_dna, enabled: checked } } : prev
-                )
-              }
-              label="Professional DNA research enabled"
-              hint="Runs a dedicated post-intake dossier enrichment pass for Brief and Profile."
-            />
-            <div className="grid gap-5 lg:grid-cols-2">
-              <SelectField
-                label="DNA base model"
-                value={config.professional_dna.base_model}
-                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: value } } : prev
-                  )
-                }
-              />
-              <SelectField
-                label="DNA research model"
-                value={config.professional_dna.research_model}
-                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: value } } : prev
-                  )
-                }
-              />
-            </div>
-            <TextAreaField
-              label="Professional DNA prompt appendix"
-              value={config.professional_dna.prompt_appendix}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, professional_dna: { ...prev.professional_dna, prompt_appendix: value } } : prev
-                )
-              }
-              minHeight="min-h-28"
-            />
-            <TextAreaField
-              label="Enabled sections"
-              value={config.professional_dna.enabled_sections.join('\n')}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        professional_dna: {
-                          ...prev.professional_dna,
-                          enabled_sections: value
-                            .split('\n')
-                            .map((entry) => entry.trim())
-                            .filter(Boolean),
-                        },
-                      }
-                    : prev
-                )
-              }
-              minHeight="min-h-24"
-            />
-            <TextAreaField
-              label="Section order"
-              value={config.professional_dna.section_order.join('\n')}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        professional_dna: {
-                          ...prev.professional_dna,
-                          section_order: value
-                            .split('\n')
-                            .map((entry) => entry.trim())
-                            .filter(Boolean),
-                        },
-                      }
-                    : prev
-                )
-              }
-              minHeight="min-h-24"
-            />
-            <ToggleField
-              checked={config.professional_dna.company_posture_notes_enabled}
-              onChange={(checked) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        professional_dna: {
-                          ...prev.professional_dna,
-                          company_posture_notes_enabled: checked,
-                        },
-                      }
-                    : prev
-                )
-              }
-              label="Include company posture notes"
-              hint="Allows the report to include directional notes on pay posture, churn, and environment tradeoffs."
-            />
-            <TextAreaField
-              label="Research domains"
-              value={config.professional_dna.research_domains.join('\n')}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        professional_dna: {
-                          ...prev.professional_dna,
-                          research_domains: value
-                            .split('\n')
-                            .map((entry) => entry.trim())
-                            .filter(Boolean),
-                        },
-                      }
-                    : prev
-                )
-              }
-              minHeight="min-h-24"
-            />
-            <TextField
-              label="Refresh window (days)"
-              type="number"
-              min={1}
-              max={90}
-              step={1}
-              value={config.professional_dna.refresh_window_days}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        professional_dna: {
-                          ...prev.professional_dna,
-                          refresh_window_days: Math.max(1, Math.min(90, Number(value) || 14)),
-                        },
-                      }
-                    : prev
-                )
-              }
-            />
-          </div>
-        </Panel>
       </SectionShell>
     );
   };

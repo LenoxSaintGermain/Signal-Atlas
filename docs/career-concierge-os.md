@@ -136,7 +136,7 @@ It uses:
 - the intake concierge step itself now shows a live lane switcher when ElevenLabs is available so the team can choose between Gemini and ElevenLabs in-session
 - the public-intake lane selector is now the persisted global default, so `/v1/public/config` reflects the saved admin choice instead of forcing Gemini when ElevenLabs is available
 - a top-command client module shell instead of the old split left-rail modal so episodes, TV, and artifact modules have a wider presentation canvas
-- the client module shell now collapses its large editorial header once the user scrolls into the module body so cinematic surfaces are not covered by persistent chrome
+- the client module shell now keeps a stable editorial header and floating close rail instead of scroll-collapsing the header, which removes the desktop bounce/stutter issue when long module pages are scrolled
 - mobile and tablet module shells now retreat secondary chrome so the narrative stage stays primary when media is present
 - a persistent save rail with explicit unsaved-state feedback
 - collapsible media-library editing so large libraries do not overwhelm the modal
@@ -151,6 +151,14 @@ It uses:
 The operating surface still comes first, but it now behaves like a structured backstage OS instead of a stacked settings page.
 Brand Studio is now part of that write surface and is the canonical place to tune the editorial grid shell.
 The `Experience` rail now also exposes the Professional DNA research lane directly, so operators can edit the dossier prompt appendix, choose the model path, change which report sections are generated, tune the research-domain list, and set the report refresh window without touching code.
+That `Experience` rail is now a guided operator workspace rather than a raw config stack:
+
+- a narrower content canvas keeps the section readable on laptop-width screens
+- onboarding-style help cards explain what changes here, what is safe to edit first, and what the Professional DNA lane affects downstream
+- dossier sections and research domains are now option chips instead of newline textareas
+- dossier section order is now controlled through explicit up/down ordering rather than raw key editing
+- prompt overlays remain editable, but are grouped into smaller field cards with scope-specific guidance
+
 The next planned admin expansion is a dedicated orchestration operating section for staff registry visibility, run monitoring, handoff-policy control, approvals, and evaluation state.
 That orchestration operating section is now partially live in `Governance`: operators can inspect the expanded staff registry, the default intent/tier policy graph, and recent confidence-bearing orchestration runs without leaving Admin.
 For demo/operator continuity, admin access now accepts Firebase `admin` or `staff` claims, allowlisted `ADMIN_EMAILS`, and a baked-in operator fallback for `operator@thirdsignal.ai` plus `gws@conciergecareerservices.com`.

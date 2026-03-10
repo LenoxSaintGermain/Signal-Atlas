@@ -57,6 +57,11 @@ Admin overview behavior:
   - `professional_dna.company_posture_notes_enabled`
   - `professional_dna.research_domains`
   - `professional_dna.refresh_window_days`
+- the `Experience` rail is intentionally no longer a free-form textarea stack:
+  - prompt overlays stay editable as scoped appendix cards
+  - Professional DNA sections and research domains are toggled from predefined option sets
+  - dossier section order is adjusted with explicit ordering controls
+  - custom section/domain keys already stored in config are preserved and surfaced as preserved custom values
 
 If using a standalone Cloud Build trigger instead of Cloud Run's repo-connected deploy, use `cloudbuild.api.yaml`. A single raw `docker build` trigger is insufficient because it does not roll the new image onto the `career-concierge-api` service.
 That build config also sets `logging: CLOUD_LOGGING_ONLY` so triggers using a dedicated service account do not fail on logs-bucket validation.
