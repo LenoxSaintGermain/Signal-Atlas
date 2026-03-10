@@ -4,6 +4,27 @@ This log tracks implementation progress against the V1 MVP backlog plus the queu
 Detailed story-level status and pass-by-pass execution entries now live in `docs/backlog-ledger.md`.
 Update both files in each delivery pass so roadmap visuals and implementation status stay aligned.
 
+## 2026-03-09
+
+### Delivery: Premium Flash Cards Stage + Plan-Wired Review Rooms
+
+- Rebuilt `Flash Cards` from a static local grid into a staged review surface:
+  - entry rail
+  - room browser
+  - active review stage
+  - recap state
+- Added premium motion with Framer-grade transitions scoped to the flash-card experience:
+  - room-to-stage handoff
+  - reveal choreography
+  - weighted recap entry
+- Upgraded deck generation to use:
+  - foundational client-context cards
+  - plan-derived rooms from `next_72_hours`, `next_2_weeks`, and `needs_from_you`
+- Added local review scheduling and persistence:
+  - confidence now stores review timestamps and next-due timing
+  - last active room persists locally
+- Added module-safe navigation out of recap into `Plan` or `Episodes`.
+
 ## 2026-03-05
 
 ### Delivery: Roadmap Validation Surface + Log Foundation

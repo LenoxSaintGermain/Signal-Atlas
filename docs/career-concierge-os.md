@@ -70,7 +70,7 @@ Those tracks existed because the older Lucid analysis named the modules, but did
 The Lucid-added client modules are now first-class suite surfaces:
 
 - `SkillSync AI TV` for curated editorial programming and personalized rails
-- `Flash Cards` for lightweight reinforcement tied to current themes
+- `Flash Cards` for staged memory-route review runs tied to current themes, current plan, and local confidence persistence
 - `Events & Networking` for operator-visible interest capture without fake RSVP state
 - `Telescope` for `now`, `near`, and `later` opportunity framing
 - `SkillSync AI Team` for client-safe explanation of the support roster and handoff options

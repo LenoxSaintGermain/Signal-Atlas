@@ -302,20 +302,24 @@ const App: React.FC = () => {
         return;
       }
 
-      const isArtifact =
-        openModule.id === 'brief' ||
-        openModule.id === 'suite_distilled' ||
-        openModule.id === 'plan' ||
-        openModule.id === 'profile' ||
-        openModule.id === 'ai_profile' ||
-        openModule.id === 'gaps' ||
-        openModule.id === 'readiness' ||
-        openModule.id === 'cjs_execution';
-      if (!isArtifact) return;
+      const loadArtifactType =
+        openModule.id === 'flash_cards'
+          ? 'plan'
+          : openModule.id === 'brief' ||
+              openModule.id === 'suite_distilled' ||
+              openModule.id === 'plan' ||
+              openModule.id === 'profile' ||
+              openModule.id === 'ai_profile' ||
+              openModule.id === 'gaps' ||
+              openModule.id === 'readiness' ||
+              openModule.id === 'cjs_execution'
+            ? openModule.id
+            : null;
+      if (!loadArtifactType) return;
 
       setArtifactLoading(true);
       try {
-        const a = await getArtifact(user.uid, openModule.id as any);
+        const a = await getArtifact(user.uid, loadArtifactType as any);
         setArtifact(a);
       } catch (e: any) {
         setArtifactError(e?.message ?? 'Unable to load.');
@@ -805,7 +809,13 @@ const App: React.FC = () => {
               ) : openModule.id === 'tv' ? (
                 <SkillSyncTvView client={client} />
               ) : openModule.id === 'flash_cards' ? (
-                <FlashCardsView client={client} />
+                <FlashCardsView
+                  client={client}
+                  plan={artifact?.type === 'plan' && artifact.content ? artifact.content : null}
+                  planLoading={artifactLoading}
+                  isFreeTier={isFreeTier}
+                  onOpenModule={openModuleById}
+                />
               ) : openModule.id === 'my_concierge' ? (
                 <MyConciergeView client={client} onOpenModule={openModuleById} />
               ) : openModule.id === 'events' ? (
