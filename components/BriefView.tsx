@@ -24,6 +24,7 @@ export function BriefView(props: {
   const inferred = hasItems(brief.evidence_ledger?.inferred) ? brief.evidence_ledger?.inferred : [];
   const external = hasItems(brief.evidence_ledger?.external) ? brief.evidence_ledger?.external : [];
   const telemetry = buildBriefTelemetry(brief);
+  const hasEvidenceLedger = observed.length > 0 || inferred.length > 0 || external.length > 0;
 
   return (
     <div className="space-y-8 md:space-y-10">
@@ -83,7 +84,7 @@ export function BriefView(props: {
         <DnaCompensationLadderPanel ladder={telemetry.compensationLadder} receipt={receipt} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
+      <div className={hasEvidenceLedger ? 'grid gap-6 xl:grid-cols-[minmax(0,0.96fr)_minmax(320px,0.82fr)]' : 'space-y-6'}>
         <section className="border border-black/10 bg-white p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
           <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">Executive Summary</div>
           <div className="mt-5">
@@ -91,7 +92,7 @@ export function BriefView(props: {
           </div>
         </section>
 
-        {(observed.length > 0 || inferred.length > 0 || external.length > 0) && (
+        {hasEvidenceLedger && (
           <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
             <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">Evidence Ledger</div>
             <div className="mt-5 grid gap-4">
@@ -116,14 +117,14 @@ export function BriefView(props: {
 
       <DnaWarRoom tasks={telemetry.warRoom} />
 
-      <section className="flex flex-wrap items-center justify-between gap-4 border border-black/10 bg-white px-6 py-5 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)]">
-        <div>
+      <section className="grid gap-4 border border-black/10 bg-white px-6 py-5 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <div className="max-w-2xl">
           <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">Execution Link</div>
           <div className="mt-2 text-xl text-[#09161a] font-editorial">Turn the brief into a controlled plan.</div>
         </div>
         <button
           onClick={props.onOpenPlan}
-          className="border border-[#28211E] bg-[#28211E] px-6 py-3 text-[10px] uppercase tracking-[0.28em] text-white transition-transform duration-200 hover:-translate-y-0.5"
+          className="justify-self-start border border-[#28211E] bg-[#28211E] px-6 py-3 text-[10px] uppercase tracking-[0.28em] text-white transition-transform duration-200 hover:-translate-y-0.5 md:justify-self-end"
         >
           Open Your Plan
         </button>

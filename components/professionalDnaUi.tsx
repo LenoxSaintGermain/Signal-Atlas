@@ -362,13 +362,13 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
           return (
             <div key={item.id} className={`border p-4 ${tone.border} ${tone.surface}`}>
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">{item.label}</div>
+                <div className="text-[10px] uppercase tracking-[0.22em] text-black/45 font-data">{item.label}</div>
                 <span className={`px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${tone.text}`}>{item.score}</span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden bg-white/10">
+              <div className="mt-3 h-2 overflow-hidden bg-black/10">
                 <div className={`h-full ${tone.accent}`} style={{ width: `${item.score}%` }} />
               </div>
-              <div className="mt-3 text-xs leading-5 text-white/60 font-body">{item.rationale}</div>
+              <div className="mt-3 text-xs leading-5 text-black/62 font-body">{item.rationale}</div>
             </div>
           );
         })}
@@ -460,6 +460,7 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
   const accentForTimebox = (timebox?: string) =>
     timebox === 'do_now' ? 'border-l-[#5ed3b4]' : timebox === '48h' ? 'border-l-[#f0b14a]' : 'border-l-[#d9777f]';
   const labelForTimebox = (timebox?: string) => (timebox === 'do_now' ? 'Do Now' : timebox === '48h' ? '48H' : '72H');
+  const gridClass = tasks.length >= 3 ? 'xl:grid-cols-3' : tasks.length === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1';
 
   return (
     <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
@@ -469,7 +470,7 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
           <div className="mt-3 text-3xl text-[#09161a] font-editorial">Move before the market rewrites the receipt.</div>
         </div>
       </div>
-      <div className="mt-6 grid gap-4 xl:grid-cols-3">
+      <div className={`mt-6 grid gap-4 ${gridClass}`}>
         {tasks.map((task) => (
           <div key={task.id} className={`border border-black/10 border-l-4 bg-white p-5 ${accentForTimebox(task.timebox)}`}>
             <div className="text-[10px] uppercase tracking-[0.24em] text-black/45 font-data">{labelForTimebox(task.timebox)}</div>
