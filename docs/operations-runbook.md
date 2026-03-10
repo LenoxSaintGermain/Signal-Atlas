@@ -57,11 +57,16 @@ Admin overview behavior:
   - `professional_dna.company_posture_notes_enabled`
   - `professional_dna.research_domains`
   - `professional_dna.refresh_window_days`
+  - `professional_dna.hero_*`
+  - `professional_dna.voice_agent_*`
+  - `professional_dna.voice_transcription_visible`
+  - `professional_dna.voice_to_form_autofill`
 - the `Experience` rail is intentionally no longer a free-form textarea stack:
   - prompt overlays stay editable as scoped appendix cards
   - Professional DNA sections and research domains are toggled from predefined option sets
   - dossier section order is adjusted with explicit ordering controls
   - custom section/domain keys already stored in config are preserved and surfaced as preserved custom values
+  - Smart Start hero video and voice-agent controls now live under the same `Professional DNA` rail instead of hidden env-only configuration
 
 If using a standalone Cloud Build trigger instead of Cloud Run's repo-connected deploy, use `cloudbuild.api.yaml`. A single raw `docker build` trigger is insufficient because it does not roll the new image onto the `career-concierge-api` service.
 That build config also sets `logging: CLOUD_LOGGING_ONLY` so triggers using a dedicated service account do not fail on logs-bucket validation.
@@ -187,6 +192,12 @@ Current public-intake behavior:
 - the intake concierge step follows that selector and mounts the ElevenLabs conversational widget when `elevenlabs` is selected and a public agent ID is available
 - the intake concierge step also exposes a visible lane switcher so operators can flip between the two rails live without reopening Admin
 - Gemini Live remains the internal native-audio session path used by the existing live panel and token route
+- Smart Start Intake now also reads public-facing Professional DNA config for:
+  - optional hero video / fallback image rendering
+  - Smart Start voice-lane enablement
+  - transcript visibility inside Gemini Live
+  - voice-to-form autofill behavior
+- Gemini Live Smart Start sessions now hit `POST /v1/intake/extract` after session close to map transcript signals into empty intake fields without overwriting user edits
 
 Current Professional DNA behavior:
 

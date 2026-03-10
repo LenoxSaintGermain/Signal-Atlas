@@ -1756,6 +1756,229 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 </div>
 
                 <FieldCard
+                  eyebrow="Hero video"
+                  title="Intake hero media"
+                  description="Controls the premium video or fallback panel shown at the top of Smart Start Intake."
+                >
+                  <div className="grid gap-4">
+                    <ToggleField
+                      checked={config.professional_dna.hero_visible ?? false}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, hero_visible: checked },
+                              }
+                            : prev
+                        )
+                      }
+                      label="Show intake hero media"
+                      hint="When off, the intake opens without the hero video stage."
+                    />
+                    <TextField
+                      label="Hero video URL"
+                      value={config.professional_dna.hero_video_url ?? ''}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, hero_video_url: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <TextField
+                      label="Hero title"
+                      value={config.professional_dna.hero_video_title ?? ''}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, hero_video_title: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <TextField
+                      label="Fallback image URL"
+                      value={config.professional_dna.hero_fallback_image_url ?? ''}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, hero_fallback_image_url: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <ToggleField
+                        checked={config.professional_dna.hero_autoplay_muted ?? true}
+                        onChange={(checked) =>
+                          setConfig((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  professional_dna: { ...prev.professional_dna, hero_autoplay_muted: checked },
+                                }
+                              : prev
+                          )
+                        }
+                        label="Autoplay muted"
+                      />
+                      <ToggleField
+                        checked={config.professional_dna.hero_loop ?? true}
+                        onChange={(checked) =>
+                          setConfig((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  professional_dna: { ...prev.professional_dna, hero_loop: checked },
+                                }
+                              : prev
+                          )
+                        }
+                        label="Loop hero media"
+                      />
+                    </div>
+                  </div>
+                </FieldCard>
+
+                <FieldCard
+                  eyebrow="Voice agent"
+                  title="Smart Start voice lane"
+                  description="Controls the live intake agent posture, transcript visibility, and voice-to-form autofill behavior."
+                >
+                  <div className="grid gap-4">
+                    <ToggleField
+                      checked={config.professional_dna.voice_agent_enabled ?? true}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, voice_agent_enabled: checked },
+                              }
+                            : prev
+                        )
+                      }
+                      label="Enable Smart Start voice agent"
+                      hint="Hides the immersive voice rail when disabled."
+                    />
+                    <SelectField
+                      label="Voice lane model"
+                      value={config.professional_dna.voice_model ?? 'gemini_live'}
+                      options={[
+                        { value: 'gemini_live', label: 'Gemini Live' },
+                        { value: 'elevenlabs_conversational', label: 'ElevenLabs Conversational' },
+                      ]}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: {
+                                  ...prev.professional_dna,
+                                  voice_model:
+                                    value === 'elevenlabs_conversational'
+                                      ? 'elevenlabs_conversational'
+                                      : 'gemini_live',
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <ToggleField
+                      checked={config.professional_dna.voice_transcription_visible ?? false}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, voice_transcription_visible: checked },
+                              }
+                            : prev
+                        )
+                      }
+                      label="Show transcript inside intake"
+                    />
+                    <ToggleField
+                      checked={config.professional_dna.voice_to_form_autofill ?? true}
+                      onChange={(checked) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, voice_to_form_autofill: checked },
+                              }
+                            : prev
+                        )
+                      }
+                      label="Enable voice-to-form autofill"
+                      hint="Only fills empty fields. User-entered form values stay authoritative."
+                    />
+                    <TextField
+                      label="Voice agent voice ID"
+                      value={config.professional_dna.voice_agent_voice_id ?? ''}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, voice_agent_voice_id: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <TextAreaField
+                      label="Voice arc sections"
+                      value={(config.professional_dna.voice_arc_sections ?? []).join('\n')}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: {
+                                  ...prev.professional_dna,
+                                  voice_arc_sections: value
+                                    .split('\n')
+                                    .map((entry) => entry.trim().toLowerCase())
+                                    .filter(Boolean),
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                      minHeight="min-h-24"
+                    />
+                    <TextAreaField
+                      label="Voice agent persona appendix"
+                      value={config.professional_dna.voice_agent_persona ?? ''}
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, voice_agent_persona: value },
+                              }
+                            : prev
+                        )
+                      }
+                      minHeight="min-h-28"
+                    />
+                  </div>
+                </FieldCard>
+
+                <FieldCard
                   eyebrow="Prompt appendix"
                   title="Professional DNA operator notes"
                   description="Use this for extra research posture, client-type instructions, or sector-specific criteria."

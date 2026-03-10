@@ -77,6 +77,13 @@ The Lucid-added client modules are now first-class suite surfaces:
 
 The design target remains an editorial, cinematic workspace rather than a generic SaaS dashboard.
 Modules should feel like guided surfaces inside one OS, not isolated product pages.
+`Smart Start Intake` is now a four-screen premium dossier intake instead of a generic long-form field stack:
+
+- a configurable hero-video stage can appear at the top of Intake from public config
+- the voice rail now sits above the form path and can run Gemini Live or ElevenLabs depending on operator config
+- Gemini Live sessions can extract structured intake signals back into empty form fields, with visible `from voice session` provenance tags
+- the prepare state now shows a live intake/market/research progress rail rather than a generic loading card
+
 The `Brief` / `Profile` pair now also carries a research-grade Professional DNA posture:
 
 - `The Brief` behaves as the abstract and decision memo
@@ -110,7 +117,7 @@ The admin console is the operational control plane for:
 - voice provider routing
 - Gemini Live transcription, interruption, and VAD tuning
 - prompt appendices and ROM tuning
-- Professional DNA research configuration for model path, prompt appendix, section lists, section order, company-posture notes, research domains, and dossier refresh window
+- Professional DNA research configuration for model path, prompt appendix, section lists, section order, company-posture notes, research domains, dossier refresh window, intake hero media, and Smart Start voice-agent controls
 - media library targeting
 - feature flags
 - brand identity, color tokens, hierarchy, logo URL, and workflow-label copy
@@ -158,6 +165,7 @@ That `Experience` rail is now a guided operator workspace rather than a raw conf
 - dossier sections and research domains are now option chips instead of newline textareas
 - dossier section order is now controlled through explicit up/down ordering rather than raw key editing
 - prompt overlays remain editable, but are grouped into smaller field cards with scope-specific guidance
+- intake hero video, fallback media, voice-lane defaults, transcript visibility, and voice-to-form autofill are now part of the same admin surface
 
 The next planned admin expansion is a dedicated orchestration operating section for staff registry visibility, run monitoring, handoff-policy control, approvals, and evaluation state.
 That orchestration operating section is now partially live in `Governance`: operators can inspect the expanded staff registry, the default intent/tier policy graph, and recent confidence-bearing orchestration runs without leaving Admin.
@@ -216,6 +224,7 @@ The Express API under `api/` handles:
 - admin config reads and writes
 - public brand-config reads for the suite shell
 - suite artifact generation
+- intake transcript extraction for Smart Start voice sessions
 - post-intake Professional DNA dossier enrichment with a dedicated `dna_research_analyst` role
 - CJS execution rail endpoints (resume upload/review/strategy)
 - interaction ledger + approval endpoints
@@ -225,6 +234,8 @@ The Express API under `api/` handles:
 - suite generation now runs in two layers for paid-suite users:
   - the core artifact pass
   - a Professional DNA research pass that upgrades `brief` and `profile` before downstream planning continues
+- the live intake token route now appends a configurable seven-stage Smart Start interview arc to the Gemini Live system instruction
+- the new `/v1/intake/extract` route converts Smart Start transcripts into high-confidence partial intake fields and falls back to deterministic extraction when the model path is unavailable
 - the DNA research lane writes upgraded `brief` / `profile` content back into Firestore and logs an orchestration run so governance can inspect the handoff
 - the DNA lane now hydrates a stricter dossier contract:
   - signal-strip metrics

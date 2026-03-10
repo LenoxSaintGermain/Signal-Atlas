@@ -25,6 +25,9 @@ export function BriefView(props: {
   const external = hasItems(brief.evidence_ledger?.external) ? brief.evidence_ledger?.external : [];
   const telemetry = buildBriefTelemetry(brief);
   const hasEvidenceLedger = observed.length > 0 || inferred.length > 0 || external.length > 0;
+  const evidenceNodeCount = observed.length + inferred.length + external.length;
+  const intakeSignalCount = observed.length;
+  const marketSourceCount = inferred.length + external.length;
 
   return (
     <div className="space-y-8 md:space-y-10">
@@ -39,6 +42,13 @@ export function BriefView(props: {
             </h2>
             <div className="mt-6 max-w-3xl text-base leading-8 text-white/72 font-body">
               {brief.thesis || 'This brief compresses the adaptation case: where your market position is strong, where signal is leaking, and what needs to change before the ask becomes more credible.'}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-4 font-data text-[9px] uppercase tracking-[0.12em] text-white/46">
+              <span>{evidenceNodeCount} evidence nodes</span>
+              <span>·</span>
+              <span>{intakeSignalCount} intake signals</span>
+              <span>·</span>
+              <span>{marketSourceCount} market sources</span>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {[

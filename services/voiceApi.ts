@@ -1,5 +1,5 @@
 import { auth } from './firebase';
-import { VoiceSynthesisResponse } from '../types';
+import { IntakeAnswers, IntakeTranscriptExtractionResponse, VoiceSynthesisResponse } from '../types';
 import { resolveApiOrigin } from './apiOrigin';
 
 export const synthesizeConciergeVoice = async (text: string): Promise<VoiceSynthesisResponse> => {
@@ -30,4 +30,37 @@ export const synthesizeConciergeVoice = async (text: string): Promise<VoiceSynth
   }
 
   return (await resp.json()) as VoiceSynthesisResponse;
+};
+
+export const extractIntakeFromTranscript = async (
+  transcript: string,
+  existingAnswers: IntakeAnswers
+): Promise<IntakeTranscriptExtractionResponse> => {
+  const origin = resolveApiOrigin();
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+  const token = await user.getIdToken();
+
+  let resp: Response;
+  try {
+    resp = await fetch(`${origin}/v1/intake/extract`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ transcript, existing_answers: existingAnswers }),
+    });
+  } catch {
+    throw new Error(
+      `Cannot reach API at ${origin}. Start the API server on port 8080 or update VITE_CONCIERGE_API_URL.`
+    );
+  }
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error(`Transcript extraction error (${resp.status}): ${txt || resp.statusText}`);
+  }
+
+  return (await resp.json()) as IntakeTranscriptExtractionResponse;
 };

@@ -32,7 +32,46 @@ export type ClientIntent = 'current_role' | 'target_role' | 'not_sure';
 export type PacePreference = 'straight' | 'standard' | 'story';
 export type FocusPreference = 'job_search' | 'skills' | 'leadership';
 
-export type IntakeAnswers = Record<string, string | string[] | boolean>;
+export interface IntakeFormData {
+  intent_type?: 'STAY_SHARP' | 'SPECIFIC_MOVE' | 'DESIGN_DIRECTION';
+  outcome_goals?: string[];
+  comp_level?: string;
+  current_title?: string;
+  target_title?: string;
+  salary_range?: string;
+  benefits_timing?: 'NOT_YET' | 'UPCOMING' | 'IN_PROGRESS';
+  ai_usage_frequency?: 'RARELY_OR_NEVER' | 'OCCASIONALLY' | 'REGULARLY' | 'DAILY' | string;
+  enterprise_ai_context?: string[];
+  job_description?: string;
+  resume_url?: string;
+  align_bio_on_upload?: boolean;
+  foundational_interests?: string[];
+  advanced_interests?: string[];
+  learning_modality?: string[];
+  direction_aim?: string;
+  pressure_breaks?: string;
+  momentum_source?: string;
+  constraints?: string;
+  industry?: string;
+  tone_preference?: string[];
+  timeline_urgency?: string;
+  target_sector?: string;
+  target_companies?: string[];
+  comp_range?: string;
+  comp_posture?: string;
+  proof_artifacts?: string[];
+  quantified_outcomes?: string[];
+  role_ownership?: string;
+  suppressor_signals?: string[];
+  ai_proficiency_self_report?: string;
+  voice_session_id?: string;
+  voice_session_completed?: boolean;
+  voice_extracted_fields?: string[];
+  synthesis_approval?: boolean;
+}
+
+export type IntakeAnswerValue = string | string[] | boolean;
+export type IntakeAnswers = Partial<IntakeFormData> & Record<string, IntakeAnswerValue | undefined>;
 
 export interface ClientPreferences {
   pace: PacePreference;
@@ -622,6 +661,19 @@ export interface AppConfig {
     company_posture_notes_enabled: boolean;
     research_domains: string[];
     refresh_window_days: number;
+    hero_video_url?: string;
+    hero_video_title?: string;
+    hero_autoplay_muted?: boolean;
+    hero_loop?: boolean;
+    hero_fallback_image_url?: string;
+    hero_visible?: boolean;
+    voice_agent_enabled?: boolean;
+    voice_agent_persona?: string;
+    voice_arc_sections?: string[];
+    voice_model?: 'elevenlabs_conversational' | 'gemini_live';
+    voice_agent_voice_id?: string;
+    voice_transcription_visible?: boolean;
+    voice_to_form_autofill?: boolean;
   };
   ui: {
     show_prologue: boolean;
@@ -682,6 +734,19 @@ export interface PublicConfig {
   ui: AppConfig['ui'];
   brand: AppConfig['brand'];
   operations: Pick<AppConfig['operations'], 'cjs_enabled'>;
+  professional_dna: Pick<
+    AppConfig['professional_dna'],
+    | 'hero_video_url'
+    | 'hero_video_title'
+    | 'hero_autoplay_muted'
+    | 'hero_loop'
+    | 'hero_fallback_image_url'
+    | 'hero_visible'
+    | 'voice_agent_enabled'
+    | 'voice_model'
+    | 'voice_transcription_visible'
+    | 'voice_to_form_autofill'
+  >;
   voice: {
     elevenlabs_enabled: boolean;
     elevenlabs_agent_id: string;
@@ -961,6 +1026,13 @@ export interface GeminiLiveTokenResponse {
   proactive_audio_enabled: boolean;
   issued_at: string;
   expires_at: string;
+}
+
+export interface IntakeTranscriptExtractionResponse {
+  extracted: Partial<IntakeFormData>;
+  extracted_fields: string[];
+  model: string;
+  fallback?: boolean;
 }
 
 export interface ArtifactDoc<T = unknown> {

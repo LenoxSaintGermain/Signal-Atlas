@@ -37,6 +37,10 @@ Setup:
 ## Voice Engine Routing
 
 The onboarding flow supports concierge voice playback through `POST /v1/voice/synthesize` on the Cloud Run API.
+When `ELEVENLABS_AGENT_ID` is present in the API env, the public concierge intake can mount the ElevenLabs conversational widget from `/v1/public/config`.
+Admin voice controls expose a separate public-intake lane selector so the team can flip that step between Gemini and ElevenLabs without changing secrets.
+The intake concierge step also exposes an in-flow lane switcher when both lanes are available so operators can flip live during a session.
+Smart Start Intake now also supports transcript-to-form extraction through `POST /v1/intake/extract`, so Gemini Live intake sessions can prefill empty form fields without overwriting user-entered answers.
 
 Provider options:
 

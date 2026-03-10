@@ -119,7 +119,11 @@ const pcmToWavBlob = (pcmBase64: string, sampleRate = 24000) => {
   return new Blob([buffer], { type: 'audio/wav' });
 };
 
-export function GeminiLivePanel() {
+export function GeminiLivePanel(props: {
+  onStateChange?: (state: LiveState) => void;
+  onSessionComplete?: (payload: { transcript: string; sessionId?: string; completed: boolean }) => void;
+  transcriptVisible?: boolean;
+}) {
   const [state, setState] = useState<LiveState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -154,6 +158,8 @@ export function GeminiLivePanel() {
   const firstByteAtRef = useRef<number | null>(null);
   const promptSentAtRef = useRef<number | null>(null);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const transcriptRef = useRef('');
+  const transcriptDeliveredRef = useRef(false);
   const cameraReady = state === 'connected' && cameraEnabled;
   const micReady = state === 'connected' && micEnabled;
   const engagementReady = state === 'connected' && (micEnabled || prompt.trim().length > 0);
@@ -177,6 +183,7 @@ export function GeminiLivePanel() {
     if (!cleaned) return;
     setTranscript((prev) => `${prev}${prev ? '\n' : ''}${cleaned}`);
   };
+  transcriptRef.current = transcript;
   const liveMood =
     state === 'connected'
       ? micEnabled
@@ -187,6 +194,21 @@ export function GeminiLivePanel() {
         : state === 'error'
           ? 'Session interrupted'
           : 'Immersive studio on standby';
+
+  useEffect(() => {
+    props.onStateChange?.(state);
+  }, [props, state]);
+
+  const notifyTranscriptReady = (completed: boolean) => {
+    const cleaned = transcriptRef.current.trim();
+    if (!cleaned || transcriptDeliveredRef.current) return;
+    transcriptDeliveredRef.current = true;
+    props.onSessionComplete?.({
+      transcript: cleaned,
+      sessionId: tokenInfo?.token_name,
+      completed,
+    });
+  };
 
   const clearCameraLoop = () => {
     if (cameraLoopRef.current) {
@@ -249,6 +271,7 @@ export function GeminiLivePanel() {
   };
 
   const closeSession = () => {
+    notifyTranscriptReady(true);
     try {
       sessionRef.current?.close?.();
     } catch {
@@ -358,6 +381,7 @@ export function GeminiLivePanel() {
     setState('connecting');
     setTranscript('');
     setLatencyMs(null);
+    transcriptDeliveredRef.current = false;
     audioChunksRef.current = [];
     firstByteAtRef.current = null;
     promptSentAtRef.current = null;
@@ -425,6 +449,7 @@ export function GeminiLivePanel() {
             setState('error');
           },
           onclose: (event: any) => {
+            notifyTranscriptReady(true);
             stopMic();
             stopCamera();
             setState('idle');
@@ -835,8 +860,13 @@ export function GeminiLivePanel() {
             <div className="border border-[#274148] bg-[#0d2025] p-4">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[#8ea3a7]">Conversation Memory</div>
               <div className="mt-2 text-sm leading-relaxed text-[#d0ddde]">
-                Transcript is intentionally hidden in this view to keep focus on presence and flow.
+                Your answers are being structured in real time.
               </div>
+              {props.transcriptVisible && transcript ? (
+                <pre className="mt-3 max-h-[180px] overflow-y-auto whitespace-pre-wrap border border-[#274148] bg-[#09181c] p-3 text-xs leading-6 text-[#cfe0e1]">
+                  {transcript}
+                </pre>
+              ) : null}
             </div>
             {error && (
               <div className="border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200 leading-relaxed">

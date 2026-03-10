@@ -41,6 +41,18 @@ const DEFAULT_PUBLIC_CONFIG: PublicConfig = {
   operations: {
     cjs_enabled: true,
   },
+  professional_dna: {
+    hero_video_url: '',
+    hero_video_title: '',
+    hero_autoplay_muted: true,
+    hero_loop: true,
+    hero_fallback_image_url: '',
+    hero_visible: false,
+    voice_agent_enabled: true,
+    voice_model: 'gemini_live',
+    voice_transcription_visible: false,
+    voice_to_form_autofill: true,
+  },
   voice: {
     elevenlabs_enabled: false,
     elevenlabs_agent_id: '',
@@ -714,8 +726,7 @@ const App: React.FC = () => {
                         onClick={() => openModuleById(relatedId)}
                         className="inline-flex px-3 py-2 text-[10px] uppercase tracking-[0.18em] transition-colors"
                         style={{
-                          border: `1px solid ${hexToRgba(brand.colors.overlay_text, 0.12)}`,
-                          backgroundColor: hexToRgba(brand.colors.overlay_text, 0.05),
+                          borderBottom: `2px solid ${brand.colors.accent}`,
                           color: hexToRgba(brand.colors.overlay_text, 0.72),
                         }}
                       >
@@ -758,6 +769,7 @@ const App: React.FC = () => {
                   client={client}
                   isAdminUser={isAdminUser}
                   voiceConfig={publicConfig.voice}
+                  intakeConfig={publicConfig.professional_dna}
                   onComplete={(nextModuleId, payload) => {
                     // Update local client state so tiles unlock immediately.
                     setClient((prev) =>

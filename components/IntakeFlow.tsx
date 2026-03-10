@@ -1,13 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   CLIENT_INTENTS,
   FOCUS_PREFS,
   FREE_TIER_SMART_START_FIELD_IDS,
   PACE_PREFS,
   SMART_START_FIELDS,
-  SmartStartField,
 } from '../constants';
-import { ClientDoc, ClientIntent, ClientPreferences, FocusPreference, IntakeAnswers, PacePreference, SuiteModuleId } from '../types';
+import {
+  ClientDoc,
+  ClientIntent,
+  ClientPreferences,
+  FocusPreference,
+  IntakeAnswers,
+  IntakeAnswerValue,
+  PacePreference,
+  PublicConfig,
+  SuiteModuleId,
+} from '../types';
 import { saveIntake } from '../services/clientService';
 import { upsertArtifact } from '../services/artifactService';
 import {
@@ -21,139 +30,303 @@ import {
   generateSuiteDistilledDoc,
 } from '../services/stubGenerator';
 import { generateSuiteArtifacts } from '../services/suiteApi';
-import { synthesizeConciergeVoice } from '../services/voiceApi';
+import { extractIntakeFromTranscript } from '../services/voiceApi';
+import { ElevenLabsConvaiPanel } from './ElevenLabsConvaiPanel';
 import { GeminiLivePanel } from './GeminiLivePanel';
+import { HeroVideoSection } from './HeroVideoSection';
+import { DNAProgressIndicator, DnaProgressStage } from './DNAProgressIndicator';
 
-type Step = 'intent' | 'concierge' | 'questions' | 'prefs' | 'plating' | 'done';
+type Step = 'screen_1' | 'screen_2' | 'screen_3' | 'screen_4' | 'plating' | 'done';
+type VoiceSessionState = 'idle' | 'connecting' | 'connected' | 'completed' | 'error';
+
 const SUITE_FEEL_OPTIONS = ['STRATEGIC', 'GROUNDED', 'STORY', 'JOB-SEARCH', 'SKILLS', 'LEADERSHIP'];
-
-const base64ToBytes = (base64: string) => {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+const BENEFITS_OPTIONS = [
+  { label: 'Not yet', value: 'NOT_YET' },
+  { label: 'Upcoming', value: 'UPCOMING' },
+  { label: 'In progress', value: 'IN_PROGRESS' },
+] as const;
+const AI_USAGE_OPTIONS = [
+  { label: 'Rarely or Never', value: 'RARELY_OR_NEVER' },
+  { label: 'Occasionally', value: 'OCCASIONALLY' },
+  { label: 'Regularly', value: 'REGULARLY' },
+  { label: 'Daily', value: 'DAILY' },
+] as const;
+const INTENT_COPY: Record<ClientIntent, { label: string; description: string }> = {
+  current_role: {
+    label: 'Stay sharp in my current role',
+    description: 'Protect momentum, increase signal, and strengthen leverage where I already operate.',
+  },
+  target_role: {
+    label: 'Move into a specific next role',
+    description: 'Build a case for a defined move, with evidence, fit, and compensation clarity.',
+  },
+  not_sure: {
+    label: 'Help me design the direction',
+    description: 'Surface the strongest path before I overinvest in the wrong market story.',
+  },
 };
+const ARTIFACT_PREVIEW = [
+  {
+    icon: '◉',
+    label: 'Your Brief',
+    promise: 'A market-calibrated verdict on where your value lands and what is suppressing it.',
+  },
+  {
+    icon: '◈',
+    label: 'Your Profile',
+    promise: 'Your career genome - adaptive assets, extinction risks, and behavioral propensities.',
+  },
+  {
+    icon: '◎',
+    label: 'Your Plan',
+    promise: 'A 72-hour action sequence and a 90-day adaptation roadmap, built around your constraints.',
+  },
+];
+
+const intakeTheme = {
+  '--intake-bg': '#EDEAE2',
+  '--intake-bg-alt': '#E5E2DA',
+  '--intake-dark': '#1B1E1C',
+  '--intake-dark-mid': '#252A27',
+  '--intake-teal': '#4B9E8D',
+  '--intake-teal-dim': '#2D7A6B',
+  '--intake-teal-light': '#6BBFAF',
+  '--intake-teal-bg': '#E0F0ED',
+  '--intake-amber': '#C9853A',
+  '--intake-border': '#D0CEC5',
+  '--intake-border-dark': '#303530',
+  '--intake-cream': '#F5F2EA',
+  '--intake-muted': '#8A8A7A',
+  '--intake-muted-light': '#AEADA0',
+} as React.CSSProperties;
+
+const cardClass = 'border border-[var(--intake-border)] bg-[var(--intake-cream)] p-5 md:p-6';
+const darkCardClass = 'border border-[var(--intake-border-dark)] bg-[var(--intake-dark)] p-5 md:p-6 text-[#F5F2EA]';
+const labelClass = 'font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[var(--intake-teal-dim)]';
+const fieldLabelClass = 'flex items-center gap-2 font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[var(--intake-muted)]';
+const inputBaseClass = 'w-full border border-[var(--intake-border)] bg-white px-4 py-3 text-sm text-[#1B1E1C] outline-none transition-colors focus:border-[var(--intake-teal)]';
+const secondaryButtonClass =
+  'border border-[var(--intake-border)] bg-transparent px-4 py-3 font-intake-mono text-[10px] uppercase tracking-[0.12em] text-[#1B1E1C] transition-colors hover:border-[var(--intake-teal)]';
+const primaryButtonClass =
+  'bg-[var(--intake-teal)] px-4 py-3 font-intake-mono text-[10px] uppercase tracking-[0.16em] text-white transition-colors hover:bg-[var(--intake-teal-dim)] disabled:opacity-50';
+
+const isValueFilled = (value: IntakeAnswerValue | undefined) => {
+  if (typeof value === 'string') return Boolean(value.trim());
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'boolean') return true;
+  return false;
+};
+
+const dedupeStrings = (values: string[]) => Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+
+const mapIntentToIntakeType = (intent: ClientIntent) =>
+  intent === 'current_role' ? 'STAY_SHARP' : intent === 'target_role' ? 'SPECIFIC_MOVE' : 'DESIGN_DIRECTION';
+
+const titleFromIntent = (intent: ClientIntent) =>
+  intent === 'current_role'
+    ? 'Where are you heading?'
+    : intent === 'target_role'
+      ? 'What move are we pricing?'
+      : 'What direction is worth designing?';
+
+const normalizeAnswersForSubmission = (intent: ClientIntent, answers: IntakeAnswers): IntakeAnswers => {
+  const normalized: IntakeAnswers = { ...answers };
+  normalized.intent_type = mapIntentToIntakeType(intent);
+  normalized.outcome_goals = Array.isArray(answers.outcomes_goals) ? answers.outcomes_goals : [];
+  normalized.comp_level = typeof answers.target_compensation_level === 'string' ? answers.target_compensation_level : '';
+  normalized.target_title =
+    typeof answers.current_or_target_job_title === 'string' ? answers.current_or_target_job_title : '';
+  normalized.salary_range =
+    typeof answers.current_or_target_salary === 'string' ? answers.current_or_target_salary : '';
+  normalized.comp_range = typeof answers.current_or_target_salary === 'string' ? answers.current_or_target_salary : '';
+  normalized.benefits_timing =
+    typeof answers.benefits_timing === 'string' ? answers.benefits_timing : 'NOT_YET';
+  normalized.benefits_under_review = normalized.benefits_timing !== 'NOT_YET';
+  normalized.enterprise_ai_context = Array.isArray(answers.enterprise_context) ? answers.enterprise_context : [];
+  normalized.resume_url = typeof answers.resume_source === 'string' ? answers.resume_source : '';
+  normalized.align_bio_on_upload = answers.bio_alignment_requested === true;
+  normalized.learning_modality = Array.isArray(answers.learning_modalities) ? answers.learning_modalities : [];
+  normalized.direction_aim = typeof answers.target === 'string' ? answers.target : '';
+  normalized.momentum_source = typeof answers.work_style === 'string' ? answers.work_style : '';
+  normalized.tone_preference =
+    typeof answers.suite_feel === 'string' && answers.suite_feel ? [answers.suite_feel] : [];
+  normalized.voice_extracted_fields = Array.isArray(answers.voice_extracted_fields) ? answers.voice_extracted_fields : [];
+  return normalized;
+};
+
+function FieldShell({
+  label,
+  fieldId,
+  voiceFilled,
+  helper,
+  children,
+  wide = false,
+}: {
+  label: string;
+  fieldId?: string;
+  voiceFilled?: boolean;
+  helper?: string;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col gap-3 ${wide ? 'md:col-span-2' : ''}`}>
+      <div className={fieldLabelClass}>
+        <span>{label}</span>
+        {fieldId && voiceFilled ? (
+          <span className="text-[var(--intake-teal)]">{'<-'} From voice session</span>
+        ) : null}
+      </div>
+      {helper ? <div className="font-intake-body text-sm leading-relaxed text-[var(--intake-muted)]">{helper}</div> : null}
+      {children}
+    </div>
+  );
+}
+
+function ChipGroup({
+  options,
+  selected,
+  onToggle,
+  multi = false,
+}: {
+  options: Array<{ label: string; value: string }>;
+  selected: string[];
+  onToggle: (value: string) => void;
+  multi?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      {options.map((option) => {
+        const active = selected.includes(option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onToggle(option.value)}
+            className={`border bg-white px-3 py-2 font-intake-mono text-[9px] uppercase tracking-[0.1em] transition-colors ${
+              active
+                ? 'border-t-2 border-[var(--intake-teal)] bg-[var(--intake-teal-bg)] text-[var(--intake-teal-dim)]'
+                : 'border-[var(--intake-border)] text-[#1B1E1C] hover:bg-[var(--intake-teal-bg)]'
+            }`}
+            aria-pressed={active}
+          >
+            {option.label}
+            {!multi && active ? null : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function IntakeFlow(props: {
   uid: string;
   tier?: string;
   client?: ClientDoc | null;
   isAdminUser?: boolean;
+  voiceConfig: PublicConfig['voice'];
+  intakeConfig: PublicConfig['professional_dna'];
   onComplete: (
     nextModuleId: SuiteModuleId,
     payload: { intent: ClientIntent; preferences: ClientPreferences; answers: IntakeAnswers }
   ) => void;
 }) {
   const isFreeTier = props.tier === 'free_foundation_access';
-  const [step, setStep] = useState<Step>('intent');
+  const [step, setStep] = useState<Step>('screen_1');
   const [intent, setIntent] = useState<ClientIntent>('current_role');
   const [answers, setAnswers] = useState<IntakeAnswers>({});
   const [pace, setPace] = useState<PacePreference>('standard');
   const [focus, setFocus] = useState<FocusPreference>('job_search');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [voiceSessionState, setVoiceSessionState] = useState<VoiceSessionState>('idle');
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [lastVoiceProvider, setLastVoiceProvider] = useState<'sesame' | 'gemini_live' | null>(null);
-  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewAudioContextRef = useRef<AudioContext | null>(null);
-  const previewAudioUnlockedRef = useRef(false);
-
-  useEffect(() => {
-    return () => {
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
-      if (previewAudioContextRef.current) {
-        void previewAudioContextRef.current.close().catch(() => undefined);
-        previewAudioContextRef.current = null;
-      }
-    };
-  }, []);
-
-  const ensurePreviewAudioUnlocked = async () => {
-    const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextCtor) return;
-    if (!previewAudioContextRef.current) {
-      previewAudioContextRef.current = new AudioContextCtor();
-    }
-    const context = previewAudioContextRef.current;
-    if (context.state === 'suspended') {
-      await context.resume();
-    }
-    if (!previewAudioUnlockedRef.current) {
-      const unlockBuffer = context.createBuffer(1, 1, 22050);
-      const source = context.createBufferSource();
-      source.buffer = unlockBuffer;
-      source.connect(context.destination);
-      source.start(0);
-      previewAudioUnlockedRef.current = true;
-    }
-  };
-
-  const playVoiceResponse = async (mimeType: string, audioBase64: string) => {
-    const bytes = base64ToBytes(audioBase64);
-    const mime = String(mimeType || 'audio/wav');
-    const lowerMime = mime.toLowerCase();
-    const context = previewAudioContextRef.current;
-
-    if (context && !lowerMime.startsWith('audio/pcm')) {
-      try {
-        if (context.state === 'suspended') await context.resume();
-        const raw = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-        const decoded = await context.decodeAudioData(raw as ArrayBuffer);
-        const source = context.createBufferSource();
-        source.buffer = decoded;
-        source.connect(context.destination);
-        source.start();
-        return;
-      } catch {
-        // Fallback to element playback.
-      }
-    }
-
-    const blob = new Blob([bytes], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.preload = 'auto';
-    activeAudioRef.current = audio;
-    audio.onended = () => URL.revokeObjectURL(url);
-    audio.onerror = () => URL.revokeObjectURL(url);
-    await audio.play();
-  };
+  const [voiceAutofillBusy, setVoiceAutofillBusy] = useState(false);
+  const [progressStages, setProgressStages] = useState<DnaProgressStage[]>([
+    { id: 'intake', label: 'INTAKE SIGNALS', status: 'complete' },
+    { id: 'market', label: 'MARKET DATA', status: 'loading' },
+    { id: 'research', label: 'RESEARCH PASS', status: 'pending' },
+  ]);
+  const [voiceLaneChoice, setVoiceLaneChoice] = useState<PublicConfig['voice']['active_panel']>(
+    props.intakeConfig.voice_model === 'elevenlabs_conversational' && props.voiceConfig.elevenlabs_enabled
+      ? 'elevenlabs'
+      : props.voiceConfig.active_panel
+  );
 
   const prefs: ClientPreferences = useMemo(() => ({ pace, focus }), [pace, focus]);
-  const intakeFields = useMemo(
-    () =>
-      isFreeTier
-        ? SMART_START_FIELDS.filter((field) => FREE_TIER_SMART_START_FIELD_IDS.includes(field.id))
-        : SMART_START_FIELDS,
-    [isFreeTier]
-  );
-  const fieldsBySection = useMemo(() => {
-    const grouped: Record<string, SmartStartField[]> = {};
-    for (const field of intakeFields) {
-      if (!grouped[field.section]) grouped[field.section] = [];
-      grouped[field.section].push(field);
+  const fieldOptions = useMemo(() => {
+    const map = new Map<string, string[]>();
+    SMART_START_FIELDS.forEach((field) => {
+      map.set(field.id, field.options ?? []);
+    });
+    return map;
+  }, []);
+  const freeTierFieldSet = useMemo(() => new Set(FREE_TIER_SMART_START_FIELD_IDS), []);
+
+  useEffect(() => {
+    setVoiceLaneChoice(
+      props.intakeConfig.voice_model === 'elevenlabs_conversational' && props.voiceConfig.elevenlabs_enabled
+        ? 'elevenlabs'
+        : props.voiceConfig.active_panel
+    );
+  }, [props.intakeConfig.voice_model, props.voiceConfig.active_panel, props.voiceConfig.elevenlabs_enabled]);
+
+  useEffect(() => {
+    if (step !== 'plating') {
+      setProgressStages([
+        { id: 'intake', label: 'INTAKE SIGNALS', status: 'complete' },
+        { id: 'market', label: 'MARKET DATA', status: 'loading' },
+        { id: 'research', label: 'RESEARCH PASS', status: 'pending' },
+      ]);
+      return;
     }
-    return Object.entries(grouped);
-  }, [intakeFields]);
+    const first = window.setTimeout(() => {
+      setProgressStages([
+        { id: 'intake', label: 'INTAKE SIGNALS', status: 'complete' },
+        { id: 'market', label: 'MARKET DATA', status: 'complete' },
+        { id: 'research', label: 'RESEARCH PASS', status: 'loading' },
+      ]);
+    }, 850);
+    const second = window.setTimeout(() => {
+      setProgressStages([
+        { id: 'intake', label: 'INTAKE SIGNALS', status: 'complete' },
+        { id: 'market', label: 'MARKET DATA', status: 'complete' },
+        { id: 'research', label: 'RESEARCH PASS', status: 'complete' },
+      ]);
+    }, 1750);
+    return () => {
+      window.clearTimeout(first);
+      window.clearTimeout(second);
+    };
+  }, [step]);
+
+  const hasAutofillSource = useMemo(
+    () => Boolean(props.client?.intake?.answers || props.client?.demo_profile),
+    [props.client?.demo_profile, props.client?.intake?.answers]
+  );
 
   const readText = (id: string) => (typeof answers[id] === 'string' ? (answers[id] as string) : '');
   const readList = (id: string) => (Array.isArray(answers[id]) ? (answers[id] as string[]) : []);
   const readBool = (id: string) => answers[id] === true;
-  const setText = (id: string, value: string) => setAnswers((prev) => ({ ...prev, [id]: value }));
-  const setBool = (id: string, value: boolean) => setAnswers((prev) => ({ ...prev, [id]: value }));
-  const setSingle = (id: string, value: string) => setAnswers((prev) => ({ ...prev, [id]: value }));
-  const toggleMulti = (id: string, value: string) =>
-    setAnswers((prev) => {
-      const existing = Array.isArray(prev[id]) ? (prev[id] as string[]) : [];
-      const next = existing.includes(value)
-        ? existing.filter((entry) => entry !== value)
-        : [...existing, value];
-      return { ...prev, [id]: next };
-    });
+  const voiceFieldSet = useMemo(
+    () => new Set(Array.isArray(answers.voice_extracted_fields) ? answers.voice_extracted_fields : []),
+    [answers.voice_extracted_fields]
+  );
+  const isFieldAvailable = (id: string) => !isFreeTier || freeTierFieldSet.has(id);
+
+  const setValue = (id: string, value: IntakeAnswerValue) =>
+    setAnswers((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+
+  const setText = (id: string, value: string) => setValue(id, value);
+  const setList = (id: string, value: string[]) => setValue(id, value);
+  const toggleList = (id: string, value: string) => {
+    const existing = readList(id);
+    setList(id, existing.includes(value) ? existing.filter((entry) => entry !== value) : [...existing, value]);
+  };
 
   const buildProfileAutofillState = () => {
     const seededAnswers = props.client?.intake?.answers ?? {};
@@ -184,173 +357,91 @@ export function IntakeFlow(props: {
     };
   };
 
-  const applyProfileAutofill = (nextStep?: Step) => {
+  const mergeOnlyEmptyAnswers = (base: IntakeAnswers, incoming: IntakeAnswers) => {
+    const next: IntakeAnswers = { ...base };
+    Object.entries(incoming).forEach(([key, value]) => {
+      if (!isValueFilled(base[key])) {
+        next[key] = value;
+      }
+    });
+    return next;
+  };
+
+  const applyProfileAutofill = (nextStep?: Step, onlyEmpty = false) => {
     const next = buildProfileAutofillState();
     setIntent(next.nextIntent);
     setPace(next.nextPace);
     setFocus(next.nextFocus);
-    setAnswers(next.nextAnswers);
+    setAnswers((prev) => (onlyEmpty ? mergeOnlyEmptyAnswers(prev, next.nextAnswers) : next.nextAnswers));
     setError(null);
     if (nextStep) setStep(nextStep);
   };
 
-  const renderSmartStartField = (field: SmartStartField) => {
-    if (field.type === 'text') {
-      return (
-        <input
-          value={readText(field.id)}
-          onChange={(e) => setText(field.id, e.target.value)}
-          placeholder={field.placeholder ?? ''}
-          className="w-full border-b border-black/10 focus-border-brand-teal outline-none py-2 text-sm bg-transparent"
-        />
-      );
-    }
+  const mergeVoiceExtractedFields = (extractedAnswers: IntakeAnswers, sessionId?: string, completed = true) => {
+    setAnswers((prev) => {
+      const merged: IntakeAnswers = { ...prev };
+      const appliedFields: string[] = Array.isArray(prev.voice_extracted_fields) ? [...prev.voice_extracted_fields] : [];
 
-    if (field.type === 'textarea') {
-      return (
-        <textarea
-          value={readText(field.id)}
-          onChange={(e) => setText(field.id, e.target.value)}
-          placeholder={field.placeholder ?? ''}
-          className="w-full min-h-24 border border-black/10 focus-border-brand-teal outline-none p-3 text-sm leading-relaxed bg-white"
-        />
-      );
-    }
+      Object.entries(extractedAnswers).forEach(([key, value]) => {
+        if (!isValueFilled(prev[key])) {
+          merged[key] = value;
+          appliedFields.push(key);
+        }
+      });
 
-    if (field.type === 'select') {
-      return (
-        <select
-          value={readText(field.id)}
-          onChange={(e) => setSingle(field.id, e.target.value)}
-          className="w-full border-b border-black/10 focus-border-brand-teal outline-none py-2 text-sm bg-transparent"
-        >
-          <option value="">Select…</option>
-          {(field.options ?? []).map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      );
-    }
+      merged.voice_session_id = sessionId || readText('voice_session_id');
+      merged.voice_session_completed = completed;
+      merged.voice_extracted_fields = dedupeStrings(appliedFields);
 
-    if (field.type === 'checkbox') {
-      return (
-        <label className="flex items-center gap-3 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={readBool(field.id)}
-            onChange={(e) => setBool(field.id, e.target.checked)}
-          />
-          <span>Yes</span>
-        </label>
-      );
-    }
+      if (!isValueFilled(prev.current_or_target_salary) && typeof merged.comp_range === 'string' && merged.comp_range) {
+        merged.current_or_target_salary = merged.comp_range;
+        merged.salary_range = merged.comp_range;
+      }
+      if (!isValueFilled(prev.current_or_target_job_title) && typeof merged.target_title === 'string' && merged.target_title) {
+        merged.current_or_target_job_title = merged.target_title;
+      }
+      if (!isValueFilled(prev.enterprise_context) && Array.isArray(merged.enterprise_ai_context)) {
+        merged.enterprise_context = merged.enterprise_ai_context;
+      }
 
-    if (field.type === 'radio') {
-      return (
-        <div className="flex flex-wrap gap-2">
-          {(field.options ?? []).map((option) => {
-            const active = readText(field.id) === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSingle(field.id, option)}
-                className={`px-3 py-2 text-[11px] uppercase tracking-[0.16em] border transition-colors ${
-                  active ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 hover-border-brand-teal'
-                }`}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {(field.options ?? []).map((option) => {
-          const active = readList(field.id).includes(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => toggleMulti(field.id, option)}
-              className={`px-3 py-2 text-[11px] uppercase tracking-[0.16em] border transition-colors ${
-                active ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 hover-border-brand-teal'
-              }`}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
-    );
+      return merged;
+    });
   };
 
-  const buildVoiceScript = () => {
-    const currentTitle = readText('current_title') || readText('current_or_target_job_title') || 'your current role';
-    const industry = readText('industry') || 'your target industry';
-    const target = readText('target') || readText('current_or_target_job_title') || 'your next role';
-    const suiteFeel = readText('suite_feel') || 'STRATEGIC';
-
-    if (step === 'intent') {
-      return `Welcome. We are here to shape your suite around what matters most to you right now. Choose your direction, and we will build your Brief, Your Suite Distilled, and your 72-hour momentum plan.`;
-    }
-    if (step === 'concierge') {
-      return `Current snapshot: role ${currentTitle}, industry ${industry}, target direction ${target}. Preferred suite feel is ${suiteFeel}. We are building your professional DNA, not collecting generic form data.`;
-    }
-    if (step === 'questions') {
-      return `Complete Smart Start Intake with concise specifics. This single intake powers readiness routing and ConciergeJobSearch execution.`;
-    }
-    if (step === 'prefs') {
-      return `Final tuning before generation. Confirm pace and focus so your outputs land with the right rhythm and decision framing.`;
-    }
-    return `Preparing your suite.`;
-  };
-
-  const playConciergeVoice = async () => {
-    setVoiceBusy(true);
+  const handleVoiceSessionComplete = async (payload: { transcript: string; sessionId?: string; completed: boolean }) => {
+    setVoiceSessionState(payload.completed ? 'completed' : 'idle');
     setVoiceError(null);
+    if (!props.intakeConfig.voice_to_form_autofill) {
+      setAnswers((prev) => ({
+        ...prev,
+        voice_session_id: payload.sessionId || '',
+        voice_session_completed: payload.completed,
+      }));
+      return;
+    }
+
+    setVoiceAutofillBusy(true);
     try {
-      await ensurePreviewAudioUnlocked();
-      const response = await synthesizeConciergeVoice(buildVoiceScript());
-      setLastVoiceProvider(response.provider);
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
-      await playVoiceResponse(response.mime_type || 'audio/wav', response.audio_base64);
-    } catch (e: any) {
-      const message = String(e?.message ?? '');
-      if (
-        e?.name === 'NotAllowedError' ||
-        message.toLowerCase().includes('user agent') ||
-        message.toLowerCase().includes('permission')
-      ) {
-        setVoiceError('This device blocked audio playback. Tap the preview button once more to allow sound.');
-      } else {
-        setVoiceError(message || 'Voice playback failed.');
-      }
+      const extraction = await extractIntakeFromTranscript(payload.transcript, answers);
+      mergeVoiceExtractedFields(extraction.extracted as IntakeAnswers, payload.sessionId, payload.completed);
+    } catch (extractionError: any) {
+      setVoiceError(extractionError?.message ?? 'Unable to structure the voice session into intake fields.');
     } finally {
-      setVoiceBusy(false);
+      setVoiceAutofillBusy(false);
     }
   };
 
   const submitWithPayload = async (
     nextIntent: ClientIntent,
     nextPreferences: ClientPreferences,
-    nextAnswers: IntakeAnswers
+    rawAnswers: IntakeAnswers
   ) => {
     setBusy(true);
     setError(null);
     try {
+      const nextAnswers = normalizeAnswersForSubmission(nextIntent, rawAnswers);
       const intakePayload = { intent: nextIntent, preferences: nextPreferences, answers: nextAnswers };
       await saveIntake(props.uid, intakePayload);
-
-      // Generate artifacts (stubbed for now; LLM swap is Phase 1).
       setStep('plating');
 
       if (isFreeTier) {
@@ -372,8 +463,6 @@ export function IntakeFlow(props: {
         return;
       }
 
-      // Preferred path: Cloud Run API (stub now, LLM later).
-      // Fallback: local stub generator if API isn't configured yet.
       let brief: any, plan: any, profile: any, aiProfile: any, gaps: any;
       try {
         const artifacts = await generateSuiteArtifacts({
@@ -396,31 +485,21 @@ export function IntakeFlow(props: {
 
       await Promise.all([
         upsertArtifact(props.uid, 'brief', 'The Brief', brief),
-        upsertArtifact(
-          props.uid,
-          'suite_distilled',
-          'Your Suite, Distilled',
-          generateSuiteDistilledDoc(brief, nextAnswers)
-        ),
+        upsertArtifact(props.uid, 'suite_distilled', 'Your Suite, Distilled', generateSuiteDistilledDoc(brief, nextAnswers)),
         upsertArtifact(props.uid, 'plan', 'Your Plan', plan),
         upsertArtifact(props.uid, 'profile', 'Your Profile', profile),
         upsertArtifact(props.uid, 'ai_profile', 'Your AI Profile', aiProfile),
         upsertArtifact(props.uid, 'gaps', 'Your Gaps', gaps),
         upsertArtifact(props.uid, 'readiness', 'AI Readiness Assessment', generateReadinessDoc(nextAnswers)),
-        upsertArtifact(
-          props.uid,
-          'cjs_execution',
-          'ConciergeJobSearch Execution',
-          generateCjsExecutionDoc(nextAnswers, nextIntent)
-        ),
+        upsertArtifact(props.uid, 'cjs_execution', 'ConciergeJobSearch Execution', generateCjsExecutionDoc(nextAnswers, nextIntent)),
       ]);
 
       setStep('done');
       const nextModuleId: SuiteModuleId = nextIntent === 'not_sure' ? 'my_concierge' : 'brief';
       props.onComplete(nextModuleId, intakePayload);
-    } catch (e: any) {
-      setError(e?.message ?? 'Unable to complete intake.');
-      setStep('prefs');
+    } catch (submitError: any) {
+      setError(submitError?.message ?? 'Unable to complete intake.');
+      setStep('screen_4');
     } finally {
       setBusy(false);
     }
@@ -438,339 +517,618 @@ export function IntakeFlow(props: {
     await submitWithPayload(next.nextIntent, nextPreferences, next.nextAnswers);
   };
 
-  return (
-    <div className="space-y-10 max-w-[860px]">
-      <div>
-        <div className="text-xs font-mono uppercase tracking-widest text-brand-teal mb-3">Smart Start Intake</div>
-        <h2 className="text-3xl md:text-4xl font-editorial leading-tight">A concierge conversation, tailored to you.</h2>
-        <p className="text-sm text-gray-600 leading-relaxed mt-4 max-w-2xl">
-          No tests and no scripts. We start by understanding your context so your suite is useful from the first move.
-        </p>
-      </div>
-
-      {props.isAdminUser ? (
-        <div className="border border-brand-teal/20 bg-[#eef9f8] p-4 md:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">Operator speed run</div>
-              <div className="mt-2 text-sm leading-6 text-[#0d5b59]">
-                Use seeded profile context to prefill intake and jump straight into suite preparation.
-              </div>
+  const renderVoiceRail = props.intakeConfig.voice_agent_enabled === false ? null : (
+    <section className={darkCardClass}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <div className="font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[var(--intake-teal)]">
+              Immersive Play Rail
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => applyProfileAutofill('questions')}
-                className="border border-brand-teal/25 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-brand-teal"
-              >
-                Autofill intake
-              </button>
-              <button
-                type="button"
-                onClick={() => applyProfileAutofill('prefs')}
-                className="btn-brand px-4 py-3 text-[10px] uppercase tracking-[0.22em]"
-              >
-                Autofill + jump
-              </button>
-              <button
-                type="button"
-                onClick={speedRunProfileSubmit}
-                disabled={busy}
-                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 disabled:opacity-50"
-              >
-                {busy ? 'Preparing…' : 'Autofill + prepare suite'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {error && (
-        <div className="border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-      <div className="border border-black/10 bg-brand-soft p-4 md:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">Immersive Play Rail</div>
-            <div className="text-sm text-gray-700 mt-2">
+            <div className="mt-3 font-intake-body text-base italic leading-relaxed text-[#F5F2EA]">
               Start with voice to set tone, then move into the live studio scrollytelling flow.
             </div>
           </div>
           <button
             type="button"
-            onClick={playConciergeVoice}
-            disabled={voiceBusy || step === 'plating'}
-            className="px-4 py-2 btn-brand text-[10px] uppercase tracking-[0.22em] transition-colors disabled:opacity-50"
+            onClick={() => setVoicePanelOpen((prev) => !prev)}
+            className={primaryButtonClass}
           >
-            {voiceBusy ? 'Scoring cinematic preview…' : 'Play Concierge Preview'}
+            {voiceSessionState === 'connected' ? 'Voice Channel Active' : 'Begin Voice Intake'}
           </button>
         </div>
-        <div className="mt-3 text-[10px] uppercase tracking-[0.2em] text-gray-500">
-          {lastVoiceProvider ? `${lastVoiceProvider} route active` : 'Voice route ready'}
+
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center">
+            <span
+              className={`mr-2 inline-block h-2 w-2 rounded-full bg-[var(--intake-teal)] ${
+                voiceSessionState === 'connected' ? '' : 'animate-pulse'
+              }`}
+            />
+            <span className="font-intake-mono text-[9px] uppercase tracking-[0.14em] text-[var(--intake-teal)]">
+              {voiceSessionState === 'connected' ? 'Live' : 'Standby'}
+            </span>
+          </div>
+          <div className="font-intake-mono text-[9px] uppercase tracking-[0.14em] text-[#AEADA0]">
+            {voiceAutofillBusy
+              ? 'Structuring transcript'
+              : voiceFieldSet.size > 0
+                ? `${voiceFieldSet.size} fields from voice`
+                : 'Voice channel ready'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--intake-border-dark)] bg-[var(--intake-dark-mid)] p-5">
+          <div className="font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[var(--intake-teal)]">
+            Conversation Memory
+          </div>
+          <div className="mt-3 font-intake-body text-base leading-relaxed text-[#AEADA0]">
+            Your answers are being structured in real time.
+          </div>
+        </div>
+
+        {voiceError ? (
+          <div className="border border-[var(--intake-border-dark)] bg-[#2E2018] px-4 py-3 font-intake-body text-sm leading-relaxed text-[#F5D7C1]">
+            {voiceError}
+          </div>
+        ) : null}
+
+        {voicePanelOpen ? (
+          <div className="pt-2">
+            {props.voiceConfig.elevenlabs_enabled ? (
+              <div className="mb-4 flex flex-wrap gap-3">
+                {[
+                  { id: 'gemini_live', label: 'Gemini Live' },
+                  { id: 'elevenlabs', label: 'ElevenLabs' },
+                ].map((option) => {
+                  const active = voiceLaneChoice === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setVoiceLaneChoice(option.id as PublicConfig['voice']['active_panel'])}
+                      className={`border px-3 py-2 font-intake-mono text-[9px] uppercase tracking-[0.14em] transition-colors ${
+                        active
+                          ? 'border-t-2 border-[var(--intake-teal)] bg-[var(--intake-teal-bg)] text-[var(--intake-teal-dim)]'
+                          : 'border-[var(--intake-border)] bg-white text-[#1B1E1C] hover:border-[var(--intake-teal)]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {props.voiceConfig.elevenlabs_enabled && voiceLaneChoice === 'elevenlabs' ? (
+              <ElevenLabsConvaiPanel agentId={props.voiceConfig.elevenlabs_agent_id} />
+            ) : (
+              <GeminiLivePanel
+                onStateChange={(state) => setVoiceSessionState(state)}
+                onSessionComplete={handleVoiceSessionComplete}
+                transcriptVisible={props.intakeConfig.voice_transcription_visible}
+              />
+            )}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+
+  const renderOperatorSpeedRun =
+    props.isAdminUser ? (
+      <section className="border border-[var(--intake-border)] bg-[#E0F0ED] p-5 md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="max-w-2xl">
+            <div className={labelClass}>Operator Speed Run</div>
+            <div className="mt-3 font-intake-body text-base leading-relaxed text-[var(--intake-teal-dim)]">
+              Use seeded profile context to prefill intake and jump straight into suite preparation.
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => applyProfileAutofill('screen_2')} className={secondaryButtonClass}>
+              Autofill intake
+            </button>
+            <button type="button" onClick={() => applyProfileAutofill('screen_4')} className={primaryButtonClass}>
+              Autofill + jump
+            </button>
+            <button type="button" onClick={speedRunProfileSubmit} disabled={busy} className={secondaryButtonClass}>
+              {busy ? 'Preparing...' : 'Autofill + prepare suite'}
+            </button>
+          </div>
+        </div>
+      </section>
+    ) : null;
+
+  const renderScreenOne = () => (
+    <section className="space-y-6">
+      <div className={cardClass}>
+        <div className={labelClass}>Screen 01 · Positioning</div>
+        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+          {titleFromIntent(intent)}
+        </h2>
+        <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
+          Users should know their numbers before they know their narrative. Start with direction, target outcomes, and the compensation frame.
         </div>
       </div>
-      {voiceError && (
-        <div className="border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-700">
-          {voiceError}
-        </div>
-      )}
 
-      {step === 'intent' && (
-        <div className="space-y-4">
-          <div className="text-[10px] uppercase tracking-widest text-gray-500">What are we optimizing for right now?</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {CLIENT_INTENTS.map((i) => {
-              const label =
-                i === 'current_role'
-                  ? 'Stay sharp in my current role'
-                  : i === 'target_role'
-                  ? 'Move into a specific next role'
-                  : 'I’m not sure yet; help me design a direction';
-              const active = intent === i;
-              return (
-                <button
-                  key={i}
-                  onClick={() => setIntent(i)}
-                  className={`text-left p-5 border transition-all dur-md ease-exit ${
-                    active ? 'border-brand-teal bg-brand-soft' : 'border-black/10 hover-border-brand-teal'
-                  }`}
-                >
-                  <div className="text-xs uppercase tracking-widest opacity-60 mb-2">Intent</div>
-                  <div className="text-lg font-editorial italic leading-tight">{label}</div>
-                </button>
-              );
-            })}
-          </div>
-          <div className="pt-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {props.isAdminUser ? (
-                <button
-                  type="button"
-                  onClick={() => applyProfileAutofill(isFreeTier ? 'questions' : 'concierge')}
-                  className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60"
-                >
-                  Use profile defaults
-                </button>
-              ) : null}
-              <button
-                onClick={() => setStep(isFreeTier ? 'questions' : 'concierge')}
-                className="px-5 py-3 btn-brand text-xs uppercase tracking-[0.25em] transition-colors"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {step === 'concierge' && (
-        <div className="space-y-8">
-          <GeminiLivePanel />
-          <section className="border border-black/10 p-5 bg-gray-50 space-y-4">
-            <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">Conversation Flow</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs text-gray-700">
-                  What industries are you currently working in? What are you doing right now? Where do you need the most help?
-                </label>
-                <textarea
-                  value={readText('conversation_current_reality')}
-                  onChange={(e) => setText('conversation_current_reality', e.target.value)}
-                  placeholder="Constraints, timelines, competing priorities."
-                  className="w-full min-h-28 border border-black/10 focus-border-brand-teal outline-none p-3 text-sm leading-relaxed bg-white"
-                />
+      <div className="grid gap-3 md:grid-cols-3">
+        {CLIENT_INTENTS.map((option) => {
+          const active = option === intent;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setIntent(option)}
+              className={`group border p-6 text-left transition-colors ${
+                active
+                  ? 'border-t-2 border-[var(--intake-teal)] bg-[var(--intake-teal-bg)]'
+                  : 'border-[var(--intake-border)] bg-white hover:border-[var(--intake-teal)]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="font-intake-mono text-[8px] uppercase tracking-[0.14em] text-[var(--intake-muted)]">Intent</div>
+                <span className="font-intake-mono text-sm text-[var(--intake-teal)] opacity-0 transition-opacity group-hover:opacity-100">
+                  →
+                </span>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs text-gray-700">How should this feel?</label>
-                <div className="flex flex-wrap gap-2">
-                  {SUITE_FEEL_OPTIONS.map((option) => {
-                    const active = readText('suite_feel') === option;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setSingle('suite_feel', option)}
-                        className={`px-3 py-2 text-[11px] uppercase tracking-[0.16em] border transition-colors ${
-                          active
-                            ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                            : 'border-black/10 hover-border-brand-teal'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="mt-4 font-intake-body text-base italic leading-relaxed text-[#1B1E1C]">
+                {INTENT_COPY[option].label}
               </div>
-              <div className="md:col-span-2 border border-black/5 bg-white p-4">
-                <div className="text-[10px] uppercase tracking-widest opacity-50 mb-2">Suite Preview</div>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  Preparing your suite with three pillars: <strong>Your Profile</strong>,{' '}
-                  <strong>Your AI Profile</strong>, and <strong>Your Gaps</strong>. This confirms the agent is
-                  building, not just collecting.
-                </p>
+              <div className="mt-4 font-intake-body text-sm leading-relaxed text-[var(--intake-muted)]">
+                {INTENT_COPY[option].description}
               </div>
-            </div>
-          </section>
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={() => setStep('intent')}
-              className="text-xs uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity"
-            >
-              Back
             </button>
-            <button
-              onClick={() => setStep('questions')}
-              className="px-5 py-3 btn-brand text-xs uppercase tracking-[0.25em] transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
 
-      {step === 'questions' && (
-        <div className="space-y-6">
-          <div className="text-[10px] uppercase tracking-widest text-gray-500">Smart Start intake blueprint</div>
-          {isFreeTier && (
-            <div className="border border-brand-teal/25 bg-brand-soft p-4 text-sm text-gray-700">
-              Free foundation intake: short path focused on foundational interests and readiness routing.
-            </div>
-          )}
-          <div className="space-y-8">
-            {fieldsBySection.map(([section, fields]) => (
-              <section key={section} className="border border-black/10 p-5 space-y-4 bg-gray-50">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">{section}</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {fields.map((field) => (
-                    <div
-                      key={field.id}
-                      className={`flex flex-col gap-2 ${field.type === 'textarea' || field.type === 'multiselect' ? 'md:col-span-2' : ''}`}
-                    >
-                      <label className="text-xs text-gray-700">{field.label}</label>
-                      {renderSmartStartField(field)}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={() => setStep(isFreeTier ? 'intent' : 'concierge')}
-              className="text-xs uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity"
-            >
-              Back
-            </button>
-            {props.isAdminUser ? (
-              <button
-                type="button"
-                onClick={() => applyProfileAutofill('prefs')}
-                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60"
-              >
-                Autofill remainder
-              </button>
-            ) : null}
-            <button
-              onClick={() => setStep('prefs')}
-              className="px-5 py-3 btn-brand text-xs uppercase tracking-[0.25em] transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
+      <div className={`${cardClass} grid gap-6 md:grid-cols-2`}>
+        {isFieldAvailable('outcomes_goals') ? (
+          <FieldShell
+            label="Primary outcome goals"
+            fieldId="outcomes_goals"
+            voiceFilled={voiceFieldSet.has('outcomes_goals')}
+            wide
+          >
+            <ChipGroup
+              options={(fieldOptions.get('outcomes_goals') ?? []).map((value) => ({ label: value, value }))}
+              selected={readList('outcomes_goals')}
+              onToggle={(value) => toggleList('outcomes_goals', value)}
+              multi
+            />
+          </FieldShell>
+        ) : null}
 
-      {step === 'prefs' && (
-        <div className="space-y-8">
+        {isFieldAvailable('target_compensation_level') ? (
+          <FieldShell
+            label="Target compensation level"
+            fieldId="target_compensation_level"
+            voiceFilled={voiceFieldSet.has('target_compensation_level') || voiceFieldSet.has('comp_level')}
+          >
+            <select
+              value={readText('target_compensation_level')}
+              onChange={(event) => setText('target_compensation_level', event.target.value)}
+              className={inputBaseClass}
+            >
+              <option value="">Select...</option>
+              {(fieldOptions.get('target_compensation_level') ?? []).map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('current_or_target_job_title') ? (
+          <FieldShell
+            label="Current or target job title"
+            fieldId="current_or_target_job_title"
+            voiceFilled={voiceFieldSet.has('current_or_target_job_title') || voiceFieldSet.has('target_title')}
+          >
+            <input
+              value={readText('current_or_target_job_title')}
+              onChange={(event) => setText('current_or_target_job_title', event.target.value)}
+              placeholder="e.g., Program Manager"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('current_or_target_salary') ? (
+          <FieldShell
+            label="Current or target salary range"
+            fieldId="current_or_target_salary"
+            voiceFilled={voiceFieldSet.has('current_or_target_salary') || voiceFieldSet.has('comp_range')}
+          >
+            <input
+              value={readText('current_or_target_salary')}
+              onChange={(event) => setText('current_or_target_salary', event.target.value)}
+              placeholder="e.g., $120k-$160k"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        <FieldShell label="Benefits at or near review" fieldId="benefits_timing" voiceFilled={voiceFieldSet.has('benefits_timing')} wide>
+          <ChipGroup
+            options={BENEFITS_OPTIONS.map((option) => ({ label: option.label, value: option.value }))}
+            selected={[readText('benefits_timing') || 'NOT_YET']}
+            onToggle={(value) => {
+              setText('benefits_timing', value);
+              setValue('benefits_under_review', value !== 'NOT_YET');
+            }}
+          />
+        </FieldShell>
+      </div>
+    </section>
+  );
+
+  const renderScreenTwo = () => (
+    <section className="space-y-6">
+      <div className={cardClass}>
+        <div className={labelClass}>Screen 02 · Context</div>
+        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+          Where are you now?
+        </h2>
+        <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
+          Capture the current operating environment, the AI context around the role, and the actual job signal you want us to calibrate against.
+        </div>
+      </div>
+
+      <div className={`${cardClass} grid gap-6 md:grid-cols-2`}>
+        {isFieldAvailable('current_title') ? (
+          <FieldShell label="Current title" fieldId="current_title" voiceFilled={voiceFieldSet.has('current_title')}>
+            <input
+              value={readText('current_title')}
+              onChange={(event) => setText('current_title', event.target.value)}
+              placeholder="e.g., Executive Assistant"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('industry') ? (
+          <FieldShell label="Industry" fieldId="industry" voiceFilled={voiceFieldSet.has('industry')}>
+            <input
+              value={readText('industry')}
+              onChange={(event) => setText('industry', event.target.value)}
+              placeholder="e.g., Healthcare, SaaS, Public sector"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('ai_usage_frequency') ? (
+          <FieldShell label="AI usage frequency" fieldId="ai_usage_frequency" voiceFilled={voiceFieldSet.has('ai_usage_frequency')} wide>
+            <ChipGroup
+              options={AI_USAGE_OPTIONS.map((option) => ({ label: option.label, value: option.value }))}
+              selected={readText('ai_usage_frequency') ? [readText('ai_usage_frequency')] : []}
+              onToggle={(value) => setText('ai_usage_frequency', value)}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('enterprise_context') ? (
+          <FieldShell
+            label="Enterprise AI context"
+            fieldId="enterprise_context"
+            voiceFilled={voiceFieldSet.has('enterprise_context') || voiceFieldSet.has('enterprise_ai_context')}
+            wide
+          >
+            <ChipGroup
+              options={(fieldOptions.get('enterprise_context') ?? []).map((value) => ({ label: value, value }))}
+              selected={readList('enterprise_context')}
+              onToggle={(value) => toggleList('enterprise_context', value)}
+              multi
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('job_description') ? (
+          <FieldShell
+            label="Paste your current or target job description"
+            fieldId="job_description"
+            voiceFilled={voiceFieldSet.has('job_description')}
+            helper="This is your most valuable input. Alignment and gap analysis depends on it."
+            wide
+          >
+            <textarea
+              value={readText('job_description')}
+              onChange={(event) => setText('job_description', event.target.value)}
+              placeholder="Paste the role, scope, requirements, and language the market is already using."
+              className={`${inputBaseClass} min-h-[220px] resize-y font-intake-body text-base leading-relaxed`}
+            />
+          </FieldShell>
+        ) : null}
+      </div>
+    </section>
+  );
+
+  const renderScreenThree = () => (
+    <section className="space-y-6">
+      <div className={cardClass}>
+        <div className={labelClass}>Screen 03 · Inputs</div>
+        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+          What are we working with?
+        </h2>
+        <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
+          This screen captures source material, interest clusters, and learning posture so the suite can respond like a living system, not a form response.
+        </div>
+      </div>
+
+      <div className={`${cardClass} grid gap-6 md:grid-cols-2`}>
+        {isFieldAvailable('resume_source') ? (
+          <FieldShell label="Resume link or upload reference" fieldId="resume_source" voiceFilled={voiceFieldSet.has('resume_source')}>
+            <input
+              value={readText('resume_source')}
+              onChange={(event) => setText('resume_source', event.target.value)}
+              placeholder="URL, file name, or notes"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('bio_alignment_requested') ? (
+          <FieldShell label="Run ALIGN MY BIO after upload" fieldId="bio_alignment_requested" voiceFilled={voiceFieldSet.has('bio_alignment_requested')}>
+            <ChipGroup
+              options={[
+                { label: 'Not now', value: 'false' },
+                { label: 'Run it', value: 'true' },
+              ]}
+              selected={[readBool('bio_alignment_requested') ? 'true' : 'false']}
+              onToggle={(value) => setValue('bio_alignment_requested', value === 'true')}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('foundational_interests') ? (
+          <FieldShell label="Foundational areas of interest" fieldId="foundational_interests" voiceFilled={voiceFieldSet.has('foundational_interests')} wide>
+            <ChipGroup
+              options={(fieldOptions.get('foundational_interests') ?? []).map((value) => ({ label: value, value }))}
+              selected={readList('foundational_interests')}
+              onToggle={(value) => toggleList('foundational_interests', value)}
+              multi
+            />
+          </FieldShell>
+        ) : null}
+
+        {!isFreeTier && isFieldAvailable('advanced_interests') ? (
+          <FieldShell label="Advanced areas of interest" fieldId="advanced_interests" voiceFilled={voiceFieldSet.has('advanced_interests')} wide>
+            <ChipGroup
+              options={(fieldOptions.get('advanced_interests') ?? []).map((value) => ({ label: value, value }))}
+              selected={readList('advanced_interests')}
+              onToggle={(value) => toggleList('advanced_interests', value)}
+              multi
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('learning_modalities') ? (
+          <FieldShell label="Learning modality preferences" fieldId="learning_modalities" voiceFilled={voiceFieldSet.has('learning_modalities')} wide>
+            <ChipGroup
+              options={(fieldOptions.get('learning_modalities') ?? []).map((value) => ({ label: value, value }))}
+              selected={readList('learning_modalities')}
+              onToggle={(value) => toggleList('learning_modalities', value)}
+              multi
+            />
+          </FieldShell>
+        ) : null}
+
+        <FieldShell label="Suite tone" fieldId="suite_feel" voiceFilled={voiceFieldSet.has('suite_feel') || voiceFieldSet.has('tone_preference')} wide>
+          <ChipGroup
+            options={SUITE_FEEL_OPTIONS.map((value) => ({ label: value, value }))}
+            selected={readText('suite_feel') ? [readText('suite_feel')] : []}
+            onToggle={(value) => setText('suite_feel', value)}
+          />
+        </FieldShell>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {ARTIFACT_PREVIEW.map((artifact) => (
+          <article key={artifact.label} className={cardClass}>
+            <div className="font-intake-mono text-xl text-[var(--intake-teal)]">{artifact.icon}</div>
+            <div className="mt-4 font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[var(--intake-muted)]">
+              {artifact.label}
+            </div>
+            <div className="mt-3 font-intake-body text-sm italic leading-relaxed text-[#1B1E1C]">
+              {artifact.promise}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+
+  const renderScreenFour = () => (
+    <section className="space-y-6">
+      <div className={cardClass}>
+        <div className={labelClass}>Screen 04 · Constraints</div>
+        <h2 className="mt-4 font-editorial text-4xl font-black leading-[0.94] tracking-tight text-[#1B1E1C] md:text-5xl">
+          What do we need to know?
+        </h2>
+        <div className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
+          This is the operating reality layer: direction, pressure pattern, momentum source, and the constraints the system needs to respect.
+        </div>
+      </div>
+
+      <div className={`${cardClass} grid gap-6 md:grid-cols-2`}>
+        {isFieldAvailable('target') ? (
+          <FieldShell label="If you had to pick a direction, what are you aiming at?" fieldId="target" voiceFilled={voiceFieldSet.has('target') || voiceFieldSet.has('direction_aim')}>
+            <input
+              value={readText('target')}
+              onChange={(event) => setText('target', event.target.value)}
+              placeholder="e.g., Program manager"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        <FieldShell label="Timeline urgency" fieldId="timeline_urgency" voiceFilled={voiceFieldSet.has('timeline_urgency')}>
+          <input
+            value={readText('timeline_urgency')}
+            onChange={(event) => setText('timeline_urgency', event.target.value)}
+            placeholder="e.g., 30 days, this quarter, immediate"
+            className={inputBaseClass}
+          />
+        </FieldShell>
+
+        {isFieldAvailable('pressure_breaks') ? (
+          <FieldShell label="Under pressure, what breaks first?" fieldId="pressure_breaks" voiceFilled={voiceFieldSet.has('pressure_breaks')}>
+            <input
+              value={readText('pressure_breaks')}
+              onChange={(event) => setText('pressure_breaks', event.target.value)}
+              placeholder="Time, clarity, confidence, energy"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('work_style') ? (
+          <FieldShell label="When you need momentum, what helps most?" fieldId="work_style" voiceFilled={voiceFieldSet.has('work_style') || voiceFieldSet.has('momentum_source')}>
+            <input
+              value={readText('work_style')}
+              onChange={(event) => setText('work_style', event.target.value)}
+              placeholder="A template, a blank page, a conversation"
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+
+        {isFieldAvailable('constraints') ? (
+          <FieldShell label="Constraints we should respect?" fieldId="constraints" voiceFilled={voiceFieldSet.has('constraints')} wide>
+            <input
+              value={readText('constraints')}
+              onChange={(event) => setText('constraints', event.target.value)}
+              placeholder="Time, location, salary, caregiving, etc."
+              className={inputBaseClass}
+            />
+          </FieldShell>
+        ) : null}
+      </div>
+
+      <div className={`${cardClass} grid gap-6 md:grid-cols-2`}>
+        <FieldShell label="Pace">
+          <ChipGroup
+            options={PACE_PREFS.map((value) => ({ label: value, value }))}
+            selected={[pace]}
+            onToggle={(value) => setPace(value as PacePreference)}
+          />
+        </FieldShell>
+
+        <FieldShell label="Focus">
+          <ChipGroup
+            options={FOCUS_PREFS.map((value) => ({ label: value, value }))}
+            selected={[focus]}
+            onToggle={(value) => setFocus(value as FocusPreference)}
+          />
+        </FieldShell>
+      </div>
+    </section>
+  );
+
+  const renderNavigation = () => {
+    const nextStep =
+      step === 'screen_1'
+        ? 'screen_2'
+        : step === 'screen_2'
+          ? 'screen_3'
+          : step === 'screen_3'
+            ? 'screen_4'
+            : null;
+    const previousStep =
+      step === 'screen_2'
+        ? 'screen_1'
+        : step === 'screen_3'
+          ? 'screen_2'
+          : step === 'screen_4'
+            ? 'screen_3'
+            : null;
+
+    if (!['screen_1', 'screen_2', 'screen_3', 'screen_4'].includes(step)) return null;
+
+    return (
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        {previousStep ? (
+          <button type="button" onClick={() => setStep(previousStep as Step)} className={secondaryButtonClass}>
+            Back
+          </button>
+        ) : null}
+
+        {step !== 'screen_1' && hasAutofillSource ? (
+          <button type="button" onClick={() => applyProfileAutofill(step as Step, true)} className={secondaryButtonClass}>
+            Autofill remainder
+          </button>
+        ) : null}
+
+        {nextStep ? (
+          <button type="button" onClick={() => setStep(nextStep as Step)} className={primaryButtonClass}>
+            Continue
+          </button>
+        ) : (
+          <button type="button" onClick={submit} disabled={busy || voiceAutofillBusy} className={primaryButtonClass}>
+            {busy ? 'Preparing...' : 'Prepare My Suite'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-[980px] space-y-8 bg-[var(--intake-bg)]" style={intakeTheme}>
+      <div className="border border-[var(--intake-border-dark)] bg-[var(--intake-dark)] px-5 py-4 text-white md:px-6">
+        <div className="font-intake-mono text-[9px] uppercase tracking-[0.18em] text-[#6BBFAF]">Professional DNA · Module 01/18</div>
+      </div>
+
+      <HeroVideoSection
+        visible={props.intakeConfig.hero_visible}
+        videoUrl={props.intakeConfig.hero_video_url}
+        videoTitle={props.intakeConfig.hero_video_title}
+        autoplayMuted={props.intakeConfig.hero_autoplay_muted}
+        loop={props.intakeConfig.hero_loop}
+        fallbackImageUrl={props.intakeConfig.hero_fallback_image_url}
+      />
+
+      <section className="space-y-4">
+        <div className={labelClass}>Smart Start Intake</div>
+        <h1 className="font-editorial text-5xl font-black tracking-tight text-[#1B1E1C]">A concierge conversation, tailored to you.</h1>
+        <p className="max-w-3xl font-intake-body text-xl leading-relaxed text-[var(--intake-muted)]">
+          No tests. No quiz energy. This is a serious intake that turns context into signal before we prepare the suite.
+        </p>
+      </section>
+
+      {renderVoiceRail}
+      {renderOperatorSpeedRun}
+
+      {error ? (
+        <div className="border border-[#C9853A] bg-[#F4E8DA] px-4 py-3 font-intake-body text-base leading-relaxed text-[#6E4318]">
+          {error}
+        </div>
+      ) : null}
+
+      {step === 'screen_1' ? renderScreenOne() : null}
+      {step === 'screen_2' ? renderScreenTwo() : null}
+      {step === 'screen_3' ? renderScreenThree() : null}
+      {step === 'screen_4' ? renderScreenFour() : null}
+
+      {renderNavigation()}
+
+      {step === 'plating' ? (
+        <section className="space-y-6 border border-[var(--intake-border)] bg-[var(--intake-cream)] p-5 md:p-6">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-3">Preferences</div>
-            <div className="text-xl font-editorial italic">How should this feel?</div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="text-[10px] uppercase tracking-widest text-gray-500">Pace</div>
-              <div className="flex gap-2 flex-wrap">
-                {PACE_PREFS.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPace(p)}
-                    className={`px-4 py-2 text-xs uppercase tracking-widest border transition-all dur-sm ease-exit ${
-                      pace === p ? 'bg-brand-soft text-brand-teal border-brand-teal' : 'border-black/10 hover-border-brand-teal'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
+            <div className={labelClass}>Preparing your suite</div>
+            <div className="mt-4 font-editorial text-4xl font-black leading-[0.96] tracking-tight text-[#1B1E1C]">
+              We are preparing your suite now.
             </div>
-
-            <div className="space-y-3">
-              <div className="text-[10px] uppercase tracking-widest text-gray-500">Focus</div>
-              <div className="flex gap-2 flex-wrap">
-                {FOCUS_PREFS.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFocus(f)}
-                    className={`px-4 py-2 text-xs uppercase tracking-widest border transition-all dur-sm ease-exit ${
-                      focus === f ? 'bg-brand-soft text-brand-teal border-brand-teal' : 'border-black/10 hover-border-brand-teal'
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="mt-4 max-w-3xl font-intake-body text-lg leading-relaxed text-[var(--intake-muted)]">
+              This is the intentional pause. Intake signals, market framing, and the research pass are being assembled into your Brief, Profile, and Plan.
+            </p>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={() => setStep('questions')}
-              className="text-xs uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity"
-            >
-              Back
-            </button>
-            {props.isAdminUser ? (
-              <button
-                type="button"
-                onClick={() => applyProfileAutofill('prefs')}
-                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60"
-              >
-                Refresh from profile
-              </button>
-            ) : null}
-            <button
-              onClick={submit}
-              disabled={busy}
-              className="px-5 py-3 btn-brand text-xs uppercase tracking-[0.25em] transition-colors disabled:opacity-60"
-            >
-              {busy ? 'Preparing…' : 'Prepare My Suite'}
-            </button>
-          </div>
-
-        </div>
-      )}
-
-      {step === 'plating' && (
-        <div className="pt-6">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-teal animate-pulse">Plating</div>
-          <div className="mt-3 text-2xl font-editorial italic">Preparing your suite…</div>
-          <p className="text-sm text-gray-600 leading-relaxed mt-3 max-w-xl">
-            This is the intentional pause. We are assembling your Brief, your Plan, and your supporting documents.
-          </p>
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {['Your Profile', 'Your AI Profile', 'Your Gaps'].map((x) => (
-              <div key={x} className="border border-black/5 bg-gray-50 p-4">
-                <div className="text-[9px] uppercase tracking-widest opacity-50 mb-2">In progress</div>
-                <div className="font-editorial italic text-lg">{x}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          <DNAProgressIndicator stages={progressStages} />
+        </section>
+      ) : null}
     </div>
   );
 }

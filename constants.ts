@@ -48,9 +48,9 @@ export const SMART_START_FIELDS: SmartStartField[] = [
   {
     id: 'current_or_target_salary',
     section: 'Compensation & Role',
-    label: 'Current or target salary',
+    label: 'Current or target salary range',
     type: 'text',
-    placeholder: 'e.g., $145,000',
+    placeholder: 'e.g., $120k-$160k',
   },
   {
     id: 'benefits_under_review',
@@ -77,7 +77,7 @@ export const SMART_START_FIELDS: SmartStartField[] = [
     section: 'Job Description',
     label: 'Paste your current or target job description',
     type: 'textarea',
-    placeholder: 'Optional, but highly recommended for alignment and gap calibration.',
+    placeholder: 'This is your most valuable input. Alignment and gap analysis depends on it.',
   },
   {
     id: 'resume_source',

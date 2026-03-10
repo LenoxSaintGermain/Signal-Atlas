@@ -8,11 +8,14 @@ import {
   CONCIERGE_ROM_SYSTEM,
   DNA_RESEARCH_ENRICHMENT_SCHEMA,
   EPISODE_SCHEMA,
+  INTAKE_EXTRACTION_SCHEMA,
+  LIVE_INTAKE_VOICE_ARC,
   ROM_VERSION,
   SUITE_ARTIFACTS_SCHEMA,
   composeBingePrompt,
   composeBingeSystemInstruction,
   composeDnaResearchPrompt,
+  composeIntakeExtractionPrompt,
   composeSuitePrompt,
   findToneViolations,
 } from './prompts/conciergeRom.js';
@@ -88,11 +91,38 @@ app.get('/v1/public/config', async (_req, res) => {
       operations: {
         cjs_enabled: config.operations.cjs_enabled,
       },
+      professional_dna: {
+        hero_video_url: config.professional_dna?.hero_video_url || '',
+        hero_video_title: config.professional_dna?.hero_video_title || '',
+        hero_autoplay_muted:
+          typeof config.professional_dna?.hero_autoplay_muted === 'boolean'
+            ? config.professional_dna.hero_autoplay_muted
+            : true,
+        hero_loop:
+          typeof config.professional_dna?.hero_loop === 'boolean' ? config.professional_dna.hero_loop : true,
+        hero_fallback_image_url: config.professional_dna?.hero_fallback_image_url || '',
+        hero_visible: Boolean(config.professional_dna?.hero_visible),
+        voice_agent_enabled:
+          typeof config.professional_dna?.voice_agent_enabled === 'boolean'
+            ? config.professional_dna.voice_agent_enabled
+            : true,
+        voice_model:
+          config.professional_dna?.voice_model === 'elevenlabs_conversational'
+            ? 'elevenlabs_conversational'
+            : 'gemini_live',
+        voice_transcription_visible: Boolean(config.professional_dna?.voice_transcription_visible),
+        voice_to_form_autofill:
+          typeof config.professional_dna?.voice_to_form_autofill === 'boolean'
+            ? config.professional_dna.voice_to_form_autofill
+            : true,
+      },
       voice: {
         elevenlabs_enabled: Boolean(elevenlabsAgentId),
         elevenlabs_agent_id: elevenlabsAgentId || '',
         active_panel:
-          config.voice?.public_panel_provider === 'elevenlabs' && elevenlabsAgentId
+          (config.professional_dna?.voice_model === 'elevenlabs_conversational' ||
+            config.voice?.public_panel_provider === 'elevenlabs') &&
+          elevenlabsAgentId
             ? 'elevenlabs'
             : 'gemini_live',
       },
@@ -925,6 +955,19 @@ const DEFAULT_APP_CONFIG = {
       'regulatory_demand',
     ],
     refresh_window_days: 14,
+    hero_video_url: '',
+    hero_video_title: '',
+    hero_autoplay_muted: true,
+    hero_loop: true,
+    hero_fallback_image_url: '',
+    hero_visible: false,
+    voice_agent_enabled: true,
+    voice_agent_persona: '',
+    voice_arc_sections: ['anchor', 'intent', 'proof', 'market', 'friction', 'context', 'close'],
+    voice_model: 'gemini_live',
+    voice_agent_voice_id: '',
+    voice_transcription_visible: false,
+    voice_to_form_autofill: true,
   },
   ui: {
     show_prologue: true,
@@ -1313,6 +1356,43 @@ const normalizeConfig = (input = {}) => {
         1,
         90
       ),
+      hero_video_url: String(professionalDna.hero_video_url ?? '').trim(),
+      hero_video_title: String(professionalDna.hero_video_title ?? '').trim(),
+      hero_autoplay_muted:
+        typeof professionalDna.hero_autoplay_muted === 'boolean'
+          ? professionalDna.hero_autoplay_muted
+          : DEFAULT_APP_CONFIG.professional_dna.hero_autoplay_muted,
+      hero_loop:
+        typeof professionalDna.hero_loop === 'boolean'
+          ? professionalDna.hero_loop
+          : DEFAULT_APP_CONFIG.professional_dna.hero_loop,
+      hero_fallback_image_url: String(professionalDna.hero_fallback_image_url ?? '').trim(),
+      hero_visible:
+        typeof professionalDna.hero_visible === 'boolean'
+          ? professionalDna.hero_visible
+          : DEFAULT_APP_CONFIG.professional_dna.hero_visible,
+      voice_agent_enabled:
+        typeof professionalDna.voice_agent_enabled === 'boolean'
+          ? professionalDna.voice_agent_enabled
+          : DEFAULT_APP_CONFIG.professional_dna.voice_agent_enabled,
+      voice_agent_persona: String(professionalDna.voice_agent_persona ?? '').trim(),
+      voice_arc_sections:
+        Array.isArray(professionalDna.voice_arc_sections) && professionalDna.voice_arc_sections.length
+          ? professionalDna.voice_arc_sections.map((entry) => String(entry).trim().toLowerCase()).filter(Boolean)
+          : [...DEFAULT_APP_CONFIG.professional_dna.voice_arc_sections],
+      voice_model:
+        professionalDna.voice_model === 'elevenlabs_conversational'
+          ? 'elevenlabs_conversational'
+          : DEFAULT_APP_CONFIG.professional_dna.voice_model,
+      voice_agent_voice_id: String(professionalDna.voice_agent_voice_id ?? '').trim(),
+      voice_transcription_visible:
+        typeof professionalDna.voice_transcription_visible === 'boolean'
+          ? professionalDna.voice_transcription_visible
+          : DEFAULT_APP_CONFIG.professional_dna.voice_transcription_visible,
+      voice_to_form_autofill:
+        typeof professionalDna.voice_to_form_autofill === 'boolean'
+          ? professionalDna.voice_to_form_autofill
+          : DEFAULT_APP_CONFIG.professional_dna.voice_to_form_autofill,
     },
     ui: {
       show_prologue:
@@ -1488,6 +1568,20 @@ const dnaResearchSystemInstruction = (runtimeConfig) =>
 const bingeSystemInstruction = (runtimeConfig) =>
   joinInstructionParts(composeBingeSystemInstruction(), runtimeConfig?.prompts?.rom_appendix);
 
+const buildLiveIntakeArcInstruction = (runtimeConfig) => {
+  const configuredSections = Array.isArray(runtimeConfig?.professional_dna?.voice_arc_sections)
+    ? runtimeConfig.professional_dna.voice_arc_sections.map((entry) => String(entry).trim().toLowerCase()).filter(Boolean)
+    : [];
+  const sectionNote = configuredSections.length
+    ? `VOICE ARC PRIORITY ORDER: ${configuredSections.join(' -> ')}.`
+    : '';
+  return joinInstructionParts(
+    LIVE_INTAKE_VOICE_ARC,
+    sectionNote,
+    runtimeConfig?.professional_dna?.voice_agent_persona
+  );
+};
+
 const liveSystemInstruction = (runtimeConfig, clientName = '') =>
   joinInstructionParts(
     CONCIERGE_ROM_SYSTEM,
@@ -1500,6 +1594,7 @@ const liveSystemInstruction = (runtimeConfig, clientName = '') =>
 - Never use the words: calibrated, calibration, assessment, or test.
 - Prefer "understanding your context" and "shaping your suite around you."
 - Keep tone composed, premium, and quietly encouraging.`,
+    buildLiveIntakeArcInstruction(runtimeConfig),
     runtimeConfig?.voice?.narration_style || DEFAULT_APP_CONFIG.voice.narration_style,
     runtimeConfig?.prompts?.live_appendix
   );
@@ -4917,7 +5012,7 @@ const synthesizeWithGeminiLive = async ({ runtimeConfig, text, clientName }) => 
   const model = nonEmpty(runtimeConfig.voice.gemini_live_model) || geminiLiveModelDefault;
   const voiceName =
     normalizeGeminiVoiceName(
-      runtimeConfig.voice.gemini_voice_name,
+      runtimeConfig.professional_dna?.voice_agent_voice_id || runtimeConfig.voice.gemini_voice_name,
       geminiLiveVoiceDefault
     ) || nonEmpty(runtimeConfig.voice.speaker) || geminiLiveVoiceDefault;
   const instruction = liveSystemInstruction(runtimeConfig, clientName);
@@ -5090,6 +5185,93 @@ const buildMediaFallbackPack = ({ episodeId, runtimeConfig, direction, reason })
   ],
 });
 
+const isMeaningfulExtractionValue = (value) => {
+  if (typeof value === 'string') return Boolean(value.trim());
+  if (Array.isArray(value)) return value.some((entry) => typeof entry === 'string' && entry.trim());
+  if (typeof value === 'boolean') return true;
+  return false;
+};
+
+const normalizeTranscriptExtraction = (payload) => {
+  const source = payload && typeof payload === 'object' ? payload : {};
+  const extractedSource = source.extracted && typeof source.extracted === 'object' ? source.extracted : {};
+  const extracted = {};
+  for (const [key, raw] of Object.entries(extractedSource)) {
+    if (typeof raw === 'string') {
+      const value = raw.trim();
+      if (value) extracted[key] = value;
+      continue;
+    }
+    if (Array.isArray(raw)) {
+      const values = raw.map((entry) => String(entry ?? '').trim()).filter(Boolean);
+      if (values.length) extracted[key] = Array.from(new Set(values));
+      continue;
+    }
+    if (typeof raw === 'boolean') {
+      extracted[key] = raw;
+    }
+  }
+  const extractedFields = Array.isArray(source.extracted_fields)
+    ? source.extracted_fields.map((entry) => String(entry ?? '').trim()).filter((entry) => entry && isMeaningfulExtractionValue(extracted[entry]))
+    : Object.keys(extracted);
+  return {
+    extracted,
+    extracted_fields: Array.from(new Set(extractedFields)),
+  };
+};
+
+const fallbackExtractIntakeFromTranscript = (transcript) => {
+  const text = String(transcript ?? '').trim();
+  const lower = text.toLowerCase();
+  const extracted = {};
+
+  const compensationMatch = text.match(/\$?\d[\d,]*(?:k|K)?\s*(?:-|–|to)\s*\$?\d[\d,]*(?:k|K)?/);
+  if (compensationMatch) extracted.comp_range = compensationMatch[0];
+
+  if (/\b(daily|every day)\b/i.test(text)) extracted.ai_usage_frequency = 'DAILY';
+  else if (/\bregularly|frequently|often\b/i.test(text)) extracted.ai_usage_frequency = 'REGULARLY';
+  else if (/\boccasionally|sometimes\b/i.test(text)) extracted.ai_usage_frequency = 'OCCASIONALLY';
+  else if (/\brarely|never\b/i.test(text)) extracted.ai_usage_frequency = 'RARELY_OR_NEVER';
+
+  const enterpriseAiContext = [];
+  if (lower.includes('chatgpt enterprise')) enterpriseAiContext.push('ChatGPT Enterprise');
+  if (lower.includes('gemini')) enterpriseAiContext.push('Gemini');
+  if (lower.includes('copilot')) enterpriseAiContext.push('Copilot');
+  if (lower.includes('claude')) enterpriseAiContext.push('Claude');
+  if (lower.includes('no formal mandate')) enterpriseAiContext.push('No Formal Mandate');
+  if (enterpriseAiContext.length) extracted.enterprise_ai_context = enterpriseAiContext;
+
+  if (/\bstay\b|\bcurrent role\b|\bwhere i am\b/i.test(lower)) extracted.intent_type = 'STAY_SHARP';
+  else if (/\bmove\b|\bnext role\b|\btarget role\b|\btransition\b/i.test(lower)) extracted.intent_type = 'SPECIFIC_MOVE';
+  else if (/\bnot sure\b|\bdesign\b|\bfigure out\b/i.test(lower)) extracted.intent_type = 'DESIGN_DIRECTION';
+
+  const titleMatch =
+    text.match(/\b(?:i am|i'm|i work as|my role is|current title is)\s+([^.,\n]+)/i) ||
+    text.match(/\b(?:targeting|aiming at|next role is)\s+([^.,\n]+)/i);
+  if (titleMatch?.[1]) extracted.current_title = titleMatch[1].trim();
+
+  const industryMatch = text.match(/\b(?:in|within)\s+the\s+([^.,\n]+?)\s+(?:industry|sector)\b/i);
+  if (industryMatch?.[1]) extracted.industry = industryMatch[1].trim();
+
+  const constraintsMatch = text.match(/\b(?:constraint[s]?|pressure|timeline|caregiving|location|salary)[^.\n]*/i);
+  if (constraintsMatch?.[0]) extracted.constraints = constraintsMatch[0].trim();
+
+  const targetSectorMatch = text.match(/\b(?:targeting|looking at|interested in)\s+([^.,\n]+?)\s+(?:companies|organizations|sector)\b/i);
+  if (targetSectorMatch?.[1]) extracted.target_sector = targetSectorMatch[1].trim();
+
+  const suppressorSignals = [];
+  if (/\bvisibility\b/i.test(text)) suppressorSignals.push('Visibility');
+  if (/\bnarrative\b/i.test(text)) suppressorSignals.push('Narrative clarity');
+  if (/\btime\b/i.test(text)) suppressorSignals.push('Time pressure');
+  if (/\bconfidence\b/i.test(text)) suppressorSignals.push('Confidence drag');
+  if (suppressorSignals.length) extracted.suppressor_signals = suppressorSignals;
+
+  return normalizeTranscriptExtraction({
+    extracted,
+    extracted_fields: Object.keys(extracted),
+  });
+};
+
 const generateImageAsset = async ({ runtimeConfig, direction }) => {
   const model = runtimeConfig.media.image_model;
   try {
@@ -5184,7 +5366,7 @@ app.post('/v1/live/token', requireAuth, async (_req, res) => {
   const model = nonEmpty(runtimeConfig.voice.gemini_live_model) || geminiLiveModelDefault;
   const voiceName =
     normalizeGeminiVoiceName(
-      runtimeConfig.voice.gemini_voice_name,
+      runtimeConfig.professional_dna?.voice_agent_voice_id || runtimeConfig.voice.gemini_voice_name,
       geminiLiveVoiceDefault
     ) || nonEmpty(runtimeConfig.voice.speaker) || geminiLiveVoiceDefault;
   const clientName = toDisplayName(_req.user);
@@ -5270,6 +5452,69 @@ app.post('/v1/live/token', requireAuth, async (_req, res) => {
     return res.status(502).json({
       error: 'live_token_failed',
       detail: sanitizeError(error, 'live_token_failed'),
+    });
+  }
+});
+
+app.post('/v1/intake/extract', requireAuth, async (req, res) => {
+  const transcript = String(req.body?.transcript ?? '').trim();
+  const existingAnswers =
+    req.body?.existing_answers && typeof req.body.existing_answers === 'object' ? req.body.existing_answers : {};
+  if (!transcript) {
+    return res.status(400).json({ error: 'transcript_required' });
+  }
+
+  const runtimeConfig = await loadAppConfig();
+  const model =
+    nonEmpty(runtimeConfig?.professional_dna?.research_model) ||
+    nonEmpty(runtimeConfig?.professional_dna?.base_model) ||
+    nonEmpty(runtimeConfig?.generation?.suite_model) ||
+    utilityTextModel;
+
+  if (!ai) {
+    const fallback = fallbackExtractIntakeFromTranscript(transcript);
+    return res.json({
+      ...fallback,
+      model: 'deterministic-fallback',
+      fallback: true,
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: composeIntakeExtractionPrompt({ transcript, existingAnswers }),
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: INTAKE_EXTRACTION_SCHEMA,
+        systemInstruction: joinInstructionParts(
+          CONCIERGE_ROM_SYSTEM,
+          `ADDITIONAL MODE: INTAKE_TRANSCRIPT_EXTRACTION
+- Extract only high-confidence fields from the transcript.
+- Never invent compensation, employers, or outcomes.
+- Prefer omission over low-confidence guessing.
+- Return strict JSON matching the provided schema.`,
+          runtimeConfig?.professional_dna?.voice_agent_persona
+        ),
+        temperature: 0.2,
+      },
+    });
+
+    const text = response.text?.trim();
+    if (!text) throw new Error('empty_transcript_extraction_response');
+    const parsed = normalizeTranscriptExtraction(safeParseJson(text));
+    return res.json({
+      ...parsed,
+      model,
+    });
+  } catch (error) {
+    console.error('intake_transcript_extraction_error', error);
+    const fallback = fallbackExtractIntakeFromTranscript(transcript);
+    return res.json({
+      ...fallback,
+      model,
+      fallback: true,
+      detail: sanitizeError(error, 'intake_transcript_extraction_failed'),
     });
   }
 });

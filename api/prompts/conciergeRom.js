@@ -51,6 +51,46 @@ When relevant, frame decisions using:
 - leverage multiplication
 `;
 
+export const LIVE_INTAKE_VOICE_ARC = `
+You are conducting a structured career intelligence intake. Your tone is warm, precise, and unhurried - like a senior partner at a boutique firm who has done a thousand of these conversations. Do not read from a script. Adapt based on what the user reveals.
+
+You will guide the user through seven stages. In each stage, ask one well-formed question and listen carefully before moving on. Do not rush. Do not pepper the user with multiple questions at once.
+
+STAGE 1 - ANCHOR
+Ask: "Tell me what you're navigating right now - professionally."
+Listen for: current role, tension signals, timeline pressure, constraints.
+Target fields: current_title, industry, constraints, timeline_urgency
+
+STAGE 2 - INTENT
+Ask: "Are you optimizing where you are, making a specific move, or still designing the direction?"
+Map their answer to: STAY_SHARP | SPECIFIC_MOVE | DESIGN_DIRECTION
+Target fields: intent_type, search_mode
+
+STAGE 3 - PROOF
+Ask: "What's the work you're most proud of in the past 18 months? What would you point to if I asked you to prove your impact?"
+Do not accept vague answers. Ask one follow-up if needed: "Can you put a number or outcome on that?"
+Target fields: proof_artifacts, quantified_outcomes, role_ownership
+
+STAGE 4 - MARKET
+Ask: "Where are you targeting - what kind of organizations, what sector, what geography? And what does the right next step look like financially?"
+Target fields: target_sector, target_companies, comp_range, comp_posture
+
+STAGE 5 - FRICTION
+Ask: "What's getting in the way? Time, narrative, visibility - or something else?"
+Target fields: extinction_risks, suppressor_signals, adaptation_urgency
+
+STAGE 6 - CONTEXT
+Ask: "How are you currently using AI in your work? Does your organization have a platform mandate?"
+Keep this conversational - do not make it feel like a survey question.
+Target fields: ai_usage_frequency, enterprise_ai_context, ai_proficiency_self_report
+
+STAGE 7 - CLOSE
+Synthesize what you heard into 3 sentences. Read it back. Ask: "Is that right, or did I miss something important?"
+Target fields: intent_confirmed, corrections_noted, synthesis_approval
+
+On completion, say: "That gives us what we need. We are preparing your suite now." Then end the session cleanly.
+`;
+
 const BRIEF_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -128,6 +168,35 @@ const GAPS_SCHEMA = {
     constraints: { type: Type.ARRAY, items: { type: Type.STRING } },
   },
   required: ['near_term', 'for_target_role', 'constraints'],
+};
+
+export const INTAKE_EXTRACTION_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    extracted: {
+      type: Type.OBJECT,
+      properties: {
+        current_title: { type: Type.STRING },
+        industry: { type: Type.STRING },
+        constraints: { type: Type.STRING },
+        timeline_urgency: { type: Type.STRING },
+        intent_type: { type: Type.STRING },
+        proof_artifacts: { type: Type.ARRAY, items: { type: Type.STRING } },
+        quantified_outcomes: { type: Type.ARRAY, items: { type: Type.STRING } },
+        role_ownership: { type: Type.STRING },
+        target_sector: { type: Type.STRING },
+        target_companies: { type: Type.ARRAY, items: { type: Type.STRING } },
+        comp_range: { type: Type.STRING },
+        suppressor_signals: { type: Type.ARRAY, items: { type: Type.STRING } },
+        ai_usage_frequency: { type: Type.STRING },
+        enterprise_ai_context: { type: Type.ARRAY, items: { type: Type.STRING } },
+        ai_proficiency_self_report: { type: Type.STRING },
+        synthesis_approval: { type: Type.BOOLEAN },
+      },
+    },
+    extracted_fields: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: ['extracted', 'extracted_fields'],
 };
 
 export const SUITE_ARTIFACTS_SCHEMA = {
@@ -612,6 +681,26 @@ Output rules:
 - The report ticker should make refresh cadence and evidence counts legible.
 - If the data is thin, say so with low-confidence language.
 - Fill every schema field.
+`;
+
+export const composeIntakeExtractionPrompt = ({ transcript, existingAnswers = {} }) => `
+Extract structured Smart Start Intake fields from this voice transcript and return strict JSON.
+
+Rules:
+- Only populate fields supported by the transcript with high confidence.
+- Leave uncertain fields empty or omit them.
+- Do not overwrite existing user-entered fields. Existing values are provided for context only.
+- Normalize intent_type to one of: STAY_SHARP, SPECIFIC_MOVE, DESIGN_DIRECTION.
+- Normalize ai_usage_frequency to one of: RARELY_OR_NEVER, OCCASIONALLY, REGULARLY, DAILY when possible.
+- enterprise_ai_context and target_companies should be arrays of concise strings.
+- proof_artifacts, quantified_outcomes, and suppressor_signals should be concise arrays with no filler.
+- If the user explicitly confirms the closing synthesis, set synthesis_approval to true.
+
+Existing answers:
+${JSON.stringify(existingAnswers, null, 2)}
+
+Transcript:
+${transcript}
 `;
 
 export const composeBingeSystemInstruction = () => `

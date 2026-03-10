@@ -396,9 +396,27 @@ const normalizeAdminConfig = (input: any): AppConfig => {
             'compensation',
             'company_posture',
             'supply_shifts',
-            'regulatory_demand',
-          ],
+          'regulatory_demand',
+        ],
       refresh_window_days: Number(source?.professional_dna?.refresh_window_days ?? 14),
+      hero_video_url: String(source?.professional_dna?.hero_video_url ?? ''),
+      hero_video_title: String(source?.professional_dna?.hero_video_title ?? ''),
+      hero_autoplay_muted: Boolean(source?.professional_dna?.hero_autoplay_muted ?? true),
+      hero_loop: Boolean(source?.professional_dna?.hero_loop ?? true),
+      hero_fallback_image_url: String(source?.professional_dna?.hero_fallback_image_url ?? ''),
+      hero_visible: Boolean(source?.professional_dna?.hero_visible ?? false),
+      voice_agent_enabled: Boolean(source?.professional_dna?.voice_agent_enabled ?? true),
+      voice_agent_persona: String(source?.professional_dna?.voice_agent_persona ?? ''),
+      voice_arc_sections: Array.isArray(source?.professional_dna?.voice_arc_sections)
+        ? source.professional_dna.voice_arc_sections.map((entry: unknown) => String(entry).trim()).filter(Boolean)
+        : ['anchor', 'intent', 'proof', 'market', 'friction', 'context', 'close'],
+      voice_model:
+        source?.professional_dna?.voice_model === 'elevenlabs_conversational'
+          ? 'elevenlabs_conversational'
+          : 'gemini_live',
+      voice_agent_voice_id: String(source?.professional_dna?.voice_agent_voice_id ?? ''),
+      voice_transcription_visible: Boolean(source?.professional_dna?.voice_transcription_visible ?? false),
+      voice_to_form_autofill: Boolean(source?.professional_dna?.voice_to_form_autofill ?? true),
     },
     ui: {
       show_prologue: Boolean(source?.ui?.show_prologue ?? true),
@@ -486,6 +504,21 @@ export const fetchPublicConfig = async (): Promise<PublicConfig> => {
     brand: normalizeBrandConfig(source?.brand),
     operations: {
       cjs_enabled: Boolean(source?.operations?.cjs_enabled ?? true),
+    },
+    professional_dna: {
+      hero_video_url: String(source?.professional_dna?.hero_video_url ?? ''),
+      hero_video_title: String(source?.professional_dna?.hero_video_title ?? ''),
+      hero_autoplay_muted: Boolean(source?.professional_dna?.hero_autoplay_muted ?? true),
+      hero_loop: Boolean(source?.professional_dna?.hero_loop ?? true),
+      hero_fallback_image_url: String(source?.professional_dna?.hero_fallback_image_url ?? ''),
+      hero_visible: Boolean(source?.professional_dna?.hero_visible ?? false),
+      voice_agent_enabled: Boolean(source?.professional_dna?.voice_agent_enabled ?? true),
+      voice_model:
+        source?.professional_dna?.voice_model === 'elevenlabs_conversational'
+          ? 'elevenlabs_conversational'
+          : 'gemini_live',
+      voice_transcription_visible: Boolean(source?.professional_dna?.voice_transcription_visible ?? false),
+      voice_to_form_autofill: Boolean(source?.professional_dna?.voice_to_form_autofill ?? true),
     },
     voice: {
       elevenlabs_enabled: Boolean(source?.voice?.elevenlabs_enabled ?? false),
