@@ -96,7 +96,14 @@ The `Brief` / `Profile` pair now also carries a research-grade Professional DNA 
   - a `Market Demand Analysis` environment matrix comparing demand and fit by habitat
   - a three-rung compensation ladder (`Current`, `Narrative-Adjusted`, `Market Ceiling`)
   - a 72-hour war-room execution block and footer ticker for report freshness/evidence posture
+- the Brief now degrades safely against older or partially enriched dossier artifacts instead of hard-crashing when newer telemetry fields are missing
 - those UI metrics are source-backed or explicitly inferred from dossier evidence; the system no longer relies on decorative placeholder chart data
+
+The signed-in landing canvas now also carries a compact `How To Use The Suite` operating strip:
+
+- before intake it tells the client to start with Smart Start Intake and shows the next modules as locked downstream steps
+- after intake it reframes the suite into the intended sequence: `Brief -> Plan -> reinforcement layer`
+- this guidance is embedded in the home surface rather than shipped as a blocking tutorial modal
 
 The suite shell is now driven by a shared brand config exposed through public config:
 

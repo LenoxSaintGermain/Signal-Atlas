@@ -15,6 +15,34 @@ import {
 export const hasItems = (items: unknown): items is string[] =>
   Array.isArray(items) && items.some((item) => String(item).trim());
 
+export const asTextList = (items: unknown): string[] =>
+  Array.isArray(items) ? items.map((item) => String(item ?? '').trim()).filter(Boolean) : [];
+
+const asUrgencyTasks = (items: unknown): DnaUrgencyTask[] =>
+  Array.isArray(items)
+    ? items
+        .map((item, index) => {
+          if (typeof item === 'string') {
+            return {
+              id: `n72-${index + 1}`,
+              label: item,
+              done: false,
+            };
+          }
+          if (!item || typeof item !== 'object') return null;
+          const label = String((item as DnaUrgencyTask).label ?? '').trim();
+          if (!label) return null;
+          return {
+            id: String((item as DnaUrgencyTask).id ?? `n72-${index + 1}`),
+            label,
+            done: (item as DnaUrgencyTask).done === true,
+            timebox: (item as DnaUrgencyTask).timebox,
+            rationale: (item as DnaUrgencyTask).rationale,
+          };
+        })
+        .filter((item): item is DnaUrgencyTask => Boolean(item))
+    : [];
+
 const clampScore = (value: unknown, fallback = 50) => {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
@@ -183,7 +211,15 @@ export const buildBriefTelemetry = (brief: BriefContent) => {
   const signalStrip = brief.signal_strip?.length ? brief.signal_strip : buildFallbackSignalStrip(breakdown);
   const compensationLadder = brief.compensation_ladder?.length ? brief.compensation_ladder : buildFallbackCompensationLadder(undefined, marketSignal);
   const reportTicker = brief.report_ticker || buildFallbackTicker(undefined, breakdown.length);
-  const warRoom: DnaUrgencyTask[] = brief.next_72_hours.map((task, index) => ({
+  const baselineWarRoom =
+    asUrgencyTasks(brief.next_72_hours).length > 0
+      ? asUrgencyTasks(brief.next_72_hours)
+      : asTextList(brief.needle).slice(0, 3).map((label, index) => ({
+          id: `fallback-${index + 1}`,
+          label,
+          done: false,
+        }));
+  const warRoom: DnaUrgencyTask[] = baselineWarRoom.map((task, index) => ({
     ...task,
     timebox: task.timebox || (index === 0 ? 'do_now' : index === 1 ? '48h' : '72h'),
   }));

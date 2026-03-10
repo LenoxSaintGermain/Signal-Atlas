@@ -7,6 +7,7 @@ import {
   DnaMarketSignalPanel,
   DnaTickerBar,
   DnaWarRoom,
+  asTextList,
   EditorialList,
   hasItems,
 } from './professionalDnaUi';
@@ -18,8 +19,8 @@ export function BriefView(props: {
   onOpenPlan: () => void;
 }) {
   const { brief } = props;
-  const summary = hasItems(brief.executive_summary) ? brief.executive_summary : brief.learned;
-  const receipt = hasItems(brief.market_receipt) ? brief.market_receipt : brief.needle;
+  const summary = hasItems(brief.executive_summary) ? brief.executive_summary : asTextList(brief.learned);
+  const receipt = hasItems(brief.market_receipt) ? brief.market_receipt : asTextList(brief.needle);
   const observed = hasItems(brief.evidence_ledger?.observed) ? brief.evidence_ledger?.observed : [];
   const inferred = hasItems(brief.evidence_ledger?.inferred) ? brief.evidence_ledger?.inferred : [];
   const external = hasItems(brief.evidence_ledger?.external) ? brief.evidence_ledger?.external : [];

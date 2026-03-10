@@ -395,6 +395,69 @@ const App: React.FC = () => {
 
   // Relationship highlighting
   const hovered = hoveredModuleId ? visibleModules.find((m) => m.id === hoveredModuleId) ?? null : null;
+  const suiteGuideSteps = intakeComplete
+    ? [
+        {
+          step: '01',
+          eyebrow: 'Read first',
+          title: 'Open The Brief',
+          detail: 'Start with the verdict, market signal, and 72-hour war room.',
+          moduleId: 'brief' as SuiteModuleId,
+          locked: false,
+        },
+        {
+          step: '02',
+          eyebrow: 'Then act',
+          title: 'Run Your Plan',
+          detail: 'Convert the brief into controlled movement over the next 72 hours and two weeks.',
+          moduleId: 'plan' as SuiteModuleId,
+          locked: false,
+        },
+        {
+          step: '03',
+          eyebrow: 'Reinforce',
+          title: isFreeTier ? 'Watch Episodes' : 'Use TV + Flash Cards',
+          detail: isFreeTier
+            ? 'Use Episodes to keep learning momentum alive between decisions.'
+            : 'Revisit the learning layer after execution so recall compounds instead of fading.',
+          moduleId: isFreeTier ? ('episodes' as SuiteModuleId) : ('flash_cards' as SuiteModuleId),
+          locked: false,
+        },
+      ]
+    : [
+        {
+          step: '01',
+          eyebrow: 'Start here',
+          title: 'Complete Smart Start Intake',
+          detail: 'This calibrates your profile, generates your Brief, and unlocks the rest of the suite graph.',
+          moduleId: 'intake' as SuiteModuleId,
+          locked: false,
+        },
+        {
+          step: '02',
+          eyebrow: 'Then read',
+          title: 'Open The Brief',
+          detail: 'Your market position, leverage, and the first correction to make.',
+          moduleId: 'brief' as SuiteModuleId,
+          locked: true,
+        },
+        {
+          step: '03',
+          eyebrow: 'Then move',
+          title: 'Run Your Plan',
+          detail: 'A controlled action path, not a pile of advice.',
+          moduleId: 'plan' as SuiteModuleId,
+          locked: true,
+        },
+        {
+          step: '04',
+          eyebrow: 'Then reinforce',
+          title: isFreeTier ? 'Watch Episodes' : 'Use TV + Flash Cards',
+          detail: 'Come back here between execution cycles to keep signal and memory tight.',
+          moduleId: isFreeTier ? ('episodes' as SuiteModuleId) : ('flash_cards' as SuiteModuleId),
+          locked: true,
+        },
+      ];
 
   return (
     <div
@@ -534,6 +597,54 @@ const App: React.FC = () => {
                 {brand.copy.free_tier_notice}
               </div>
             )}
+
+            <section className="mt-6 border" style={{ borderColor: brand.colors.grid_line, backgroundColor: hexToRgba(brand.colors.surface_background, 0.92) }}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: brand.colors.grid_line }}>
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                    How To Use The Suite
+                  </div>
+                  <div className="mt-1 text-sm text-black/58">
+                    {intakeComplete
+                      ? 'Read the dossier first, move into execution second, then use the learning layer to reinforce it.'
+                      : 'Do not explore randomly. Intake comes first, because it writes the dossier and unlocks the operating path.'}
+                  </div>
+                </div>
+                <div className="text-[10px] uppercase tracking-[0.22em] text-black/38">
+                  {intakeComplete ? 'Operating sequence' : 'Pre-unlock sequence'}
+                </div>
+              </div>
+
+              <div className={`grid gap-px ${suiteGuideSteps.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`} style={{ backgroundColor: brand.colors.grid_line }}>
+                {suiteGuideSteps.map((step) => (
+                  <button
+                    key={step.step}
+                    type="button"
+                    onClick={() => {
+                      if (!step.locked) openModuleById(step.moduleId);
+                    }}
+                    disabled={step.locked}
+                    className={`border-0 px-4 py-4 text-left transition-colors ${
+                      step.locked ? 'cursor-default' : 'hover:bg-white'
+                    }`}
+                    style={{
+                      backgroundColor: step.locked ? hexToRgba(brand.colors.surface_background, 0.72) : brand.colors.surface_background,
+                      opacity: step.locked ? 0.74 : 1,
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                        {step.step}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">{step.locked ? 'Unlocks after intake' : 'Open now'}</div>
+                    </div>
+                    <div className="mt-4 text-[10px] uppercase tracking-[0.22em] text-black/45">{step.eyebrow}</div>
+                    <div className="mt-2 text-xl leading-tight text-[#171412] font-editorial">{step.title}</div>
+                    <div className="mt-3 text-sm leading-6 text-black/58">{step.detail}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
           <div
@@ -616,33 +727,6 @@ const App: React.FC = () => {
             className="relative flex h-full max-h-[92vh] w-full max-w-[1460px] flex-col overflow-y-auto shadow-2xl ring-1 ring-black/5 md:overflow-hidden"
             style={{ backgroundColor: brand.colors.surface_background }}
           >
-            <div
-              className="pointer-events-none absolute right-4 top-4 z-20 flex items-center gap-3 transition-all duration-400 opacity-100 translate-y-0"
-            >
-              <div
-                className="hidden border px-3 py-2 text-[10px] uppercase tracking-[0.18em] sm:block"
-                style={{
-                  borderColor: hexToRgba(brand.colors.ink, 0.08),
-                  backgroundColor: hexToRgba(brand.colors.surface_background, 0.88),
-                  color: hexToRgba(brand.colors.ink, 0.58),
-                  backdropFilter: 'blur(14px)',
-                }}
-              >
-                {openModule.index} / {String(visibleModules.length).padStart(2, '0')} · {displayedOpenModule?.detail_title || openModule.title}
-              </div>
-              <button
-                onClick={handleCloseModal}
-                className="pointer-events-auto px-4 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors"
-                style={{
-                  border: `1px solid ${hexToRgba(brand.colors.ink, 0.08)}`,
-                  backgroundColor: hexToRgba(brand.colors.surface_background, 0.88),
-                  color: hexToRgba(brand.colors.ink, 0.72),
-                  backdropFilter: 'blur(14px)',
-                }}
-              >
-                Close
-              </button>
-            </div>
             <header
               className="shrink-0 overflow-hidden border-b border-black/10 px-4 py-2.5 transition-all duration-500 sm:px-5 sm:py-3 md:px-6"
               style={{
@@ -653,6 +737,40 @@ const App: React.FC = () => {
                 color: brand.colors.overlay_text,
               }}
             >
+              <div
+                className="mb-3 flex flex-wrap items-start justify-between gap-3 border-b pb-3"
+                style={{ borderColor: hexToRgba(brand.colors.overlay_text, 0.12) }}
+              >
+                <div
+                  className="min-w-0 border px-3 py-2 text-[10px] uppercase tracking-[0.18em]"
+                  style={{
+                    borderColor: hexToRgba(brand.colors.overlay_text, 0.12),
+                    backgroundColor: hexToRgba(brand.colors.overlay_text, 0.04),
+                    color: hexToRgba(brand.colors.overlay_text, 0.7),
+                  }}
+                >
+                  <span className="whitespace-nowrap">
+                    {openModule.index} / {String(visibleModules.length).padStart(2, '0')}
+                  </span>
+                  <span className="mx-2 opacity-40">·</span>
+                  <span className="inline-block max-w-[16rem] truncate align-bottom sm:max-w-[28rem]">
+                    {displayedOpenModule?.detail_title || openModule.title}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleCloseModal}
+                  className="px-4 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors"
+                  style={{
+                    border: `1px solid ${hexToRgba(brand.colors.overlay_text, 0.12)}`,
+                    backgroundColor: hexToRgba(brand.colors.overlay_text, 0.04),
+                    color: hexToRgba(brand.colors.overlay_text, 0.78),
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+
               <div className="flex flex-col gap-3 border-b pb-2.5 sm:pb-3 xl:flex-row xl:items-start xl:justify-between" style={{ borderColor: hexToRgba(brand.colors.overlay_text, 0.12) }}>
                 <div className="space-y-2">
                   <div className="hidden flex-wrap items-center gap-3 text-[10px] uppercase tracking-[0.24em] sm:flex" style={{ color: hexToRgba(brand.colors.overlay_text, 0.48) }}>
