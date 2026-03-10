@@ -1338,6 +1338,161 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             </div>
           </div>
         </Panel>
+
+        <Panel title="Professional DNA" eyebrow="Research lane" meta="Configurable dossier">
+          <div className="grid gap-5">
+            <ToggleField
+              checked={config.professional_dna.enabled}
+              onChange={(checked) =>
+                setConfig((prev) =>
+                  prev ? { ...prev, professional_dna: { ...prev.professional_dna, enabled: checked } } : prev
+                )
+              }
+              label="Professional DNA research enabled"
+              hint="Runs a dedicated post-intake dossier enrichment pass for Brief and Profile."
+            />
+            <div className="grid gap-5 lg:grid-cols-2">
+              <SelectField
+                label="DNA base model"
+                value={config.professional_dna.base_model}
+                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
+                onChange={(value) =>
+                  setConfig((prev) =>
+                    prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: value } } : prev
+                  )
+                }
+              />
+              <SelectField
+                label="DNA research model"
+                value={config.professional_dna.research_model}
+                options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
+                onChange={(value) =>
+                  setConfig((prev) =>
+                    prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: value } } : prev
+                  )
+                }
+              />
+            </div>
+            <TextAreaField
+              label="Professional DNA prompt appendix"
+              value={config.professional_dna.prompt_appendix}
+              onChange={(value) =>
+                setConfig((prev) =>
+                  prev ? { ...prev, professional_dna: { ...prev.professional_dna, prompt_appendix: value } } : prev
+                )
+              }
+              minHeight="min-h-28"
+            />
+            <TextAreaField
+              label="Enabled sections"
+              value={config.professional_dna.enabled_sections.join('\n')}
+              onChange={(value) =>
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        professional_dna: {
+                          ...prev.professional_dna,
+                          enabled_sections: value
+                            .split('\n')
+                            .map((entry) => entry.trim())
+                            .filter(Boolean),
+                        },
+                      }
+                    : prev
+                )
+              }
+              minHeight="min-h-24"
+            />
+            <TextAreaField
+              label="Section order"
+              value={config.professional_dna.section_order.join('\n')}
+              onChange={(value) =>
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        professional_dna: {
+                          ...prev.professional_dna,
+                          section_order: value
+                            .split('\n')
+                            .map((entry) => entry.trim())
+                            .filter(Boolean),
+                        },
+                      }
+                    : prev
+                )
+              }
+              minHeight="min-h-24"
+            />
+            <ToggleField
+              checked={config.professional_dna.company_posture_notes_enabled}
+              onChange={(checked) =>
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        professional_dna: {
+                          ...prev.professional_dna,
+                          company_posture_notes_enabled: checked,
+                        },
+                      }
+                    : prev
+                )
+              }
+              label="Include company posture notes"
+              hint="Allows the report to include directional notes on pay posture, churn, and environment tradeoffs."
+            />
+            <TextAreaField
+              label="Research domains"
+              value={config.professional_dna.research_domains.join('\n')}
+              onChange={(value) =>
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        professional_dna: {
+                          ...prev.professional_dna,
+                          research_domains: value
+                            .split('\n')
+                            .map((entry) => entry.trim())
+                            .filter(Boolean),
+                        },
+                      }
+                    : prev
+                )
+              }
+              minHeight="min-h-24"
+            />
+            <TextField
+              label="Refresh window (days)"
+              type="number"
+              min={1}
+              max={90}
+              step={1}
+              value={config.professional_dna.refresh_window_days}
+              onChange={(value) =>
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        professional_dna: {
+                          ...prev.professional_dna,
+                          refresh_window_days: Math.max(1, Math.min(90, Number(value) || 14)),
+                        },
+                      }
+                    : prev
+                )
+              }
+            />
+          </div>
+        </Panel>
       </SectionShell>
     );
   };

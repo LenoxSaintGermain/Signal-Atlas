@@ -33,6 +33,12 @@ import {
   BRAND_TILE_EMPHASES,
   DEFAULT_BRAND_CONFIG,
 } from '../config/brandSystem.js';
+import {
+  DEFAULT_GEMINI_BINGE_MODEL,
+  DEFAULT_GEMINI_IMAGE_MODEL,
+  DEFAULT_GEMINI_SUITE_MODEL,
+  DEFAULT_GEMINI_VIDEO_MODEL,
+} from '../config/geminiModels.js';
 import { GEMINI_LIVE_MODEL_OPTIONS } from '../config/voiceRuntime.js';
 import { resolveApiOrigin } from './apiOrigin';
 
@@ -330,8 +336,8 @@ const normalizeAdminConfig = (input: any): AppConfig => {
   const defaultGeminiLiveModel = GEMINI_LIVE_MODEL_OPTIONS[0]?.id || 'gemini-2.5-flash-native-audio-preview-12-2025';
   return {
     generation: {
-      suite_model: String(source?.generation?.suite_model ?? 'gemini-3-flash-preview'),
-      binge_model: String(source?.generation?.binge_model ?? 'gemini-3-flash-preview'),
+      suite_model: String(source?.generation?.suite_model ?? DEFAULT_GEMINI_SUITE_MODEL),
+      binge_model: String(source?.generation?.binge_model ?? DEFAULT_GEMINI_BINGE_MODEL),
       suite_temperature: Number(source?.generation?.suite_temperature ?? 0.45),
       binge_temperature: Number(source?.generation?.binge_temperature ?? 0.7),
     },
@@ -341,6 +347,58 @@ const normalizeAdminConfig = (input: any): AppConfig => {
       rom_appendix: String(source?.prompts?.rom_appendix ?? ''),
       live_appendix: String(source?.prompts?.live_appendix ?? ''),
       art_director_appendix: String(source?.prompts?.art_director_appendix ?? ''),
+    },
+    professional_dna: {
+      enabled: Boolean(source?.professional_dna?.enabled ?? true),
+      base_model: String(source?.professional_dna?.base_model ?? DEFAULT_GEMINI_SUITE_MODEL),
+      research_model: String(source?.professional_dna?.research_model ?? DEFAULT_GEMINI_SUITE_MODEL),
+      prompt_appendix: String(source?.professional_dna?.prompt_appendix ?? ''),
+      enabled_sections: Array.isArray(source?.professional_dna?.enabled_sections)
+        ? source.professional_dna.enabled_sections.map((entry: unknown) => String(entry).trim()).filter(Boolean)
+        : [
+            'case_summary',
+            'genome_markers',
+            'behavioral_propensities',
+            'environmental_fit',
+            'market_climate',
+            'compensation_position',
+            'extinction_risks',
+            'adaptive_assets',
+            'lean_into',
+            'let_go',
+            'build_next',
+            'evolution_path_90_days',
+          ],
+      section_order: Array.isArray(source?.professional_dna?.section_order)
+        ? source.professional_dna.section_order.map((entry: unknown) => String(entry).trim()).filter(Boolean)
+        : [
+            'case_summary',
+            'genome_markers',
+            'behavioral_propensities',
+            'pressure_response',
+            'environmental_fit',
+            'market_climate',
+            'compensation_position',
+            'extinction_risks',
+            'adaptive_assets',
+            'lean_into',
+            'let_go',
+            'build_next',
+            'evolution_path_90_days',
+          ],
+      company_posture_notes_enabled: Boolean(source?.professional_dna?.company_posture_notes_enabled ?? true),
+      research_domains: Array.isArray(source?.professional_dna?.research_domains)
+        ? source.professional_dna.research_domains.map((entry: unknown) => String(entry).trim()).filter(Boolean)
+        : [
+            'labor_market',
+            'occupation_outlook',
+            'geography',
+            'compensation',
+            'company_posture',
+            'supply_shifts',
+            'regulatory_demand',
+          ],
+      refresh_window_days: Number(source?.professional_dna?.refresh_window_days ?? 14),
     },
     ui: {
       show_prologue: Boolean(source?.ui?.show_prologue ?? true),
@@ -355,8 +413,8 @@ const normalizeAdminConfig = (input: any): AppConfig => {
     },
     media: {
       enabled: Boolean(source?.media?.enabled ?? true),
-      image_model: String(source?.media?.image_model ?? 'gemini-2.5-flash-image-preview'),
-      video_model: String(source?.media?.video_model ?? 'veo-3.1-generate-preview'),
+      image_model: String(source?.media?.image_model ?? DEFAULT_GEMINI_IMAGE_MODEL),
+      video_model: String(source?.media?.video_model ?? DEFAULT_GEMINI_VIDEO_MODEL),
       image_style: String(source?.media?.image_style ?? ''),
       video_style: String(source?.media?.video_style ?? ''),
       narrative_lens: String(source?.media?.narrative_lens ?? ''),
@@ -376,9 +434,12 @@ const normalizeAdminConfig = (input: any): AppConfig => {
       enabled: Boolean(source?.voice?.enabled ?? false),
       sesame_enabled: Boolean(source?.voice?.sesame_enabled ?? false),
       provider:
-        source?.voice?.provider === 'sesame' && Boolean(source?.voice?.sesame_enabled)
-          ? 'sesame'
-          : 'gemini_live',
+        source?.voice?.provider === 'elevenlabs'
+          ? 'elevenlabs'
+          : source?.voice?.provider === 'sesame' && Boolean(source?.voice?.sesame_enabled)
+            ? 'sesame'
+            : 'gemini_live',
+      public_panel_provider: source?.voice?.public_panel_provider === 'elevenlabs' ? 'elevenlabs' : 'gemini_live',
       api_url: String(source?.voice?.api_url ?? ''),
       speaker: String(source?.voice?.speaker ?? 'Concierge'),
       gemini_live_model: String(source?.voice?.gemini_live_model ?? defaultGeminiLiveModel),
@@ -425,6 +486,11 @@ export const fetchPublicConfig = async (): Promise<PublicConfig> => {
     brand: normalizeBrandConfig(source?.brand),
     operations: {
       cjs_enabled: Boolean(source?.operations?.cjs_enabled ?? true),
+    },
+    voice: {
+      elevenlabs_enabled: Boolean(source?.voice?.elevenlabs_enabled ?? false),
+      elevenlabs_agent_id: String(source?.voice?.elevenlabs_agent_id ?? ''),
+      active_panel: source?.voice?.active_panel === 'elevenlabs' ? 'elevenlabs' : 'gemini_live',
     },
   };
 };

@@ -83,16 +83,204 @@ export type ArtifactType =
   | 'resume_review'
   | 'search_strategy';
 
+export type DnaEvidenceClass = 'observed' | 'inferred' | 'external';
+export type DnaSignalTone = 'strong' | 'watch' | 'risk';
+export type DnaConfidenceBand = 'high' | 'medium' | 'low';
+
+export interface DnaUrgencyTask {
+  id: string;
+  label: string;
+  done: boolean;
+  timebox?: 'do_now' | '48h' | '72h';
+  rationale?: string;
+}
+
+export interface DnaSignalStripItem {
+  id: string;
+  label: string;
+  value: string;
+  detail?: string;
+  tone: DnaSignalTone;
+}
+
+export interface DnaSignalBreakdownItem {
+  id: string;
+  label: string;
+  score: number;
+  tone: DnaSignalTone;
+  rationale: string;
+  evidence: DnaEvidenceClass;
+}
+
+export interface DnaTrajectoryPoint {
+  label: string;
+  score: number;
+}
+
+export interface DnaMarketSignal {
+  composite_score: number;
+  momentum_label: string;
+  trajectory_type: 'history' | 'projection';
+  trajectory_basis: string;
+  trajectory: DnaTrajectoryPoint[];
+  breakdown: DnaSignalBreakdownItem[];
+}
+
+export interface DnaMarketDemandEnvironment {
+  id: string;
+  label: string;
+  demand_score: number;
+  fit_score: number;
+  compensation_band: string;
+  hiring_posture: string;
+  rationale: string;
+  evidence: DnaEvidenceClass;
+}
+
+export interface DnaCompensationLadderRung {
+  id: string;
+  label: string;
+  grade: string;
+  detail: string;
+}
+
+export interface DnaSourceRegistryEntry {
+  id: string;
+  label: string;
+  authority: 'government' | 'public_market' | 'company' | 'client' | 'internal_artifact';
+  url?: string;
+  as_of: string;
+  coverage: string;
+}
+
+export interface DnaEvidenceNode {
+  id: string;
+  title: string;
+  class: DnaEvidenceClass;
+  source_label: string;
+  source_type: 'government' | 'labor_market' | 'company' | 'posting' | 'intake' | 'artifact';
+  source_url?: string;
+  observed_at?: string;
+  statement: string;
+  confidence: DnaConfidenceBand;
+}
+
+export interface DnaReportTicker {
+  generated_at: string;
+  model_version: string;
+  evidence_nodes: number;
+  confidence_rating: string;
+  next_review_date: string;
+  source_snapshot_date: string;
+  source_count: number;
+  update_cadence: string;
+}
+
 export interface BriefContent {
   learned: string[]; // 3 bullets
   needle: string[]; // 3 bullets
-  next_72_hours: { id: string; label: string; done: boolean }[];
+  next_72_hours: DnaUrgencyTask[];
+  adaptation_verdict?: string;
+  thesis?: string;
+  primary_opportunity?: string;
+  primary_risk?: string;
+  recommended_habitat?: string;
+  compensation_posture?: string;
+  executive_summary?: string[];
+  market_receipt?: string[];
+  evidence_ledger?: {
+    observed: string[];
+    inferred: string[];
+    external: string[];
+  };
+  signal_strip?: DnaSignalStripItem[];
+  market_signal?: DnaMarketSignal;
+  compensation_ladder?: DnaCompensationLadderRung[];
+  report_ticker?: DnaReportTicker;
+}
+
+export interface DnaMarker {
+  id: string;
+  label: string;
+  score: number;
+  band: 'emerging' | 'viable' | 'strong' | 'distinguished';
+  interpretation: string;
+  evidence: DnaEvidenceClass;
+}
+
+export interface DnaFinding {
+  label: string;
+  finding: string;
+  implication: string;
+  evidence: DnaEvidenceClass;
+}
+
+export interface DnaEvidenceNote {
+  class: DnaEvidenceClass;
+  source_label: string;
+  note: string;
+  source_url?: string;
+  confidence?: DnaConfidenceBand;
+}
+
+export interface CompensationPosture {
+  market_value_range: string;
+  target_ask: string;
+  ask_justification_receipt: string[];
+  high_pay_habitats: string[];
+  underpay_risk_habitats: string[];
+  negotiation_strategy: string[];
 }
 
 export interface ProfileContent {
   strengths: string[];
   patterns: string[];
   leverage: string[];
+  report_version?: string;
+  generated_at?: string;
+  section_order?: string[];
+  thesis?: string;
+  target_environment?: string;
+  case_summary?: {
+    current_identity: string;
+    target_identity: string;
+    constraints: string[];
+    report_thesis: string;
+  };
+  genome_markers?: DnaMarker[];
+  behavioral_propensities?: DnaFinding[];
+  pressure_response?: DnaFinding[];
+  environmental_fit?: {
+    advantaged_in: string[];
+    punished_in: string[];
+    adjacency_paths: string[];
+    recommended_habitat: string[];
+  };
+  market_climate?: {
+    summary: string;
+    national_signals: string[];
+    occupation_signals: string[];
+    geography_signals: string[];
+    company_posture_notes: string[];
+  };
+  compensation_position?: CompensationPosture;
+  signal_strip?: DnaSignalStripItem[];
+  market_signal?: DnaMarketSignal;
+  market_demand_analysis?: {
+    summary: string;
+    environments: DnaMarketDemandEnvironment[];
+  };
+  compensation_ladder?: DnaCompensationLadderRung[];
+  report_ticker?: DnaReportTicker;
+  extinction_risks?: string[];
+  adaptive_assets?: string[];
+  lean_into?: string[];
+  let_go?: string[];
+  build_next?: string[];
+  evolution_path_90_days?: string[];
+  source_registry?: DnaSourceRegistryEntry[];
+  evidence_nodes?: DnaEvidenceNode[];
+  evidence_notes?: DnaEvidenceNote[];
 }
 
 export interface SuiteDistilledContent {
@@ -424,6 +612,17 @@ export interface AppConfig {
     live_appendix: string;
     art_director_appendix: string;
   };
+  professional_dna: {
+    enabled: boolean;
+    base_model: string;
+    research_model: string;
+    prompt_appendix: string;
+    enabled_sections: string[];
+    section_order: string[];
+    company_posture_notes_enabled: boolean;
+    research_domains: string[];
+    refresh_window_days: number;
+  };
   ui: {
     show_prologue: boolean;
     episodes_enabled: boolean;
@@ -452,7 +651,8 @@ export interface AppConfig {
   };
   voice: {
     enabled: boolean;
-    provider: 'sesame' | 'gemini_live';
+    provider: 'sesame' | 'gemini_live' | 'elevenlabs';
+    public_panel_provider: 'gemini_live' | 'elevenlabs';
     sesame_enabled: boolean;
     api_url: string;
     speaker: string;
@@ -482,6 +682,11 @@ export interface PublicConfig {
   ui: AppConfig['ui'];
   brand: AppConfig['brand'];
   operations: Pick<AppConfig['operations'], 'cjs_enabled'>;
+  voice: {
+    elevenlabs_enabled: boolean;
+    elevenlabs_agent_id: string;
+    active_panel: 'gemini_live' | 'elevenlabs';
+  };
 }
 
 export interface AdminSystemOverview {

@@ -142,6 +142,348 @@ export const SUITE_ARTIFACTS_SCHEMA = {
   required: ['brief', 'plan', 'profile', 'ai_profile', 'gaps'],
 };
 
+const STRING_ARRAY_SCHEMA = { type: Type.ARRAY, items: { type: Type.STRING } };
+
+const DNA_MARKER_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    score: { type: Type.NUMBER },
+    band: { type: Type.STRING },
+    interpretation: { type: Type.STRING },
+    evidence: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'score', 'band', 'interpretation', 'evidence'],
+};
+
+const DNA_FINDING_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    label: { type: Type.STRING },
+    finding: { type: Type.STRING },
+    implication: { type: Type.STRING },
+    evidence: { type: Type.STRING },
+  },
+  required: ['label', 'finding', 'implication', 'evidence'],
+};
+
+const DNA_EVIDENCE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    class: { type: Type.STRING },
+    source_label: { type: Type.STRING },
+    note: { type: Type.STRING },
+    source_url: { type: Type.STRING },
+    confidence: { type: Type.STRING },
+  },
+  required: ['class', 'source_label', 'note'],
+};
+
+const DNA_SIGNAL_STRIP_ITEM_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    value: { type: Type.STRING },
+    detail: { type: Type.STRING },
+    tone: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'value', 'tone'],
+};
+
+const DNA_SIGNAL_BREAKDOWN_ITEM_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    score: { type: Type.NUMBER },
+    tone: { type: Type.STRING },
+    rationale: { type: Type.STRING },
+    evidence: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'score', 'tone', 'rationale', 'evidence'],
+};
+
+const DNA_TRAJECTORY_POINT_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    label: { type: Type.STRING },
+    score: { type: Type.NUMBER },
+  },
+  required: ['label', 'score'],
+};
+
+const DNA_MARKET_SIGNAL_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    composite_score: { type: Type.NUMBER },
+    momentum_label: { type: Type.STRING },
+    trajectory_type: { type: Type.STRING },
+    trajectory_basis: { type: Type.STRING },
+    trajectory: { type: Type.ARRAY, items: DNA_TRAJECTORY_POINT_SCHEMA },
+    breakdown: { type: Type.ARRAY, items: DNA_SIGNAL_BREAKDOWN_ITEM_SCHEMA },
+  },
+  required: ['composite_score', 'momentum_label', 'trajectory_type', 'trajectory_basis', 'trajectory', 'breakdown'],
+};
+
+const DNA_MARKET_DEMAND_ENVIRONMENT_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    demand_score: { type: Type.NUMBER },
+    fit_score: { type: Type.NUMBER },
+    compensation_band: { type: Type.STRING },
+    hiring_posture: { type: Type.STRING },
+    rationale: { type: Type.STRING },
+    evidence: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'demand_score', 'fit_score', 'compensation_band', 'hiring_posture', 'rationale', 'evidence'],
+};
+
+const DNA_COMPENSATION_LADDER_RUNG_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    grade: { type: Type.STRING },
+    detail: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'grade', 'detail'],
+};
+
+const DNA_SOURCE_REGISTRY_ENTRY_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    label: { type: Type.STRING },
+    authority: { type: Type.STRING },
+    url: { type: Type.STRING },
+    as_of: { type: Type.STRING },
+    coverage: { type: Type.STRING },
+  },
+  required: ['id', 'label', 'authority', 'as_of', 'coverage'],
+};
+
+const DNA_EVIDENCE_NODE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    id: { type: Type.STRING },
+    title: { type: Type.STRING },
+    class: { type: Type.STRING },
+    source_label: { type: Type.STRING },
+    source_type: { type: Type.STRING },
+    source_url: { type: Type.STRING },
+    observed_at: { type: Type.STRING },
+    statement: { type: Type.STRING },
+    confidence: { type: Type.STRING },
+  },
+  required: ['id', 'title', 'class', 'source_label', 'source_type', 'statement', 'confidence'],
+};
+
+const DNA_REPORT_TICKER_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    generated_at: { type: Type.STRING },
+    model_version: { type: Type.STRING },
+    evidence_nodes: { type: Type.NUMBER },
+    confidence_rating: { type: Type.STRING },
+    next_review_date: { type: Type.STRING },
+    source_snapshot_date: { type: Type.STRING },
+    source_count: { type: Type.NUMBER },
+    update_cadence: { type: Type.STRING },
+  },
+  required: [
+    'generated_at',
+    'model_version',
+    'evidence_nodes',
+    'confidence_rating',
+    'next_review_date',
+    'source_snapshot_date',
+    'source_count',
+    'update_cadence',
+  ],
+};
+
+export const DNA_RESEARCH_ENRICHMENT_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    brief: {
+      type: Type.OBJECT,
+      properties: {
+        learned: STRING_ARRAY_SCHEMA,
+        needle: STRING_ARRAY_SCHEMA,
+        next_72_hours: BRIEF_SCHEMA.properties.next_72_hours,
+        adaptation_verdict: { type: Type.STRING },
+        thesis: { type: Type.STRING },
+        primary_opportunity: { type: Type.STRING },
+        primary_risk: { type: Type.STRING },
+        recommended_habitat: { type: Type.STRING },
+        compensation_posture: { type: Type.STRING },
+        executive_summary: STRING_ARRAY_SCHEMA,
+        market_receipt: STRING_ARRAY_SCHEMA,
+        evidence_ledger: {
+          type: Type.OBJECT,
+          properties: {
+            observed: STRING_ARRAY_SCHEMA,
+            inferred: STRING_ARRAY_SCHEMA,
+            external: STRING_ARRAY_SCHEMA,
+          },
+          required: ['observed', 'inferred', 'external'],
+        },
+        signal_strip: { type: Type.ARRAY, items: DNA_SIGNAL_STRIP_ITEM_SCHEMA },
+        market_signal: DNA_MARKET_SIGNAL_SCHEMA,
+        compensation_ladder: { type: Type.ARRAY, items: DNA_COMPENSATION_LADDER_RUNG_SCHEMA },
+        report_ticker: DNA_REPORT_TICKER_SCHEMA,
+      },
+      required: [
+        'learned',
+        'needle',
+        'next_72_hours',
+        'adaptation_verdict',
+        'thesis',
+        'primary_opportunity',
+        'primary_risk',
+        'recommended_habitat',
+        'compensation_posture',
+        'executive_summary',
+        'market_receipt',
+        'evidence_ledger',
+        'signal_strip',
+        'market_signal',
+        'compensation_ladder',
+        'report_ticker',
+      ],
+    },
+    profile: {
+      type: Type.OBJECT,
+      properties: {
+        strengths: STRING_ARRAY_SCHEMA,
+        patterns: STRING_ARRAY_SCHEMA,
+        leverage: STRING_ARRAY_SCHEMA,
+        report_version: { type: Type.STRING },
+        generated_at: { type: Type.STRING },
+        section_order: STRING_ARRAY_SCHEMA,
+        thesis: { type: Type.STRING },
+        target_environment: { type: Type.STRING },
+        case_summary: {
+          type: Type.OBJECT,
+          properties: {
+            current_identity: { type: Type.STRING },
+            target_identity: { type: Type.STRING },
+            constraints: STRING_ARRAY_SCHEMA,
+            report_thesis: { type: Type.STRING },
+          },
+          required: ['current_identity', 'target_identity', 'constraints', 'report_thesis'],
+        },
+        genome_markers: { type: Type.ARRAY, items: DNA_MARKER_SCHEMA },
+        behavioral_propensities: { type: Type.ARRAY, items: DNA_FINDING_SCHEMA },
+        pressure_response: { type: Type.ARRAY, items: DNA_FINDING_SCHEMA },
+        environmental_fit: {
+          type: Type.OBJECT,
+          properties: {
+            advantaged_in: STRING_ARRAY_SCHEMA,
+            punished_in: STRING_ARRAY_SCHEMA,
+            adjacency_paths: STRING_ARRAY_SCHEMA,
+            recommended_habitat: STRING_ARRAY_SCHEMA,
+          },
+          required: ['advantaged_in', 'punished_in', 'adjacency_paths', 'recommended_habitat'],
+        },
+        market_climate: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            national_signals: STRING_ARRAY_SCHEMA,
+            occupation_signals: STRING_ARRAY_SCHEMA,
+            geography_signals: STRING_ARRAY_SCHEMA,
+            company_posture_notes: STRING_ARRAY_SCHEMA,
+          },
+          required: [
+            'summary',
+            'national_signals',
+            'occupation_signals',
+            'geography_signals',
+            'company_posture_notes',
+          ],
+        },
+        signal_strip: { type: Type.ARRAY, items: DNA_SIGNAL_STRIP_ITEM_SCHEMA },
+        market_signal: DNA_MARKET_SIGNAL_SCHEMA,
+        market_demand_analysis: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            environments: { type: Type.ARRAY, items: DNA_MARKET_DEMAND_ENVIRONMENT_SCHEMA },
+          },
+          required: ['summary', 'environments'],
+        },
+        compensation_position: {
+          type: Type.OBJECT,
+          properties: {
+            market_value_range: { type: Type.STRING },
+            target_ask: { type: Type.STRING },
+            ask_justification_receipt: STRING_ARRAY_SCHEMA,
+            high_pay_habitats: STRING_ARRAY_SCHEMA,
+            underpay_risk_habitats: STRING_ARRAY_SCHEMA,
+            negotiation_strategy: STRING_ARRAY_SCHEMA,
+          },
+          required: [
+            'market_value_range',
+            'target_ask',
+            'ask_justification_receipt',
+            'high_pay_habitats',
+            'underpay_risk_habitats',
+            'negotiation_strategy',
+          ],
+        },
+        compensation_ladder: { type: Type.ARRAY, items: DNA_COMPENSATION_LADDER_RUNG_SCHEMA },
+        report_ticker: DNA_REPORT_TICKER_SCHEMA,
+        extinction_risks: STRING_ARRAY_SCHEMA,
+        adaptive_assets: STRING_ARRAY_SCHEMA,
+        lean_into: STRING_ARRAY_SCHEMA,
+        let_go: STRING_ARRAY_SCHEMA,
+        build_next: STRING_ARRAY_SCHEMA,
+        evolution_path_90_days: STRING_ARRAY_SCHEMA,
+        source_registry: { type: Type.ARRAY, items: DNA_SOURCE_REGISTRY_ENTRY_SCHEMA },
+        evidence_nodes: { type: Type.ARRAY, items: DNA_EVIDENCE_NODE_SCHEMA },
+        evidence_notes: { type: Type.ARRAY, items: DNA_EVIDENCE_SCHEMA },
+      },
+      required: [
+        'strengths',
+        'patterns',
+        'leverage',
+        'report_version',
+        'generated_at',
+        'section_order',
+        'thesis',
+        'target_environment',
+        'case_summary',
+        'genome_markers',
+        'behavioral_propensities',
+        'pressure_response',
+        'environmental_fit',
+        'market_climate',
+        'signal_strip',
+        'market_signal',
+        'market_demand_analysis',
+        'compensation_position',
+        'compensation_ladder',
+        'report_ticker',
+        'extinction_risks',
+        'adaptive_assets',
+        'lean_into',
+        'let_go',
+        'build_next',
+        'evolution_path_90_days',
+        'source_registry',
+        'evidence_nodes',
+        'evidence_notes',
+      ],
+    },
+  },
+  required: ['brief', 'profile'],
+};
+
 export const EPISODE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -177,7 +519,7 @@ export const EPISODE_SCHEMA = {
               kind: { type: Type.STRING, description: 'text|image|video|audio' },
               model: {
                 type: Type.STRING,
-                description: 'e.g., gemini-3-flash-preview, gemini-2.5-flash-image-preview, veo-3.1-generate-preview',
+                description: 'e.g., gemini-2.5-pro, gemini-2.5-flash-image, veo-3.1-generate-preview',
               },
               note: { type: Type.STRING },
             },
@@ -219,6 +561,57 @@ Output contract:
 - Include economic framing where useful.
 - Produce concise bullets and short sentences.
 - Populate all required fields from the response schema.
+`;
+
+export const composeDnaResearchPrompt = ({
+  intent,
+  preferences,
+  answers,
+  artifacts,
+  config,
+  marketSnapshot,
+}) => `
+Upgrade the existing Brief and Profile into a research-grade Professional DNA report in strict JSON with keys:
+- brief
+- profile
+
+Client context:
+- intent: ${intent}
+- pace: ${preferences?.pace ?? 'standard'}
+- focus: ${preferences?.focus ?? 'job_search'}
+
+Intake answers:
+${renderAnswers(answers)}
+
+Current suite artifacts:
+${JSON.stringify(artifacts ?? {}, null, 2)}
+
+Professional DNA configuration:
+- enabled sections: ${Array.isArray(config?.enabled_sections) && config.enabled_sections.length ? config.enabled_sections.join(', ') : 'all default sections'}
+- section order: ${Array.isArray(config?.section_order) && config.section_order.length ? config.section_order.join(', ') : 'default'}
+- company posture notes enabled: ${config?.company_posture_notes_enabled === false ? 'no' : 'yes'}
+- research domains: ${Array.isArray(config?.research_domains) && config.research_domains.length ? config.research_domains.join(', ') : 'default domains'}
+- refresh window days: ${config?.refresh_window_days ?? 14}
+
+Public market snapshot:
+${marketSnapshot}
+
+Output rules:
+- Keep the tone sober, premium, and evidence-led.
+- Preserve the original actionability of the Brief.
+- Separate observed, inferred, and external evidence cleanly.
+- Use directional market-value framing, not fake precision.
+- Mention company posture and churn tradeoffs only as directional notes, not categorical truths.
+- The command bar and market signal panel must be supported by real report fields, not decorative placeholders.
+- Distinguish fact from inference explicitly. For example: "BLS data shows..." versus "This suggests...".
+- Every external market claim should map to source_registry and evidence_nodes.
+- If you cannot support a claim with intake, artifacts, or public-source context, omit it.
+- Do not fabricate historical time series. If you need a trajectory and historical data is thin, use a clearly labeled projection path.
+- The market demand analysis should compare role habitats or company environments, not generic industries.
+- The compensation ladder should express current posture, narrative-adjusted posture, and a plausible ceiling.
+- The report ticker should make refresh cadence and evidence counts legible.
+- If the data is thin, say so with low-confidence language.
+- Fill every schema field.
 `;
 
 export const composeBingeSystemInstruction = () => `

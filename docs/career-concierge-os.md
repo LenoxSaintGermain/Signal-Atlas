@@ -77,6 +77,19 @@ The Lucid-added client modules are now first-class suite surfaces:
 
 The design target remains an editorial, cinematic workspace rather than a generic SaaS dashboard.
 Modules should feel like guided surfaces inside one OS, not isolated product pages.
+The `Brief` / `Profile` pair now also carries a research-grade Professional DNA posture:
+
+- `The Brief` behaves as the abstract and decision memo
+- `Your Profile` behaves as the full dossier
+- the report now includes adaptation verdict, market-climate framing, directional market-value guidance, evidence classes, habitat recommendations, and a 90-day evolution path
+- compensation is framed as a justified ask tied to scope, proof, and environment fit rather than a flat salary guess
+- the client UI now renders that dossier as a terminal-grade intelligence surface rather than a restrained artifact page:
+  - a top command bar with `Market Fit`, `Signal Clarity`, `Comp Index`, `Adapt Pressure`, and `Live Dossier`
+  - a `Career Market Signal` panel with composite score, projection path, and four signal breakdown metrics
+  - a `Market Demand Analysis` environment matrix comparing demand and fit by habitat
+  - a three-rung compensation ladder (`Current`, `Narrative-Adjusted`, `Market Ceiling`)
+  - a 72-hour war-room execution block and footer ticker for report freshness/evidence posture
+- those UI metrics are source-backed or explicitly inferred from dossier evidence; the system no longer relies on decorative placeholder chart data
 
 The suite shell is now driven by a shared brand config exposed through public config:
 
@@ -97,6 +110,7 @@ The admin console is the operational control plane for:
 - voice provider routing
 - Gemini Live transcription, interruption, and VAD tuning
 - prompt appendices and ROM tuning
+- Professional DNA research configuration for model path, prompt appendix, section lists, section order, company-posture notes, research domains, and dossier refresh window
 - media library targeting
 - feature flags
 - brand identity, color tokens, hierarchy, logo URL, and workflow-label copy
@@ -136,6 +150,7 @@ It uses:
 
 The operating surface still comes first, but it now behaves like a structured backstage OS instead of a stacked settings page.
 Brand Studio is now part of that write surface and is the canonical place to tune the editorial grid shell.
+The `Experience` rail now also exposes the Professional DNA research lane directly, so operators can edit the dossier prompt appendix, choose the model path, change which report sections are generated, tune the research-domain list, and set the report refresh window without touching code.
 The next planned admin expansion is a dedicated orchestration operating section for staff registry visibility, run monitoring, handoff-policy control, approvals, and evaluation state.
 That orchestration operating section is now partially live in `Governance`: operators can inspect the expanded staff registry, the default intent/tier policy graph, and recent confidence-bearing orchestration runs without leaving Admin.
 For demo/operator continuity, admin access now accepts Firebase `admin` or `staff` claims, allowlisted `ADMIN_EMAILS`, and a baked-in operator fallback for `operator@thirdsignal.ai` plus `gws@conciergecareerservices.com`.
@@ -193,11 +208,29 @@ The Express API under `api/` handles:
 - admin config reads and writes
 - public brand-config reads for the suite shell
 - suite artifact generation
+- post-intake Professional DNA dossier enrichment with a dedicated `dna_research_analyst` role
 - CJS execution rail endpoints (resume upload/review/strategy)
 - interaction ledger + approval endpoints
 - agent registry endpoint
 - admin system overview endpoint for runtime + policy visibility
 - explicit agent scope enforcement for core orchestration roles
+- suite generation now runs in two layers for paid-suite users:
+  - the core artifact pass
+  - a Professional DNA research pass that upgrades `brief` and `profile` before downstream planning continues
+- the DNA research lane writes upgraded `brief` / `profile` content back into Firestore and logs an orchestration run so governance can inspect the handoff
+- the DNA lane now hydrates a stricter dossier contract:
+  - signal-strip metrics
+  - market-signal composite + projection path
+  - market-demand environment analysis
+  - compensation ladder
+  - report ticker metadata
+  - source registry and evidence-node appendix
+- the current source spine is official-public-data-first:
+  - BLS Employment Situation
+  - BLS JOLTS
+  - BLS Occupational Outlook Handbook
+  - O*NET role baselines
+  - DOL WARN overview when supply-shock posture matters
 - binge episode generation with persona-derived topic routing when no explicit target skill is supplied
 - live token generation
 - voice synthesis routing

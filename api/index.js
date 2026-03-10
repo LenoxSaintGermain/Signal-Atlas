@@ -6,11 +6,13 @@ import { readFile } from 'node:fs/promises';
 import { ActivityHandling, EndSensitivity, GoogleGenAI, Modality, StartSensitivity } from '@google/genai';
 import {
   CONCIERGE_ROM_SYSTEM,
+  DNA_RESEARCH_ENRICHMENT_SCHEMA,
   EPISODE_SCHEMA,
   ROM_VERSION,
   SUITE_ARTIFACTS_SCHEMA,
   composeBingePrompt,
   composeBingeSystemInstruction,
+  composeDnaResearchPrompt,
   composeSuitePrompt,
   findToneViolations,
 } from './prompts/conciergeRom.js';
@@ -28,6 +30,13 @@ import {
   GEMINI_LIVE_MODEL_OPTIONS,
   GEMINI_LIVE_VOICE_OPTIONS,
 } from './config/voiceRuntime.js';
+import {
+  DEFAULT_GEMINI_BINGE_MODEL,
+  DEFAULT_GEMINI_IMAGE_MODEL,
+  DEFAULT_GEMINI_SUITE_MODEL,
+  DEFAULT_GEMINI_UTILITY_MODEL,
+  DEFAULT_GEMINI_VIDEO_MODEL,
+} from './config/geminiModels.js';
 import { STARTER_MEDIA_LIBRARY_PACK } from './config/starterMediaLibrary.js';
 
 const app = express();
@@ -78,6 +87,14 @@ app.get('/v1/public/config', async (_req, res) => {
       brand: config.brand,
       operations: {
         cjs_enabled: config.operations.cjs_enabled,
+      },
+      voice: {
+        elevenlabs_enabled: Boolean(elevenlabsAgentId),
+        elevenlabs_agent_id: elevenlabsAgentId || '',
+        active_panel:
+          config.voice?.public_panel_provider === 'elevenlabs' && elevenlabsAgentId
+            ? 'elevenlabs'
+            : 'gemini_live',
       },
     },
   });
@@ -239,13 +256,13 @@ app.get('/v1/admin/system-overview', requireAuth, requireAdmin, async (_req, res
         voice_enabled: Boolean(config.voice?.enabled),
         voice_provider: nonEmpty(config.voice?.provider) || 'gemini_live',
         sesame_enabled: Boolean(config.voice?.sesame_enabled),
-        live_model: nonEmpty(config.voice?.gemini_live_model) || geminiLiveModelDefault,
+      live_model: nonEmpty(config.voice?.gemini_live_model) || geminiLiveModelDefault,
         gemini_input_audio_transcription_enabled: Boolean(config.voice?.gemini_input_audio_transcription_enabled),
         gemini_output_audio_transcription_enabled: Boolean(config.voice?.gemini_output_audio_transcription_enabled),
         gemini_affective_dialog_enabled: Boolean(config.voice?.gemini_affective_dialog_enabled),
         gemini_proactive_audio_enabled: Boolean(config.voice?.gemini_proactive_audio_enabled),
-        suite_model: nonEmpty(config.generation?.suite_model) || fastTextModel,
-        binge_model: nonEmpty(config.generation?.binge_model) || fastTextModel,
+        suite_model: nonEmpty(config.generation?.suite_model) || suiteModelDefault,
+        binge_model: nonEmpty(config.generation?.binge_model) || bingeModelDefault,
         image_model: nonEmpty(config.media?.image_model) || imageModelDefault,
         video_model: nonEmpty(config.media?.video_model) || videoModelDefault,
         episodes_enabled: Boolean(config.ui?.episodes_enabled),
@@ -789,9 +806,13 @@ const manusApiKey = process.env.MANUS_API_KEY || null;
 const manusApiUrl = process.env.MANUS_API_URL || 'https://open.manus.ai';
 const sesameAuthHeader = process.env.SESAME_AUTH_HEADER || 'Authorization';
 const sesameAuthPrefix = process.env.SESAME_AUTH_PREFIX || 'Bearer ';
-const fastTextModel = process.env.GEMINI_MODEL_FAST || 'gemini-3-flash-preview';
-const imageModelDefault = process.env.GEMINI_MODEL_IMAGE || 'gemini-2.5-flash-image-preview';
-const videoModelDefault = process.env.GEMINI_MODEL_VIDEO || 'veo-3.1-generate-preview';
+const utilityTextModel = process.env.GEMINI_MODEL_FAST || DEFAULT_GEMINI_UTILITY_MODEL;
+const suiteModelDefault =
+  process.env.GEMINI_MODEL_SUITE || process.env.GEMINI_MODEL_FAST || DEFAULT_GEMINI_SUITE_MODEL;
+const bingeModelDefault =
+  process.env.GEMINI_MODEL_BINGE || process.env.GEMINI_MODEL_FAST || DEFAULT_GEMINI_BINGE_MODEL;
+const imageModelDefault = process.env.GEMINI_MODEL_IMAGE || DEFAULT_GEMINI_IMAGE_MODEL;
+const videoModelDefault = process.env.GEMINI_MODEL_VIDEO || DEFAULT_GEMINI_VIDEO_MODEL;
 const geminiLiveModelDefault =
   process.env.GEMINI_MODEL_LIVE_VOICE ||
   GEMINI_LIVE_MODEL_OPTIONS[0]?.id ||
@@ -846,8 +867,8 @@ const CONFIG_COLLECTION = 'system';
 const CONFIG_DOC = 'career-concierge-config';
 const DEFAULT_APP_CONFIG = {
   generation: {
-    suite_model: fastTextModel,
-    binge_model: fastTextModel,
+    suite_model: suiteModelDefault,
+    binge_model: bingeModelDefault,
     suite_temperature: 0.45,
     binge_temperature: 0.7,
   },
@@ -857,6 +878,53 @@ const DEFAULT_APP_CONFIG = {
     rom_appendix: '',
     live_appendix: '',
     art_director_appendix: '',
+  },
+  professional_dna: {
+    enabled: true,
+    base_model: suiteModelDefault,
+    research_model: suiteModelDefault,
+    prompt_appendix: '',
+    enabled_sections: [
+      'case_summary',
+      'genome_markers',
+      'behavioral_propensities',
+      'pressure_response',
+      'environmental_fit',
+      'market_climate',
+      'compensation_position',
+      'extinction_risks',
+      'adaptive_assets',
+      'lean_into',
+      'let_go',
+      'build_next',
+      'evolution_path_90_days',
+    ],
+    section_order: [
+      'case_summary',
+      'genome_markers',
+      'behavioral_propensities',
+      'pressure_response',
+      'environmental_fit',
+      'market_climate',
+      'compensation_position',
+      'extinction_risks',
+      'adaptive_assets',
+      'lean_into',
+      'let_go',
+      'build_next',
+      'evolution_path_90_days',
+    ],
+    company_posture_notes_enabled: true,
+    research_domains: [
+      'labor_market',
+      'occupation_outlook',
+      'geography',
+      'compensation',
+      'company_posture',
+      'supply_shifts',
+      'regulatory_demand',
+    ],
+    refresh_window_days: 14,
   },
   ui: {
     show_prologue: true,
@@ -889,6 +957,7 @@ const DEFAULT_APP_CONFIG = {
   voice: {
     enabled: true,
     provider: 'gemini_live',
+    public_panel_provider: 'gemini_live',
     sesame_enabled: false,
     api_url: process.env.SESAME_API_URL || '',
     speaker: process.env.SESAME_SPEAKER || 'Concierge',
@@ -1187,6 +1256,8 @@ const normalizeConfig = (input = {}) => {
   const operations = source.operations && typeof source.operations === 'object' ? source.operations : {};
   const media = source.media && typeof source.media === 'object' ? source.media : {};
   const voice = source.voice && typeof source.voice === 'object' ? source.voice : {};
+  const professionalDna =
+    source.professional_dna && typeof source.professional_dna === 'object' ? source.professional_dna : {};
   const safety = source.safety && typeof source.safety === 'object' ? source.safety : {};
   const brand = source.brand && typeof source.brand === 'object' ? source.brand : {};
 
@@ -1211,6 +1282,37 @@ const normalizeConfig = (input = {}) => {
       rom_appendix: String(prompts.rom_appendix ?? '').trim(),
       live_appendix: String(prompts.live_appendix ?? '').trim(),
       art_director_appendix: String(prompts.art_director_appendix ?? '').trim(),
+    },
+    professional_dna: {
+      enabled:
+        typeof professionalDna.enabled === 'boolean'
+          ? professionalDna.enabled
+          : DEFAULT_APP_CONFIG.professional_dna.enabled,
+      base_model: nonEmpty(professionalDna.base_model) || DEFAULT_APP_CONFIG.professional_dna.base_model,
+      research_model: nonEmpty(professionalDna.research_model) || DEFAULT_APP_CONFIG.professional_dna.research_model,
+      prompt_appendix: String(professionalDna.prompt_appendix ?? '').trim(),
+      enabled_sections:
+        Array.isArray(professionalDna.enabled_sections) && professionalDna.enabled_sections.length
+          ? professionalDna.enabled_sections.map((entry) => String(entry).trim()).filter(Boolean)
+          : [...DEFAULT_APP_CONFIG.professional_dna.enabled_sections],
+      section_order:
+        Array.isArray(professionalDna.section_order) && professionalDna.section_order.length
+          ? professionalDna.section_order.map((entry) => String(entry).trim()).filter(Boolean)
+          : [...DEFAULT_APP_CONFIG.professional_dna.section_order],
+      company_posture_notes_enabled:
+        typeof professionalDna.company_posture_notes_enabled === 'boolean'
+          ? professionalDna.company_posture_notes_enabled
+          : DEFAULT_APP_CONFIG.professional_dna.company_posture_notes_enabled,
+      research_domains:
+        Array.isArray(professionalDna.research_domains) && professionalDna.research_domains.length
+          ? professionalDna.research_domains.map((entry) => String(entry).trim()).filter(Boolean)
+          : [...DEFAULT_APP_CONFIG.professional_dna.research_domains],
+      refresh_window_days: clampInteger(
+        professionalDna.refresh_window_days,
+        DEFAULT_APP_CONFIG.professional_dna.refresh_window_days,
+        1,
+        90
+      ),
     },
     ui: {
       show_prologue:
@@ -1270,10 +1372,16 @@ const normalizeConfig = (input = {}) => {
           ? voice.sesame_enabled
           : DEFAULT_APP_CONFIG.voice.sesame_enabled,
       provider:
-        voice.provider === 'sesame' &&
-        (typeof voice.sesame_enabled === 'boolean' ? voice.sesame_enabled : DEFAULT_APP_CONFIG.voice.sesame_enabled)
-          ? 'sesame'
-          : 'gemini_live',
+        voice.provider === 'elevenlabs'
+          ? 'elevenlabs'
+          : voice.provider === 'sesame' &&
+              (typeof voice.sesame_enabled === 'boolean'
+                ? voice.sesame_enabled
+                : DEFAULT_APP_CONFIG.voice.sesame_enabled)
+            ? 'sesame'
+            : 'gemini_live',
+      public_panel_provider:
+        voice.public_panel_provider === 'elevenlabs' ? 'elevenlabs' : DEFAULT_APP_CONFIG.voice.public_panel_provider,
       api_url: nonEmpty(voice.api_url) || DEFAULT_APP_CONFIG.voice.api_url,
       speaker: nonEmpty(voice.speaker) || DEFAULT_APP_CONFIG.voice.speaker,
       gemini_live_model: nonEmpty(voice.gemini_live_model) || DEFAULT_APP_CONFIG.voice.gemini_live_model,
@@ -1363,6 +1471,19 @@ const joinInstructionParts = (...parts) =>
 
 const suiteSystemInstruction = (runtimeConfig) =>
   joinInstructionParts(CONCIERGE_ROM_SYSTEM, runtimeConfig?.prompts?.rom_appendix);
+
+const dnaResearchSystemInstruction = (runtimeConfig) =>
+  joinInstructionParts(
+    CONCIERGE_ROM_SYSTEM,
+    runtimeConfig?.prompts?.rom_appendix,
+    `ADDITIONAL MODE: PROFESSIONAL_DNA_RESEARCH
+- Behave like a sober career research analyst, not a coach.
+- Separate observed, inferred, and external evidence.
+- Compensation guidance must be directional and justified, never fabricated or over-precise.
+- Company posture notes must be probabilistic and reputation-aware, not absolute claims.
+- Prefer premium dossier language over dashboard language.`,
+    runtimeConfig?.professional_dna?.prompt_appendix
+  );
 
 const bingeSystemInstruction = (runtimeConfig) =>
   joinInstructionParts(composeBingeSystemInstruction(), runtimeConfig?.prompts?.rom_appendix);
@@ -1698,7 +1819,7 @@ const loadSamplePersonaFixtures = async () => {
 const baseMeta = (mode, degraded, extra = {}) => ({
   prompt_version: ROM_VERSION,
   generation_mode: mode,
-  model: extra.model || (mode === 'gemini' ? fastTextModel : 'deterministic-fallback'),
+  model: extra.model || (mode === 'gemini' ? utilityTextModel : 'deterministic-fallback'),
   generated_at: new Date().toISOString(),
   degraded,
   ...extra,
@@ -1791,6 +1912,927 @@ const buildSuiteFallback = (answers = {}) => {
       constraints: constraints ? [`Constraint register: ${constraints}.`] : ['Constraint register is incomplete.'],
     },
   };
+};
+
+const PROFESSIONAL_DNA_SOURCE_REGISTRY = [
+  {
+    id: 'bls-employment-situation-feb-2026',
+    label: 'BLS Employment Situation - February 2026',
+    authority: 'government',
+    url: 'https://www.bls.gov/news.release/archives/empsit_03062026.htm',
+    as_of: '2026-03-06',
+    coverage: 'National payrolls, unemployment, participation, and long-term unemployment.',
+  },
+  {
+    id: 'bls-jolts-dec-2025',
+    label: 'BLS Job Openings and Labor Turnover - December 2025',
+    authority: 'government',
+    url: 'https://www.bls.gov/news.release/archives/jolts_02052026.pdf',
+    as_of: '2026-02-05',
+    coverage: 'Job openings, hires, separations, quits, and layoffs.',
+  },
+  {
+    id: 'bls-occupation-outlook',
+    label: 'BLS Occupational Outlook Handbook',
+    authority: 'government',
+    url: 'https://www.bls.gov/ooh/',
+    as_of: '2026-03-10',
+    coverage: 'Occupation outlook, pay ranges, and role-family baseline context.',
+  },
+  {
+    id: 'onet-role-signals',
+    label: 'O*NET Online',
+    authority: 'public_market',
+    url: 'https://www.onetonline.org/',
+    as_of: '2026-03-10',
+    coverage: 'Role requirements, task clusters, and adjacent role mapping.',
+  },
+  {
+    id: 'dol-warn-overview',
+    label: 'U.S. Department of Labor WARN Overview',
+    authority: 'government',
+    url: 'https://www.dol.gov/general/topic/termination/plantclosings',
+    as_of: '2026-03-10',
+    coverage: 'WARN framework used when reasoning about supply shocks and layoff pressure.',
+  },
+];
+
+const PROFESSIONAL_DNA_MARKET_SNAPSHOT = [
+  'Snapshot date: March 10, 2026.',
+  'Employment Situation release dated March 6, 2026 reports February 2026 payrolls down by 92,000 and unemployment at 4.4%.',
+  'Labor-force participation sits at 62.0% and long-term unemployment at 1.9 million.',
+  'JOLTS release dated February 5, 2026 reports December 2025 job openings at 6.5 million, down over the month and year.',
+  'Occupation and role-fit baselines should be anchored against BLS Occupational Outlook Handbook and O*NET role families.',
+  'WARN data should be treated as a selective supply-shock signal when relevant, not as a universal market proxy.',
+  'Interpretation: the market is selective. Proof, scope, and environment fit matter more than generalized ambition.',
+].join('\n');
+
+const clampScore = (value, fallback = 50) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  if (number < 0) return 0;
+  if (number > 100) return 100;
+  return Math.round(number);
+};
+
+const scoreTone = (score) => {
+  if (score >= 70) return 'strong';
+  if (score >= 45) return 'watch';
+  return 'risk';
+};
+
+const gradeFromScore = (score) => {
+  if (score >= 94) return 'A+';
+  if (score >= 90) return 'A';
+  if (score >= 85) return 'A-';
+  if (score >= 80) return 'B+';
+  if (score >= 74) return 'B';
+  if (score >= 68) return 'B-';
+  if (score >= 62) return 'C+';
+  return 'C';
+};
+
+const slugifyDnaId = (value, fallback = 'dna-node') => {
+  const slug = String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || fallback;
+};
+
+const toIsoDate = (value, fallback = new Date().toISOString()) => {
+  const parsed = new Date(value || fallback);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString().slice(0, 10);
+  return parsed.toISOString().slice(0, 10);
+};
+
+const addDaysIso = (value, days) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString().slice(0, 10);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+};
+
+const nonEmptyList = (value) =>
+  Array.isArray(value)
+    ? value
+        .map((entry) => String(entry ?? '').trim())
+        .filter(Boolean)
+    : [];
+
+const getMarkerScore = (markers = [], markerId, fallback = 50) => {
+  const marker = Array.isArray(markers) ? markers.find((entry) => entry?.id === markerId) : null;
+  return clampScore(marker?.score, fallback);
+};
+
+const computeConfidenceRating = (nodes = []) => {
+  const total = Array.isArray(nodes) ? nodes.length : 0;
+  if (!total) return '41 / 100';
+  const weighted = nodes.reduce((sum, node) => {
+    if (node?.confidence === 'high') return sum + 1;
+    if (node?.confidence === 'medium') return sum + 0.72;
+    return sum + 0.45;
+  }, 0);
+  return `${Math.round((weighted / total) * 100)} / 100`;
+};
+
+const applyProfessionalDnaConfig = (report = {}, config = {}) => {
+  const enabledSections = Array.isArray(config?.enabled_sections) && config.enabled_sections.length
+    ? config.enabled_sections
+    : DEFAULT_APP_CONFIG.professional_dna.enabled_sections;
+  const sectionOrder = Array.isArray(config?.section_order) && config.section_order.length
+    ? config.section_order
+    : Array.isArray(report?.profile?.section_order) && report.profile.section_order.length
+      ? report.profile.section_order
+      : DEFAULT_APP_CONFIG.professional_dna.section_order;
+  const filteredOrder = sectionOrder.filter((sectionId) => enabledSections.includes(sectionId));
+
+  const next = {
+    brief: { ...(report?.brief || {}) },
+    profile: {
+      ...(report?.profile || {}),
+      section_order: filteredOrder.length ? filteredOrder : [...DEFAULT_APP_CONFIG.professional_dna.section_order],
+    },
+  };
+
+  if (config?.company_posture_notes_enabled === false && next.profile?.market_climate) {
+    next.profile.market_climate = {
+      ...next.profile.market_climate,
+      company_posture_notes: [],
+    };
+  }
+
+  return next;
+};
+
+const buildDnaSignalBreakdown = ({ brief = {}, profile = {} }) => {
+  const narrativeClarity = getMarkerScore(profile.genome_markers, 'market_signaling', 41);
+  const strategicTranslation = getMarkerScore(profile.genome_markers, 'strategic_translation', 68);
+  const executionReliability = getMarkerScore(profile.genome_markers, 'execution_reliability', 72);
+  const toolingFluency = getMarkerScore(profile.genome_markers, 'tooling_fluency', 56);
+  const observedCount =
+    nonEmptyList(brief?.evidence_ledger?.observed).length +
+    (Array.isArray(profile.evidence_notes)
+      ? profile.evidence_notes.filter((note) => note?.class === 'observed').length
+      : 0);
+  const externalCount =
+    nonEmptyList(brief?.evidence_ledger?.external).length +
+    (Array.isArray(profile.evidence_notes)
+      ? profile.evidence_notes.filter((note) => note?.class === 'external').length
+      : 0);
+  const leverageCount = nonEmptyList(profile.leverage).length;
+  const proofDensity = clampScore(32 + observedCount * 9 + externalCount * 6 + leverageCount * 4, 38);
+  const marketDemandFit = clampScore(
+    strategicTranslation * 0.38 + executionReliability * 0.34 + toolingFluency * 0.28,
+    66
+  );
+  const networkCapital = clampScore(40 + leverageCount * 5 + nonEmptyList(profile.adaptive_assets).length * 3, 55);
+
+  return [
+    {
+      id: 'narrative_clarity',
+      label: 'Narrative Clarity',
+      score: narrativeClarity,
+      tone: scoreTone(narrativeClarity),
+      rationale: 'Derived from market-signaling markers and how legible the profile reads to the market.',
+      evidence: 'inferred',
+    },
+    {
+      id: 'market_demand_fit',
+      label: 'Market Demand Fit',
+      score: marketDemandFit,
+      tone: scoreTone(marketDemandFit),
+      rationale: 'Derived from strategic translation, execution reliability, and tooling fluency against a selective market.',
+      evidence: 'inferred',
+    },
+    {
+      id: 'network_capital',
+      label: 'Network Capital',
+      score: networkCapital,
+      tone: scoreTone(networkCapital),
+      rationale: 'Inferred from leverage surfaces, adaptive assets, and adjacency strength rather than social vanity metrics.',
+      evidence: 'inferred',
+    },
+    {
+      id: 'proof_density',
+      label: 'Proof Density',
+      score: proofDensity,
+      tone: scoreTone(proofDensity),
+      rationale: 'Derived from observed evidence, external receipts, and how much outcome proof is already packaged.',
+      evidence: 'observed',
+    },
+  ];
+};
+
+const buildDnaTrajectory = ({ breakdown = [] }) => {
+  const byId = Object.fromEntries(breakdown.map((entry) => [entry.id, entry]));
+  const narrative = clampScore(byId.narrative_clarity?.score, 41);
+  const demand = clampScore(byId.market_demand_fit?.score, 68);
+  const proof = clampScore(byId.proof_density?.score, 38);
+  const network = clampScore(byId.network_capital?.score, 55);
+
+  return {
+    trajectory_type: 'projection',
+    trajectory_basis: 'Projection path from current signal quality toward a more credible market ask.',
+    trajectory: [
+      { label: 'Current', score: clampScore((narrative * 0.55) + (proof * 0.45), 48) },
+      { label: 'Narrative', score: clampScore((narrative * 0.7) + (demand * 0.3), 58) },
+      { label: 'Proof', score: clampScore((proof * 0.55) + (demand * 0.45), 63) },
+      { label: 'Ceiling', score: clampScore((demand * 0.45) + (proof * 0.35) + (network * 0.2) + 8, 74) },
+    ],
+  };
+};
+
+const buildCompensationLadder = ({ breakdown = [], compensationPosition = {} }) => {
+  const byId = Object.fromEntries(breakdown.map((entry) => [entry.id, entry.score]));
+  const currentScore = clampScore((byId.proof_density || 38) * 0.58 + (byId.narrative_clarity || 41) * 0.42, 68);
+  const narrativeAdjustedScore = clampScore(currentScore + 7, 75);
+  const ceilingScore = clampScore(
+    ((byId.market_demand_fit || 66) * 0.5) + ((byId.network_capital || 55) * 0.18) + ((byId.proof_density || 38) * 0.32) + 10,
+    86
+  );
+
+  return [
+    {
+      id: 'current',
+      label: 'Current',
+      grade: gradeFromScore(currentScore),
+      detail: compensationPosition?.market_value_range || 'Current posture reflects signal and proof currently visible to the market.',
+    },
+    {
+      id: 'narrative_adjusted',
+      label: 'Narrative-Adjusted',
+      grade: gradeFromScore(narrativeAdjustedScore),
+      detail: compensationPosition?.target_ask || 'Clearer narrative packaging and proof framing can move the ask materially.',
+    },
+    {
+      id: 'market_ceiling',
+      label: 'Market Ceiling',
+      grade: gradeFromScore(ceilingScore),
+      detail: 'Plausible ceiling if proof density, environment fit, and market positioning tighten together.',
+    },
+  ];
+};
+
+const buildSignalStrip = ({ breakdown = [], compensationLadder = [], evidenceNodes = [] }) => {
+  const byId = Object.fromEntries(breakdown.map((entry) => [entry.id, entry.score]));
+  const currentRung = compensationLadder[0]?.grade || 'B';
+  const adaptationPressure = nonEmptyList(evidenceNodes.filter((node) => node?.class === 'inferred').map((node) => node.title)).length >= 3
+    ? 'HIGH'
+    : 'MED';
+
+  return [
+    {
+      id: 'market_fit',
+      label: 'Market Fit',
+      value: String(clampScore(byId.market_demand_fit, 66)),
+      detail: 'Role-habitat fit under current labor conditions.',
+      tone: scoreTone(byId.market_demand_fit || 66),
+    },
+    {
+      id: 'signal_clarity',
+      label: 'Signal Clarity',
+      value: String(clampScore(byId.narrative_clarity, 41)),
+      detail: 'How legible the profile reads before a human makes inferences.',
+      tone: scoreTone(byId.narrative_clarity || 41),
+    },
+    {
+      id: 'comp_index',
+      label: 'Comp Index',
+      value: currentRung,
+      detail: 'Current compensation posture based on visible signal and proof.',
+      tone: currentRung.startsWith('A') ? 'strong' : currentRung.startsWith('B') ? 'watch' : 'risk',
+    },
+    {
+      id: 'adapt_pressure',
+      label: 'Adapt Pressure',
+      value: adaptationPressure,
+      detail: 'Pressure imposed by market selectivity and narrative gaps.',
+      tone: adaptationPressure === 'HIGH' ? 'risk' : 'watch',
+    },
+    {
+      id: 'live_dossier',
+      label: 'Live Dossier',
+      value: 'ACTIVE',
+      detail: 'This report is designed as a refreshable operating document.',
+      tone: 'strong',
+    },
+  ];
+};
+
+const buildSourceRegistry = ({ generatedAt }) => [
+  ...PROFESSIONAL_DNA_SOURCE_REGISTRY,
+  {
+    id: 'client-intake',
+    label: 'Smart Start Intake',
+    authority: 'client',
+    as_of: toIsoDate(generatedAt),
+    coverage: 'Client-stated role, target, constraints, work style, and pressure patterns.',
+  },
+  {
+    id: 'suite-artifacts',
+    label: 'Current Brief and Profile Artifacts',
+    authority: 'internal_artifact',
+    as_of: toIsoDate(generatedAt),
+    coverage: 'Previously generated suite artifacts used as the baseline dossier substrate.',
+  },
+];
+
+const buildEvidenceNodes = ({ brief = {}, profile = {}, sourceRegistry = [] }) => {
+  const nodes = [];
+  const noteSourceByClass = {
+    observed: 'Smart Start Intake',
+    inferred: 'Profile synthesis',
+    external: sourceRegistry.find((entry) => entry.authority === 'government')?.label || 'Public labor sources',
+  };
+
+  nonEmptyList(brief?.evidence_ledger?.observed).slice(0, 4).forEach((statement, index) => {
+    nodes.push({
+      id: `brief-observed-${index + 1}`,
+      title: `Observed signal ${index + 1}`,
+      class: 'observed',
+      source_label: 'Smart Start Intake',
+      source_type: 'intake',
+      statement,
+      confidence: 'high',
+    });
+  });
+
+  nonEmptyList(brief?.evidence_ledger?.external).slice(0, 3).forEach((statement, index) => {
+    nodes.push({
+      id: `brief-external-${index + 1}`,
+      title: `External market note ${index + 1}`,
+      class: 'external',
+      source_label: noteSourceByClass.external,
+      source_type: 'government',
+      source_url: sourceRegistry.find((entry) => entry.authority === 'government')?.url || '',
+      statement,
+      confidence: 'medium',
+    });
+  });
+
+  if (Array.isArray(profile.evidence_notes)) {
+    profile.evidence_notes.forEach((note, index) => {
+      nodes.push({
+        id: `evidence-note-${index + 1}`,
+        title: note.source_label || `Evidence note ${index + 1}`,
+        class: note.class || 'inferred',
+        source_label: note.source_label || noteSourceByClass[note.class || 'inferred'],
+        source_type:
+          note.class === 'observed'
+            ? 'intake'
+            : note.class === 'external'
+              ? 'government'
+              : 'artifact',
+        source_url: note.source_url,
+        statement: note.note,
+        confidence: note.confidence || (note.class === 'observed' ? 'high' : 'medium'),
+      });
+    });
+  }
+
+  return nodes.filter((node, index, array) => {
+    const key = `${node.class}:${node.statement}`;
+    return array.findIndex((candidate) => `${candidate.class}:${candidate.statement}` === key) === index;
+  });
+};
+
+const buildMarketDemandAnalysis = ({ profile = {}, breakdown = [], compensationPosition = {} }) => {
+  const byId = Object.fromEntries(breakdown.map((entry) => [entry.id, entry.score]));
+  const recommended = nonEmptyList(profile?.environmental_fit?.recommended_habitat);
+  const advantaged = nonEmptyList(profile?.environmental_fit?.advantaged_in);
+  const punished = nonEmptyList(profile?.environmental_fit?.punished_in);
+  const highPay = nonEmptyList(compensationPosition?.high_pay_habitats);
+  const underpay = nonEmptyList(compensationPosition?.underpay_risk_habitats);
+
+  const entries = [];
+  const addEnvironment = (label, posture) => {
+    if (!label || entries.some((entry) => entry.label === label)) return;
+    let demandScore = clampScore(byId.market_demand_fit || 66, 66);
+    let fitScore = clampScore(((byId.narrative_clarity || 41) * 0.26) + ((byId.proof_density || 38) * 0.34) + ((byId.market_demand_fit || 66) * 0.4), 59);
+    let compensationBand = compensationPosition?.market_value_range || 'Comp band pending calibration.';
+    let hiringPosture = 'Selective';
+    let rationale = 'Environment fit inferred from current dossier signals.';
+
+    if (posture === 'high_pay') {
+      demandScore = clampScore(demandScore + 6, 72);
+      fitScore = clampScore(fitScore + 4, 64);
+      hiringPosture = 'Aggressive but selective';
+      rationale = 'Pays for visible ownership, but the market will expect tighter proof and scope.';
+    } else if (posture === 'advantaged') {
+      demandScore = clampScore(demandScore + 3, 69);
+      fitScore = clampScore(fitScore + 8, 67);
+      hiringPosture = 'Healthy';
+      rationale = 'This habitat matches the profile’s operating strengths and visibility needs.';
+    } else if (posture === 'underpay') {
+      demandScore = clampScore(demandScore - 8, 56);
+      fitScore = clampScore(fitScore - 11, 48);
+      hiringPosture = 'Budget-sensitive';
+      compensationBand = 'Scope may improve faster than cash.';
+      rationale = 'This habitat may offer access or title movement while suppressing compensation.';
+    } else if (posture === 'punished') {
+      demandScore = clampScore(demandScore - 12, 52);
+      fitScore = clampScore(fitScore - 18, 41);
+      hiringPosture = 'High-friction';
+      compensationBand = 'Premium signal required.';
+      rationale = 'This environment is more likely to penalize ambiguity, politics, or weak pre-packaged signal.';
+    }
+
+    entries.push({
+      id: slugifyDnaId(label, `environment-${entries.length + 1}`),
+      label,
+      demand_score: demandScore,
+      fit_score: fitScore,
+      compensation_band: compensationBand,
+      hiring_posture: hiringPosture,
+      rationale,
+      evidence: posture === 'punished' || posture === 'underpay' ? 'inferred' : 'external',
+    });
+  };
+
+  [...recommended.slice(0, 2), ...advantaged.slice(0, 2)].slice(0, 2).forEach((label) => addEnvironment(label, 'advantaged'));
+  highPay.slice(0, 1).forEach((label) => addEnvironment(label, 'high_pay'));
+  [...underpay.slice(0, 1), ...punished.slice(0, 1)].slice(0, 1).forEach((label) =>
+    addEnvironment(label, underpay.includes(label) ? 'underpay' : 'punished')
+  );
+
+  const fallbackEntries = entries.length
+    ? entries
+    : [
+        {
+          id: 'mid-market-operator',
+          label: 'Mid-market operator',
+          demand_score: clampScore(byId.market_demand_fit || 66, 66),
+          fit_score: clampScore((byId.market_demand_fit || 66) - 3, 63),
+          compensation_band: compensationPosition?.market_value_range || 'Comp band pending calibration.',
+          hiring_posture: 'Selective',
+          rationale: 'Default habitat when the profile suggests execution depth and translation leverage.',
+          evidence: 'inferred',
+        },
+      ];
+
+  return {
+    summary:
+      'Demand strength and personal fit are not the same variable. The strongest habitats are where both clear the threshold at the same time.',
+    environments: fallbackEntries.slice(0, 4),
+  };
+};
+
+const hydrateProfessionalDnaReport = ({ report = {}, answers = {}, artifacts = {}, config = {}, model = 'dna-report-v2' }) => {
+  const current = applyProfessionalDnaConfig(report, config);
+  const brief = { ...(current?.brief || {}) };
+  const profile = { ...(current?.profile || {}) };
+  const generatedAt = profile.generated_at || toIsoDate(new Date().toISOString());
+  const sourceRegistry = Array.isArray(profile.source_registry) && profile.source_registry.length
+    ? profile.source_registry
+    : buildSourceRegistry({ generatedAt, answers, artifacts });
+  const evidenceNodes = Array.isArray(profile.evidence_nodes) && profile.evidence_nodes.length
+    ? profile.evidence_nodes
+    : buildEvidenceNodes({ brief, profile, sourceRegistry });
+  const breakdown =
+    Array.isArray(profile?.market_signal?.breakdown) && profile.market_signal.breakdown.length
+      ? profile.market_signal.breakdown
+      : buildDnaSignalBreakdown({ brief, profile });
+  const trajectory =
+    Array.isArray(profile?.market_signal?.trajectory) && profile.market_signal.trajectory.length
+      ? {
+          trajectory_type: profile.market_signal.trajectory_type || 'projection',
+          trajectory_basis:
+            profile.market_signal.trajectory_basis || 'Projection path from current signal quality toward a stronger market ask.',
+          trajectory: profile.market_signal.trajectory,
+        }
+      : buildDnaTrajectory({ breakdown });
+  const compositeScore = clampScore(
+    breakdown.reduce((sum, item) => sum + clampScore(item?.score, 50), 0) / Math.max(breakdown.length, 1),
+    60
+  );
+  const compensationLadder =
+    Array.isArray(profile.compensation_ladder) && profile.compensation_ladder.length
+      ? profile.compensation_ladder
+      : buildCompensationLadder({ breakdown, compensationPosition: profile.compensation_position });
+  const signalStrip =
+    Array.isArray(profile.signal_strip) && profile.signal_strip.length
+      ? profile.signal_strip
+      : buildSignalStrip({ breakdown, compensationLadder, evidenceNodes });
+  const reportTicker = profile.report_ticker || {
+    generated_at: toIsoDate(generatedAt),
+    model_version: model,
+    evidence_nodes: evidenceNodes.length,
+    confidence_rating: computeConfidenceRating(evidenceNodes),
+    next_review_date: addDaysIso(generatedAt, clampInteger(config?.refresh_window_days, 14, 1, 90)),
+    source_snapshot_date: PROFESSIONAL_DNA_SOURCE_REGISTRY[0]?.as_of || toIsoDate(generatedAt),
+    source_count: sourceRegistry.length,
+    update_cadence: `${clampInteger(config?.refresh_window_days, 14, 1, 90)}-day review`,
+  };
+  const marketSignal = profile.market_signal || {
+    composite_score: compositeScore,
+    momentum_label:
+      compositeScore >= 75 ? 'Signal strengthening' : compositeScore >= 58 ? 'Signal mixed' : 'Signal vulnerable',
+    breakdown,
+    ...trajectory,
+  };
+  const marketDemandAnalysis = profile.market_demand_analysis || buildMarketDemandAnalysis({
+    profile,
+    breakdown,
+    compensationPosition: profile.compensation_position,
+  });
+
+  return {
+    brief: {
+      ...brief,
+      signal_strip: brief.signal_strip?.length ? brief.signal_strip : signalStrip,
+      market_signal: brief.market_signal?.breakdown?.length ? brief.market_signal : marketSignal,
+      compensation_ladder: brief.compensation_ladder?.length ? brief.compensation_ladder : compensationLadder,
+      report_ticker: brief.report_ticker || reportTicker,
+    },
+    profile: {
+      ...profile,
+      generated_at: generatedAt,
+      signal_strip: signalStrip,
+      market_signal: marketSignal,
+      market_demand_analysis: marketDemandAnalysis,
+      compensation_ladder: compensationLadder,
+      report_ticker: reportTicker,
+      source_registry: sourceRegistry,
+      evidence_nodes: evidenceNodes,
+    },
+  };
+};
+
+const buildDnaResearchFallback = ({ answers = {}, artifacts = {}, config = {} }) => {
+  const currentTitle = nonEmpty(answers.current_title || answers.current_or_target_job_title) || 'your current role';
+  const industry = nonEmpty(answers.industry) || 'your industry';
+  const target = nonEmpty(answers.target || answers.current_or_target_job_title) || 'your next role';
+  const constraints = nonEmpty(answers.constraints);
+  const pressure = nonEmpty(answers.pressure_breaks);
+  const workStyle = nonEmpty(answers.work_style);
+  const sectionOrder =
+    Array.isArray(config?.section_order) && config.section_order.length
+      ? config.section_order
+      : [...DEFAULT_APP_CONFIG.professional_dna.section_order];
+
+  const currentBrief = artifacts?.brief || {};
+  const currentProfile = artifacts?.profile || {};
+
+  return hydrateProfessionalDnaReport(
+    {
+      brief: {
+        learned: Array.isArray(currentBrief.learned) && currentBrief.learned.length ? currentBrief.learned : [
+          `You are reallocating from ${currentTitle} toward ${target}.`,
+          `Your market context is ${industry}, and clarity will outperform volume.`,
+          'Your edge increases when each action has a concrete decision target.',
+        ],
+        needle: Array.isArray(currentBrief.needle) && currentBrief.needle.length ? currentBrief.needle : [
+          'Convert experience into proof that survives executive scrutiny.',
+          'Protect optionality by narrowing effort to high-leverage moves.',
+          'Treat AI as a structuring instrument, not a credibility substitute.',
+        ],
+        next_72_hours:
+          Array.isArray(currentBrief.next_72_hours) && currentBrief.next_72_hours.length
+            ? currentBrief.next_72_hours
+            : [
+                { id: 'n72-1', label: 'Build a verified evidence list: outcomes, scope, and metrics.', done: false },
+                { id: 'n72-2', label: 'Define a single target lane and remove adjacent noise.', done: false },
+                { id: 'n72-3', label: 'Draft a concise positioning statement for stakeholder-facing use.', done: false },
+              ],
+        adaptation_verdict: 'Viable with adaptation pressure.',
+        thesis: `Your profile can move from ${currentTitle} toward ${target}, but the market will reward clearer proof and stronger positioning discipline before it rewards ambition alone.`,
+        primary_opportunity: `Use ${industry} context as proof of domain credibility while repositioning around ${target}.`,
+        primary_risk: 'Broad ambition without hard evidence will read as narrative inflation.',
+        recommended_habitat: 'Mid-market or transformation-heavy teams that reward visible operators with strategic range.',
+        compensation_posture: 'Ask should rise only when proof, role-fit, and negotiation posture are aligned.',
+        executive_summary: [
+          `The market can understand your move if you package ${currentTitle} experience as decision-grade evidence, not general ambition.`,
+          `The fastest path to credibility is not more activity. It is tighter proof, stronger role naming, and better compensation posture.`,
+          `You are better suited to selective, evidence-led moves than broad-volume application behavior.`,
+        ],
+        market_receipt: [
+          'Current market conditions reward fit, proof, and clear scope more than generalized potential.',
+          'The top end of a compensation ask requires visible evidence, not only narrative confidence.',
+          'Geography, title scope, and sector posture will move your range materially.',
+        ],
+        evidence_ledger: {
+          observed: [
+            `Current role signal: ${currentTitle}.`,
+            `Target direction signal: ${target}.`,
+            `Industry context: ${industry}.`,
+          ],
+          inferred: [
+            'Execution quality appears stronger than visible market signaling.',
+            'This profile is likely advantaged by clarity, rhythm, and defined operating scope.',
+          ],
+          external: [
+            'The labor market is selective rather than loose.',
+            'Compensation upside concentrates around proof, scope, and environment fit.',
+          ],
+        },
+      },
+      profile: {
+        strengths:
+          Array.isArray(currentProfile.strengths) && currentProfile.strengths.length
+            ? currentProfile.strengths
+            : [
+                'You favor clear thinking over performative busyness.',
+                'You respond to structure when stakes are explicit.',
+                'You can compound progress through repeatable systems.',
+              ],
+        patterns:
+          Array.isArray(currentProfile.patterns) && currentProfile.patterns.length
+            ? currentProfile.patterns
+            : [
+                pressure
+                  ? `Pressure pattern: ${pressure.toLowerCase()}.`
+                  : 'Pressure pattern: decision load rises before clarity.',
+                workStyle
+                  ? `Stabilizer: ${workStyle.toLowerCase()}.`
+                  : 'Stabilizer: short execution cycles with explicit outputs.',
+              ],
+        leverage:
+          Array.isArray(currentProfile.leverage) && currentProfile.leverage.length
+            ? currentProfile.leverage
+            : [
+                'Turn recurring work into reusable strategic assets.',
+                'Translate execution history into board-readable proof.',
+                'Use concise language to reduce friction in high-stakes decisions.',
+              ],
+        report_version: 'dna-report-v1',
+        generated_at: new Date().toISOString(),
+        section_order: sectionOrder,
+        thesis: `Your advantage sits in disciplined execution and strategic translation, but your market value will rise only when those traits are packaged for ${target}.`,
+        target_environment: `${target} in ${industry}, with preference for teams that reward visible ownership and pragmatic AI fluency.`,
+        case_summary: {
+          current_identity: currentTitle,
+          target_identity: target,
+          constraints: constraints ? [constraints] : ['Constraint register still needs refinement.'],
+          report_thesis:
+            'This profile is credible for upward movement, but only if evidence, environment selection, and compensation positioning are tightened together.',
+        },
+        genome_markers: [
+          {
+            id: 'strategic_translation',
+            label: 'Strategic Translation',
+            score: 78,
+            band: 'strong',
+            interpretation: 'You likely make complexity legible for other people, which compounds in operator and cross-functional roles.',
+            evidence: 'inferred',
+          },
+          {
+            id: 'execution_reliability',
+            label: 'Execution Reliability',
+            score: 82,
+            band: 'distinguished',
+            interpretation: 'Your profile reads as dependable under pressure when scope is explicit.',
+            evidence: 'observed',
+          },
+          {
+            id: 'tooling_fluency',
+            label: 'Tooling Fluency',
+            score: 56,
+            band: 'viable',
+            interpretation: 'AI and tooling signal appears serviceable but not yet premium enough to command the top band alone.',
+            evidence: 'inferred',
+          },
+          {
+            id: 'market_signaling',
+            label: 'Market Signaling',
+            score: 49,
+            band: 'emerging',
+            interpretation: 'The likely gap is not raw capability. It is how clearly that capability is packaged for the market.',
+            evidence: 'inferred',
+          },
+        ],
+        behavioral_propensities: [
+          {
+            label: 'Operating style',
+            finding: workStyle
+              ? `You report a preferred work style of ${workStyle.toLowerCase()}.`
+              : 'You appear to prefer structured movement over improvised chaos.',
+            implication: 'This profile is likely strongest in environments with clear goals and visible ownership.',
+            evidence: workStyle ? 'observed' : 'inferred',
+          },
+          {
+            label: 'Decision posture',
+            finding: 'You likely create value by reducing ambiguity for other people.',
+            implication: 'That trait raises value in operationally messy teams and transformation mandates.',
+            evidence: 'inferred',
+          },
+        ],
+        pressure_response: [
+          {
+            label: 'Pressure pattern',
+            finding: pressure
+              ? `You describe your pressure pattern as ${pressure.toLowerCase()}.`
+              : 'Pressure seems to increase once decision load outruns clarity.',
+            implication: 'The report should prescribe tighter scoping and stronger evidence rituals rather than more raw volume.',
+            evidence: pressure ? 'observed' : 'inferred',
+          },
+        ],
+        environmental_fit: {
+          advantaged_in: [
+            'Mid-market teams with visible scope and imperfect systems.',
+            'Cross-functional roles where translation and execution both matter.',
+          ],
+          punished_in: [
+            'Prestige-heavy environments that require pre-packaged brand signal before capability can be seen.',
+            'Highly political cultures where vague role boundaries conceal ownership.',
+          ],
+          adjacency_paths: [
+            `Bridge from ${currentTitle} into ${target} through proof-led role reframing.`,
+            'Use AI-fluency and systems thinking as leverage rather than as a complete reinvention story.',
+          ],
+          recommended_habitat: ['Transformation teams', 'Mid-market operators', 'Execution-heavy strategic functions'],
+        },
+        market_climate: {
+          summary:
+            'The current labor market is selective. Strong asks still clear, but only when evidence, scope, and market fit are obvious.',
+          national_signals: [
+            'Payroll softness and cooling openings argue for selectivity over application volume.',
+            'Hiring managers can afford to prefer proof over narrative.',
+          ],
+          occupation_signals: [
+            `Roles adjacent to ${target} reward operators who can show measurable impact and practical AI adoption.`,
+          ],
+          geography_signals: ['Compensation and title velocity will differ materially by geography and company stage.'],
+          company_posture_notes:
+            config?.company_posture_notes_enabled === false
+              ? []
+              : [
+                  'Some companies pay aggressively but extract that premium through churn and pace.',
+                  'Others underpay cash but improve title scope and survivability.',
+                ],
+        },
+        compensation_position: {
+          market_value_range: '$145k-$185k total compensation, pending geography, scope, and proof density.',
+          target_ask: '$172k target ask with room to trade on title, scope, or bonus structure.',
+          ask_justification_receipt: [
+            'Operational reliability under pressure.',
+            'Cross-functional communication leverage.',
+            'Evidence of system building and repeated execution.',
+          ],
+          high_pay_habitats: [
+            'Transformation-heavy product and operations roles.',
+            'Companies paying for visible ownership rather than narrow task execution.',
+          ],
+          underpay_risk_habitats: [
+            'Roles with inflated title and deflated scope.',
+            'Companies using “mission” language to hide weak compensation bands.',
+          ],
+          negotiation_strategy: [
+            'Lead with scope and measurable outcomes before numbers.',
+            'Use role calibration and market comparisons, not personal need, to justify the ask.',
+            'Trade compensation against title velocity and environment quality consciously, not accidentally.',
+          ],
+        },
+        extinction_risks: [
+          'Being interpreted as broadly capable but insufficiently packaged.',
+          'Allowing proof to remain buried inside general experience language.',
+          'Targeting brand-heavy environments without enough visible signal.',
+        ],
+        adaptive_assets: [
+          'Clear thinking under pressure.',
+          'Systems orientation.',
+          'Cross-functional trust potential.',
+          'High ability to turn repeatable work into reusable leverage.',
+        ],
+        lean_into: [
+          'Proof-led positioning.',
+          'Visible ownership and measurable scope.',
+          'Roles where AI fluency compounds execution rather than replaces judgment.',
+        ],
+        let_go: [
+          'Generic ambition language.',
+          'Broad search behavior without one defined target lane.',
+          'Confusing busy activity with strategic movement.',
+        ],
+        build_next: [
+          'A concise proof portfolio.',
+          'A role-calibrated positioning narrative.',
+          'A compensation receipt tied to outcomes, scope, and market fit.',
+        ],
+        evolution_path_90_days: [
+          'Weeks 1-2: tighten target lane, proof inventory, and constraints.',
+          'Weeks 3-6: create two visible market-facing assets and test narrative fit.',
+          'Weeks 7-12: push calibrated outreach and compensation conversations only where habitat fit is credible.',
+        ],
+        evidence_notes: [
+          {
+            class: 'observed',
+            source_label: 'Smart Start Intake',
+            note: 'Role, target direction, constraints, and stated work-style inputs come directly from intake.',
+            confidence: 'high',
+          },
+          {
+            class: 'inferred',
+            source_label: 'Profile synthesis',
+            note: 'Genome markers and pressure-response interpretations are directional, not psychometric diagnoses.',
+            confidence: 'medium',
+          },
+          {
+            class: 'external',
+            source_label: 'Public labor snapshot',
+            note: 'Market climate statements are based on current labor softness, compensation selectivity, and role-fit pressure.',
+            confidence: 'medium',
+          },
+        ],
+      },
+    },
+    {
+      answers,
+      artifacts,
+      config,
+      model: 'deterministic-fallback',
+    }
+  );
+};
+
+const runDnaResearchPass = async ({ uid, intent, preferences, answers, artifacts, runtimeConfig }) => {
+  const config = runtimeConfig?.professional_dna || DEFAULT_APP_CONFIG.professional_dna;
+  if (config?.enabled === false) {
+    const hydrated = hydrateProfessionalDnaReport({
+      report: {
+        brief: artifacts?.brief || {},
+        profile: artifacts?.profile || {},
+      },
+      answers,
+      artifacts,
+      config,
+      model: 'dna-disabled-pass-through',
+    });
+    return {
+      status: 'skipped',
+      brief: hydrated.brief,
+      profile: hydrated.profile,
+    };
+  }
+
+  const fallback = buildDnaResearchFallback({ answers, artifacts, config });
+  const basePayload = {
+    uid,
+    intent,
+    preferences,
+    artifact_refs: ['brief', 'profile'].map((key) => `clients/${uid}/artifacts/${key}`),
+    evidence_refs: ['clients/{uid}', 'clients/{uid}/artifacts/brief', 'clients/{uid}/artifacts/profile'],
+  };
+
+  if (!ai) {
+    return {
+      ...basePayload,
+      status: 'fallback_completed',
+      brief: fallback.brief,
+      profile: fallback.profile,
+      model: 'deterministic-fallback',
+    };
+  }
+
+  const model = nonEmpty(config.research_model) || nonEmpty(config.base_model) || suiteModelDefault;
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: composeDnaResearchPrompt({
+        intent,
+        preferences,
+        answers,
+        artifacts,
+        config,
+        marketSnapshot: PROFESSIONAL_DNA_MARKET_SNAPSHOT,
+      }),
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: DNA_RESEARCH_ENRICHMENT_SCHEMA,
+        systemInstruction: dnaResearchSystemInstruction(runtimeConfig),
+        temperature: runtimeConfig?.generation?.suite_temperature ?? DEFAULT_APP_CONFIG.generation.suite_temperature,
+      },
+    });
+
+    const text = response.text?.trim();
+    if (!text) throw new Error('empty_dna_research_response');
+    const parsed = safeParseJson(text);
+    const filtered = hydrateProfessionalDnaReport({
+      report: parsed,
+      answers,
+      artifacts,
+      config,
+      model,
+    });
+    return {
+      ...basePayload,
+      status: 'completed',
+      brief: filtered.brief,
+      profile: filtered.profile,
+      model,
+    };
+  } catch (error) {
+    console.error('dna_research_error', error);
+    return {
+      ...basePayload,
+      status: 'fallback_completed',
+      brief: fallback.brief,
+      profile: fallback.profile,
+      model,
+      detail: sanitizeError(error, 'dna_research_failed'),
+    };
+  }
 };
 
 const deriveEpisodeTargetSkill = ({ dna = {}, explicitSkill = '' }) => {
@@ -2437,6 +3479,17 @@ const AGENT_REGISTRY = [
     policy_version: '2026-03-08.1',
   },
   {
+    role_id: 'dna_research_analyst',
+    title: 'DNA Research Analyst',
+    objective:
+      'Expand intake and first-order artifacts into a research-backed Professional DNA dossier with market value and habitat guidance.',
+    reads: ['clients/{uid}', 'clients/{uid}/artifacts/*', 'clients/{uid}/assets/*'],
+    writes: ['clients/{uid}/artifacts/brief', 'clients/{uid}/artifacts/profile', 'clients/{uid}/orchestration_runs/*'],
+    approval_required: false,
+    access_model: 'read_write_scoped',
+    policy_version: '2026-03-10.1',
+  },
+  {
     role_id: 'myconcierge_guide',
     title: 'MyConcierge Guide',
     objective: 'Answer directional questions using the user artifact stack and current journey intent.',
@@ -2516,6 +3569,7 @@ const DEFAULT_ORCHESTRATION_POLICY = {
     'chief_of_staff',
     'intake_concierge',
     'artifact_composer_pack',
+    'dna_research_analyst',
     'myconcierge_guide',
     'resume_reviewer',
     'search_strategist',
@@ -2538,20 +3592,20 @@ const DEFAULT_ORCHESTRATION_POLICY = {
   intent_routes: [
     {
       intent: 'current_role',
-      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'episode_showrunner'],
-      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'episode_showrunner', 'content_director'],
+      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'episode_showrunner'],
+      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'episode_showrunner', 'content_director'],
       premium_human_handoff: false,
     },
     {
       intent: 'target_role',
-      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'search_strategist', 'resume_reviewer'],
-      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'search_strategist', 'resume_reviewer', 'content_director'],
+      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'search_strategist', 'resume_reviewer'],
+      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'search_strategist', 'resume_reviewer', 'content_director'],
       premium_human_handoff: true,
     },
     {
       intent: 'not_sure',
-      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'myconcierge_guide', 'episode_showrunner'],
-      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'myconcierge_guide', 'episode_showrunner', 'content_director'],
+      primary_roles: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'myconcierge_guide', 'episode_showrunner'],
+      handoff_order: ['chief_of_staff', 'artifact_composer_pack', 'dna_research_analyst', 'myconcierge_guide', 'episode_showrunner', 'content_director'],
       premium_human_handoff: true,
     },
   ],
@@ -2940,6 +3994,74 @@ const recordChiefOfStaffRun = async ({ uid, intent, preferences, answers, meta, 
     },
     { merge: true }
   );
+  return { run_id: runId, confidence };
+};
+
+const recordDnaResearchRun = async ({
+  uid,
+  intent,
+  preferences,
+  answers,
+  artifacts,
+  status,
+  model,
+  detail = '',
+}) => {
+  const now = new Date();
+  const runId = `dna_research_${now.getTime().toString(36)}`;
+  const nextRoles = nextRolesForIntent(intent).filter((role) => role !== 'chief_of_staff');
+  const confidence = status === 'completed' ? 0.9 : 0.68;
+  const runPayload = {
+    run_id: runId,
+    client_uid: uid,
+    started_by_role: 'dna_research_analyst',
+    trigger: 'professional_dna_generate',
+    status,
+    intent,
+    tier: inferTierFromSignal({ answers, preferences }),
+    summary: `Professional DNA dossier refreshed with ${status === 'completed' ? 'model-backed' : 'fallback'} research synthesis.`,
+    confidence,
+    approval_state: 'not_required',
+    evidence_refs: ['clients/{uid}', 'clients/{uid}/artifacts/brief', 'clients/{uid}/artifacts/profile'],
+    artifact_refs: ['brief', 'profile'].map((key) => `clients/${uid}/artifacts/${key}`),
+    next_roles: nextRoles,
+    policy_version: DEFAULT_ORCHESTRATION_POLICY.version,
+    source_meta: {
+      model: model || 'unknown',
+      detail,
+      market_snapshot_date: '2026-03-10',
+    },
+    created_at: now,
+    updated_at: now,
+  };
+
+  await clientOrchestrationRunsRef(uid).doc(runId).set(
+    {
+      ...runPayload,
+      evaluation: buildOrchestrationEvaluation(runPayload),
+    },
+    { merge: true }
+  );
+
+  await clientArtifactsRef(uid).doc('brief').set(
+    {
+      type: 'brief',
+      title: 'The Brief',
+      updated_at: now,
+      content: artifacts?.brief || {},
+    },
+    { merge: true }
+  );
+  await clientArtifactsRef(uid).doc('profile').set(
+    {
+      type: 'profile',
+      title: 'Your Profile',
+      updated_at: now,
+      content: artifacts?.profile || {},
+    },
+    { merge: true }
+  );
+
   return { run_id: runId, confidence };
 };
 
@@ -3585,7 +4707,7 @@ const withEpisodeMediaHints = (episode, runtimeConfig) => {
   if (!hasKind('text')) {
     recommended.unshift({
       kind: 'text',
-      model: runtimeConfig.generation.binge_model || fastTextModel,
+      model: runtimeConfig.generation.binge_model || bingeModelDefault,
       note: 'Episode story beats and challenge logic.',
     });
   }
@@ -3648,6 +4770,16 @@ const buildMediaDirection = ({ episode, dna, targetSkill, runtimeConfig }) => {
 const sanitizeError = (error, fallback) => {
   const text = String(error?.message ?? fallback ?? 'generation_failed').trim();
   return text.slice(0, 200);
+};
+
+const describeMediaGenerationIssue = (kind, error) => {
+  const detail = sanitizeError(error, `${kind}_generation_failed`);
+  if (/enhanceprompt parameter is not supported/i.test(detail)) {
+    return kind === 'image'
+      ? 'Image route needs an API-safe retry after config sync.'
+      : 'Media route needs an API-safe retry after config sync.';
+  }
+  return detail;
 };
 
 const getNestedString = (obj, path) =>
@@ -3925,7 +5057,7 @@ const stubEpisode = (runtimeConfig, seed = 'default', meta = {}) => {
       audio_prompt:
         'A subtle tense underscore with soft clock ticks, minimal, premium.',
       recommended_models: [
-        { kind: 'text', model: fastTextModel, note: 'Fast episode generation' },
+        { kind: 'text', model: utilityTextModel, note: 'Low-cost utility drafting route' },
         { kind: 'video', model: runtimeConfig?.media?.video_model || videoModelDefault, note: 'If generating a short cinematic clip' },
         { kind: 'image', model: runtimeConfig?.media?.image_model || imageModelDefault, note: 'If generating card art / thumbnails' }
       ],
@@ -3969,7 +5101,6 @@ const generateImageAsset = async ({ runtimeConfig, direction }) => {
         aspectRatio: runtimeConfig.media.image_aspect_ratio,
         outputMimeType: 'image/jpeg',
         outputCompressionQuality: 80,
-        enhancePrompt: true,
       },
     });
 
@@ -3992,7 +5123,7 @@ const generateImageAsset = async ({ runtimeConfig, direction }) => {
       model,
       prompt: direction.image_prompt,
       status: 'unavailable',
-      note: `Image generation unavailable: ${sanitizeError(error, 'image_generation_failed')}`,
+      note: `Image generation unavailable: ${describeMediaGenerationIssue('image', error)}`,
     };
   }
 };
@@ -4033,7 +5164,7 @@ const generateVideoAsset = async ({ runtimeConfig, direction }) => {
       model,
       prompt: direction.video_prompt,
       status: 'unavailable',
-      note: `Video generation unavailable: ${sanitizeError(error, 'video_generation_failed')}`,
+      note: `Video generation unavailable: ${describeMediaGenerationIssue('video', error)}`,
     };
   }
 };
@@ -4190,7 +5321,7 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
 
   const uid = req.user.uid;
   const runtimeConfig = await loadAppConfig();
-  const suiteModel = runtimeConfig.generation.suite_model || fastTextModel;
+  const suiteModel = runtimeConfig.generation.suite_model || suiteModelDefault;
   const suiteTemperature = runtimeConfig.generation.suite_temperature;
   const suiteAppendix = runtimeConfig.prompts.suite_appendix;
   const toneGuardEnabled = runtimeConfig.safety.tone_guard_enabled;
@@ -4206,6 +5337,8 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
     const artifacts = withArtifactMeta(buildSuiteFallback(answers), meta);
     let contentDirector = { status: 'skipped' };
     let chiefOfStaff = { status: 'skipped' };
+    let dnaResearch = { status: 'skipped' };
+    let finalArtifacts = artifacts;
     try {
       chiefOfStaff = await recordChiefOfStaffRun({
         uid,
@@ -4221,16 +5354,41 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       chiefOfStaff = { status: 'error', detail: sanitizeError(orchestrationError, 'chief_of_staff_run_failed') };
     }
     try {
-      contentDirector = await seedContentDirectorPlanning({ uid, intent, preferences, answers, artifacts, meta });
+      dnaResearch = await runDnaResearchPass({ uid, intent, preferences, answers, artifacts, runtimeConfig });
+      finalArtifacts = withArtifactMeta(
+        {
+          ...artifacts,
+          brief: dnaResearch.brief || artifacts.brief,
+          profile: dnaResearch.profile || artifacts.profile,
+        },
+        meta
+      );
+      await recordDnaResearchRun({
+        uid,
+        intent,
+        preferences,
+        answers,
+        artifacts: finalArtifacts,
+        status: dnaResearch.status,
+        model: dnaResearch.model,
+        detail: dnaResearch.detail,
+      });
+    } catch (dnaResearchError) {
+      console.error('dna_research_run_error', dnaResearchError);
+      dnaResearch = { status: 'error', detail: sanitizeError(dnaResearchError, 'dna_research_run_failed') };
+    }
+    try {
+      contentDirector = await seedContentDirectorPlanning({ uid, intent, preferences, answers, artifacts: finalArtifacts, meta });
     } catch (planningError) {
       console.error('content_director_seed_error', planningError);
       contentDirector = { status: 'error', detail: sanitizeError(planningError, 'content_director_seed_failed') };
     }
     return res.json({
       meta,
-      artifacts,
+      artifacts: finalArtifacts,
       orchestration: {
         chief_of_staff: chiefOfStaff,
+        dna_research_analyst: dnaResearch,
         content_director: contentDirector,
       },
     });
@@ -4264,6 +5422,8 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
     const responseArtifacts = withArtifactMeta(artifacts, meta);
     let contentDirector = { status: 'skipped' };
     let chiefOfStaff = { status: 'skipped' };
+    let dnaResearch = { status: 'skipped' };
+    let finalArtifacts = responseArtifacts;
     try {
       chiefOfStaff = await recordChiefOfStaffRun({
         uid,
@@ -4279,12 +5439,43 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       chiefOfStaff = { status: 'error', detail: sanitizeError(orchestrationError, 'chief_of_staff_run_failed') };
     }
     try {
-      contentDirector = await seedContentDirectorPlanning({
+      dnaResearch = await runDnaResearchPass({
         uid,
         intent,
         preferences,
         answers,
         artifacts: responseArtifacts,
+        runtimeConfig,
+      });
+      finalArtifacts = withArtifactMeta(
+        {
+          ...responseArtifacts,
+          brief: dnaResearch.brief || responseArtifacts.brief,
+          profile: dnaResearch.profile || responseArtifacts.profile,
+        },
+        meta
+      );
+      await recordDnaResearchRun({
+        uid,
+        intent,
+        preferences,
+        answers,
+        artifacts: finalArtifacts,
+        status: dnaResearch.status,
+        model: dnaResearch.model,
+        detail: dnaResearch.detail,
+      });
+    } catch (dnaResearchError) {
+      console.error('dna_research_run_error', dnaResearchError);
+      dnaResearch = { status: 'error', detail: sanitizeError(dnaResearchError, 'dna_research_run_failed') };
+    }
+    try {
+      contentDirector = await seedContentDirectorPlanning({
+        uid,
+        intent,
+        preferences,
+        answers,
+        artifacts: finalArtifacts,
         meta,
       });
     } catch (planningError) {
@@ -4293,9 +5484,10 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
     }
     return res.json({
       meta,
-      artifacts: responseArtifacts,
+      artifacts: finalArtifacts,
       orchestration: {
         chief_of_staff: chiefOfStaff,
+        dna_research_analyst: dnaResearch,
         content_director: contentDirector,
       },
     });
@@ -4310,6 +5502,8 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
     const artifacts = withArtifactMeta(buildSuiteFallback(answers), meta);
     let contentDirector = { status: 'skipped' };
     let chiefOfStaff = { status: 'skipped' };
+    let dnaResearch = { status: 'skipped' };
+    let finalArtifacts = artifacts;
     try {
       chiefOfStaff = await recordChiefOfStaffRun({
         uid,
@@ -4325,16 +5519,41 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       chiefOfStaff = { status: 'error', detail: sanitizeError(orchestrationError, 'chief_of_staff_run_failed') };
     }
     try {
-      contentDirector = await seedContentDirectorPlanning({ uid, intent, preferences, answers, artifacts, meta });
+      dnaResearch = await runDnaResearchPass({ uid, intent, preferences, answers, artifacts, runtimeConfig });
+      finalArtifacts = withArtifactMeta(
+        {
+          ...artifacts,
+          brief: dnaResearch.brief || artifacts.brief,
+          profile: dnaResearch.profile || artifacts.profile,
+        },
+        meta
+      );
+      await recordDnaResearchRun({
+        uid,
+        intent,
+        preferences,
+        answers,
+        artifacts: finalArtifacts,
+        status: dnaResearch.status,
+        model: dnaResearch.model,
+        detail: dnaResearch.detail,
+      });
+    } catch (dnaResearchError) {
+      console.error('dna_research_run_error', dnaResearchError);
+      dnaResearch = { status: 'error', detail: sanitizeError(dnaResearchError, 'dna_research_run_failed') };
+    }
+    try {
+      contentDirector = await seedContentDirectorPlanning({ uid, intent, preferences, answers, artifacts: finalArtifacts, meta });
     } catch (planningError) {
       console.error('content_director_seed_error', planningError);
       contentDirector = { status: 'error', detail: sanitizeError(planningError, 'content_director_seed_failed') };
     }
     return res.json({
       meta,
-      artifacts,
+      artifacts: finalArtifacts,
       orchestration: {
         chief_of_staff: chiefOfStaff,
+        dna_research_analyst: dnaResearch,
         content_director: contentDirector,
       },
     });
@@ -4769,7 +5988,7 @@ app.post('/v1/binge/episode', requireAuth, async (req, res) => {
   const { dna, target_skill } = req.body ?? {};
   const uid = req.user.uid;
   const runtimeConfig = await loadAppConfig();
-  const bingeModel = runtimeConfig.generation.binge_model || fastTextModel;
+  const bingeModel = runtimeConfig.generation.binge_model || bingeModelDefault;
   const bingeTemperature = runtimeConfig.generation.binge_temperature;
   const bingeAppendix = runtimeConfig.prompts.binge_appendix;
   const toneGuardEnabled = runtimeConfig.safety.tone_guard_enabled;

@@ -47,6 +47,16 @@ Admin overview behavior:
 
 - `/v1/admin/system-overview` now degrades gracefully if queue telemetry reads are denied
 - config editing remains available, while the UI shows a queue visibility warning instead of failing the full modal
+- the `Experience` rail now also governs the Professional DNA research lane:
+  - `professional_dna.enabled`
+  - `professional_dna.base_model`
+  - `professional_dna.research_model`
+  - `professional_dna.prompt_appendix`
+  - `professional_dna.enabled_sections`
+  - `professional_dna.section_order`
+  - `professional_dna.company_posture_notes_enabled`
+  - `professional_dna.research_domains`
+  - `professional_dna.refresh_window_days`
 
 If using a standalone Cloud Build trigger instead of Cloud Run's repo-connected deploy, use `cloudbuild.api.yaml`. A single raw `docker build` trigger is insufficient because it does not roll the new image onto the `career-concierge-api` service.
 That build config also sets `logging: CLOUD_LOGGING_ONLY` so triggers using a dedicated service account do not fail on logs-bucket validation.
@@ -172,6 +182,24 @@ Current public-intake behavior:
 - the intake concierge step follows that selector and mounts the ElevenLabs conversational widget when `elevenlabs` is selected and a public agent ID is available
 - the intake concierge step also exposes a visible lane switcher so operators can flip between the two rails live without reopening Admin
 - Gemini Live remains the internal native-audio session path used by the existing live panel and token route
+
+Current Professional DNA behavior:
+
+- `/v1/suite/generate` now includes a post-intake `dna_research_analyst` pass for paid-suite users unless `professional_dna.enabled` is turned off in admin config
+- that lane upgrades `brief` and `profile` into the richer dossier shape and records an orchestration run with `trigger = professional_dna_generate`
+- if the DNA model path fails, the API falls back to a deterministic dossier shape rather than returning the shallow artifact pair
+- the dossier now includes:
+  - signal-strip metrics for `Market Fit`, `Signal Clarity`, `Comp Index`, `Adapt Pressure`, and `Live Dossier`
+  - a `Career Market Signal` composite with four breakdown metrics and a clearly labeled projection path when no historical series exists yet
+  - a `Market Demand Analysis` environment matrix
+  - a compensation ladder, report ticker, source registry, and evidence-node appendix
+- external market context is currently anchored to official public sources embedded in the API layer:
+  - BLS Employment Situation
+  - BLS JOLTS
+  - BLS Occupational Outlook Handbook
+  - O*NET
+  - DOL WARN overview
+- source-backed claims must remain distinguishable from inference-backed claims in both prompt output and UI copy
 
 Current default admin list in the deploy template includes:
 

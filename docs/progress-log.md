@@ -4,6 +4,46 @@ This log tracks implementation progress against the V1 MVP backlog plus the queu
 Detailed story-level status and pass-by-pass execution entries now live in `docs/backlog-ledger.md`.
 Update both files in each delivery pass so roadmap visuals and implementation status stay aligned.
 
+## 2026-03-10
+
+### Delivery: Professional DNA Bloomberg-Grade Dossier Pass
+
+- Elevated the Professional DNA surface from premium report to terminal-grade living dossier:
+  - top command bar with market-fit and compensation posture signals
+  - dark-shell abstract/hero treatment for `The Brief` and `Your Profile`
+  - `Career Market Signal` composite with projection-path chart and signal breakdowns
+  - `Market Demand Analysis` environment matrix and compensation ladder
+  - report ticker + evidence-node appendix so freshness and sourcing are visible in the UI
+- Hardened the generation contract so the dossier now carries structured telemetry instead of decorative UI-only state:
+  - signal strip
+  - market signal composite / trajectory / breakdown
+  - market-demand environments
+  - compensation ladder
+  - source registry
+  - evidence nodes
+  - report ticker
+- Expanded Admin `Experience` controls for the DNA lane:
+  - research domains
+  - dossier refresh window
+- Kept fallback and local-stub paths aligned so the elevated dossier still renders in degraded conditions without dropping back to the old shallow layout.
+
+### Delivery: Professional DNA Research Dossier + Admin Control Lane
+
+- Reframed `The Brief` and `Your Profile` from simple artifact lists into a premium Professional DNA report pair:
+  - `The Brief` now behaves as the abstract / verdict memo
+  - `Your Profile` now behaves as the deep dossier with market climate, market-value framing, habitat guidance, evidence notes, and a 90-day evolution path
+- Added a dedicated post-intake `dna_research_analyst` orchestration lane inside `/v1/suite/generate`:
+  - baseline suite artifacts still generate first
+  - the DNA lane then enriches `brief` and `profile`
+  - downstream planning now inherits the enriched dossier instead of the shallow profile alone
+- Extended Admin `Experience` controls to manage the DNA lane:
+  - model choice
+  - prompt appendix
+  - enabled sections
+  - section order
+  - company-posture note toggle
+- Added deterministic fallback behavior so the richer dossier still materializes even if the dedicated DNA model path fails.
+
 ## 2026-03-09
 
 ### Delivery: Admin Console Hierarchy + Operator Shell Hardening
