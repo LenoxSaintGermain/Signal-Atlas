@@ -2980,13 +2980,13 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-3">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[290px_minmax(0,1fr)]">
+      <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] xl:flex xl:flex-col">
           <div className="border-b border-black/10 p-5">
             <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">Admin OS</div>
-            <div className="mt-3 text-[34px] font-editorial italic leading-none text-[#08161a]">Control tower.</div>
-            <p className="mt-3 text-sm leading-6 text-black/58">
-              Runtime posture, editing rails, and operator policy, compressed into one disciplined surface.
+            <div className="mt-3 text-[32px] font-editorial italic leading-none text-[#08161a]">Control rail.</div>
+            <p className="mt-3 text-sm leading-6 text-black/56">
+              Use the rail to change lanes. Keep the metrics in the main canvas where they can breathe.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
@@ -3001,11 +3001,6 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               >
                 {hasUnsavedChanges ? 'Unsaved changes' : 'Saved state'}
               </span>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {shellStats.map((card) => (
-                <AdminStatCard key={card.label} label={card.label} value={card.value} detail={card.detail} />
-              ))}
             </div>
           </div>
 
@@ -3023,16 +3018,22 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       : 'border-black/10 bg-white/72 text-[#09161a] hover:border-black/20'
                   } disabled:cursor-not-allowed disabled:opacity-55`}
                 >
-                  <div
-                    className={`text-[10px] uppercase tracking-[0.24em] ${
-                      activeSection === section.id ? 'text-brand-teal' : 'text-black/38'
-                    }`}
-                  >
-                    {String(index + 1).padStart(2, '0')} {section.shortLabel}
-                  </div>
-                  <div className="mt-2 text-[18px] font-editorial leading-tight">{section.title}</div>
-                  <div className={`mt-2 text-sm leading-6 ${activeSection === section.id ? 'text-white/72' : 'text-black/52'}`}>
-                    {section.description}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div
+                        className={`text-[10px] uppercase tracking-[0.24em] ${
+                          activeSection === section.id ? 'text-brand-teal' : 'text-black/38'
+                        }`}
+                      >
+                        {String(index + 1).padStart(2, '0')} {section.shortLabel}
+                      </div>
+                      <div className="mt-2 text-[18px] font-editorial leading-tight">{section.title}</div>
+                    </div>
+                    <span
+                      className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${
+                        activeSection === section.id ? 'bg-brand-teal' : 'bg-black/10'
+                      }`}
+                    />
                   </div>
                 </button>
               ))}
@@ -3084,6 +3085,9 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
+                  {loading ? 'Loading' : 'Live config'}
+                </span>
+                <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
                   Revision {overview?.runtime.revision ?? '—'}
                 </span>
                 <span
@@ -3104,7 +3108,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               </div>
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:hidden">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {shellStats.map((card) => (
                 <AdminStatCard key={card.label} label={card.label} value={card.value} detail={card.detail} />
               ))}

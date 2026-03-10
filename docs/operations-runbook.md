@@ -396,7 +396,8 @@ The admin console should now expose the following before any config edits are ma
 The admin modal is intentionally structured as an operator workspace now:
 
 - left rail for section switching
-- control-tower summary for runtime and queue visibility
+- lean left rail for section switching without competing summary cards
+- control-tower summary for runtime and queue visibility in the main canvas
 - one active edit surface at a time
 - compact command header on smaller viewports so section identity and save posture stay visible before the edit fields
 - single-column section layouts so controls do not compress on laptop-width views

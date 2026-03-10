@@ -19,6 +19,9 @@ Update both files in each delivery pass so roadmap visuals and implementation st
   - queue pressure
   - save posture
   before the deeper form controls
+- Rebalanced the shell after live review:
+  - left rail now behaves as a lean operator index
+  - control-tower metrics moved into the main canvas so the overview and nav are not squeezed into the same narrow column
 - Refined the shared admin panel styling so section cards feel lighter, more editorial, and less like a dense debug dashboard.
 
 ### Delivery: Premium Flash Cards Stage + Plan-Wired Review Rooms

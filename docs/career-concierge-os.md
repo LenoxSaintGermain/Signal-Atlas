@@ -111,7 +111,8 @@ The current layout is now a compact operator shell rather than a single long-for
 It uses:
 
 - a left-rail navigation for section switching
-- a control-tower summary as the read-only operating surface
+- a lean left rail that acts as the operator index rather than a second dashboard
+- a control-tower summary in the main canvas so runtime metrics and queue posture have enough width to read cleanly
 - one active workspace at a time for generation, media, brand, voice, or governance edits
 - a single-column editorial content stack so controls do not compress or overlap on medium-width laptop views
 - a compact command header on smaller viewports so laptop and tablet operators still see active section context before the form fields
