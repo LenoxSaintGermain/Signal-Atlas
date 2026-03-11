@@ -598,24 +598,14 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <section className="mt-6 border" style={{ borderColor: brand.colors.grid_line, backgroundColor: hexToRgba(brand.colors.surface_background, 0.92) }}>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: brand.colors.grid_line }}>
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                    How To Use The Suite
-                  </div>
-                  <div className="mt-1 text-sm text-black/58">
-                    {intakeComplete
-                      ? 'Read the dossier first, move into execution second, then use the learning layer to reinforce it.'
-                      : 'Do not explore randomly. Intake comes first, because it writes the dossier and unlocks the operating path.'}
-                  </div>
-                </div>
-                <div className="text-[10px] uppercase tracking-[0.22em] text-black/38">
-                  {intakeComplete ? 'Operating sequence' : 'Pre-unlock sequence'}
-                </div>
+            <section className="mt-6 border-y py-3" style={{ borderColor: brand.colors.grid_line }}>
+              <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-[0.24em]">
+                <span style={{ color: brand.colors.accent_dark }}>How To Use The Suite</span>
+                <span className="text-black/34">
+                  {intakeComplete ? 'Read the Brief, move into Plan, then reinforce between execution cycles.' : 'Start with Intake. Everything else follows from that calibration.'}
+                </span>
               </div>
-
-              <div className={`grid gap-px ${suiteGuideSteps.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`} style={{ backgroundColor: brand.colors.grid_line }}>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {suiteGuideSteps.map((step) => (
                   <button
                     key={step.step}
@@ -624,23 +614,17 @@ const App: React.FC = () => {
                       if (!step.locked) openModuleById(step.moduleId);
                     }}
                     disabled={step.locked}
-                    className={`border-0 px-4 py-4 text-left transition-colors ${
-                      step.locked ? 'cursor-default' : 'hover:bg-white'
+                    className={`border px-3 py-2 text-left text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                      step.locked ? 'cursor-default text-black/38' : 'text-[#171412] hover:bg-white'
                     }`}
                     style={{
-                      backgroundColor: step.locked ? hexToRgba(brand.colors.surface_background, 0.72) : brand.colors.surface_background,
-                      opacity: step.locked ? 0.74 : 1,
+                      borderColor: step.locked ? hexToRgba(brand.colors.ink, 0.08) : hexToRgba(brand.colors.accent_dark, 0.2),
+                      backgroundColor: step.locked ? hexToRgba(brand.colors.surface_background, 0.72) : hexToRgba(brand.colors.accent, 0.08),
                     }}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                        {step.step}
-                      </div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">{step.locked ? 'Unlocks after intake' : 'Open now'}</div>
-                    </div>
-                    <div className="mt-4 text-[10px] uppercase tracking-[0.22em] text-black/45">{step.eyebrow}</div>
-                    <div className="mt-2 text-xl leading-tight text-[#171412] font-editorial">{step.title}</div>
-                    <div className="mt-3 text-sm leading-6 text-black/58">{step.detail}</div>
+                    <span style={{ color: step.locked ? undefined : brand.colors.accent_dark }}>{step.step}</span>
+                    <span className="mx-2 opacity-35">/</span>
+                    <span>{step.title}</span>
                   </button>
                 ))}
               </div>
