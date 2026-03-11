@@ -102,6 +102,15 @@ app.get('/v1/public/config', async (_req, res) => {
           typeof config.professional_dna?.hero_loop === 'boolean' ? config.professional_dna.hero_loop : true,
         hero_fallback_image_url: config.professional_dna?.hero_fallback_image_url || '',
         hero_visible: Boolean(config.professional_dna?.hero_visible),
+        journey_guide_video_provider:
+          config.professional_dna?.journey_guide_video_provider === 'vimeo'
+            ? 'vimeo'
+            : config.professional_dna?.journey_guide_video_provider === 'direct'
+              ? 'direct'
+              : 'youtube',
+        journey_guide_video_id: config.professional_dna?.journey_guide_video_id || '',
+        journey_guide_video_url: config.professional_dna?.journey_guide_video_url || '',
+        journey_guide_video_title: config.professional_dna?.journey_guide_video_title || '',
         voice_agent_enabled:
           typeof config.professional_dna?.voice_agent_enabled === 'boolean'
             ? config.professional_dna.voice_agent_enabled
@@ -964,6 +973,10 @@ const DEFAULT_APP_CONFIG = {
     hero_loop: true,
     hero_fallback_image_url: '',
     hero_visible: false,
+    journey_guide_video_provider: 'youtube',
+    journey_guide_video_id: '',
+    journey_guide_video_url: '',
+    journey_guide_video_title: '',
     voice_agent_enabled: true,
     voice_agent_persona: '',
     voice_arc_sections: ['anchor', 'intent', 'proof', 'market', 'friction', 'context', 'close'],
@@ -1374,6 +1387,15 @@ const normalizeConfig = (input = {}) => {
         typeof professionalDna.hero_visible === 'boolean'
           ? professionalDna.hero_visible
           : DEFAULT_APP_CONFIG.professional_dna.hero_visible,
+      journey_guide_video_provider:
+        professionalDna.journey_guide_video_provider === 'vimeo'
+          ? 'vimeo'
+          : professionalDna.journey_guide_video_provider === 'direct'
+            ? 'direct'
+            : DEFAULT_APP_CONFIG.professional_dna.journey_guide_video_provider,
+      journey_guide_video_id: String(professionalDna.journey_guide_video_id ?? '').trim(),
+      journey_guide_video_url: String(professionalDna.journey_guide_video_url ?? '').trim(),
+      journey_guide_video_title: String(professionalDna.journey_guide_video_title ?? '').trim(),
       voice_agent_enabled:
         typeof professionalDna.voice_agent_enabled === 'boolean'
           ? professionalDna.voice_agent_enabled

@@ -83,6 +83,11 @@ Modules should feel like guided surfaces inside one OS, not isolated product pag
 - the voice rail now sits above the form path and can run Gemini Live or ElevenLabs depending on operator config
 - Gemini Live sessions can extract structured intake signals back into empty form fields, with visible `from voice session` provenance tags
 - the prepare state now shows a live intake/market/research progress rail rather than a generic loading card
+- the signed-in landing experience now pairs that intake with a lighter editorial `Your Journey Guide` surface that:
+  - opens as an opt-in four-act concierge briefing instead of a tutorial modal
+  - personalizes the invite copy, act headlines, and context lines from the client dossier/intake context already on file
+  - highlights the live grid by act, lifting relevant modules and dimming the rest
+  - uses an admin-configured journey-briefing video slot as the right-rail explainer surface
 
 The `Brief` / `Profile` pair now also carries a research-grade Professional DNA posture:
 
@@ -99,11 +104,12 @@ The `Brief` / `Profile` pair now also carries a research-grade Professional DNA 
 - the Brief now degrades safely against older or partially enriched dossier artifacts instead of hard-crashing when newer telemetry fields are missing
 - those UI metrics are source-backed or explicitly inferred from dossier evidence; the system no longer relies on decorative placeholder chart data
 
-The signed-in landing canvas now also carries a compact `How To Use The Suite` operating strip:
+The signed-in landing canvas now also carries a persistent `Your Journey Guide` anchor:
 
-- before intake it tells the client to start with Smart Start Intake and shows the next modules as locked downstream steps
-- after intake it reframes the suite into the intended sequence: `Brief -> Plan -> reinforcement layer`
-- this guidance is embedded in the home surface rather than shipped as a blocking tutorial modal
+- the closed state is a restrained invite rail rather than a large instructional banner
+- the open state is an editorial briefing, not a tutorial
+- once dismissed, a small bottom-right pill remains available for re-entry
+- hover/focus help for the guide uses the same ambient tooltip system as the rest of the suite so the behavior demos consistently on desktop
 
 The suite shell is now driven by a shared brand config exposed through public config:
 

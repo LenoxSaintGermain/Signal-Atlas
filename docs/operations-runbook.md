@@ -194,10 +194,17 @@ Current public-intake behavior:
 - Gemini Live remains the internal native-audio session path used by the existing live panel and token route
 - Smart Start Intake now also reads public-facing Professional DNA config for:
   - optional hero video / fallback image rendering
+  - optional journey-guide video provider / ID / URL / title values for the signed-in home briefing overlay
   - Smart Start voice-lane enablement
   - transcript visibility inside Gemini Live
   - voice-to-form autofill behavior
 - Gemini Live Smart Start sessions now hit `POST /v1/intake/extract` after session close to map transcript signals into empty intake fields without overwriting user edits
+- the signed-in home `Your Journey Guide` now uses two persistence keys in browser storage:
+  - `career_concierge_journey_guide_dismissed`
+  - `career_concierge_journey_guide_visits`
+- operator implication:
+  - the guide copy rotates by returning-visit count while staying client-context aware
+  - the media slot is globally configured in admin and reused as the default briefing asset for new users
 
 Current Professional DNA behavior:
 
@@ -213,6 +220,15 @@ Current Professional DNA behavior:
   - BLS Employment Situation
   - BLS JOLTS
   - BLS Occupational Outlook Handbook
+- admin `Experience -> Professional DNA` now includes dedicated journey-guide media controls:
+  - `professional_dna.journey_guide_video_provider`
+  - `professional_dna.journey_guide_video_id`
+  - `professional_dna.journey_guide_video_url`
+  - `professional_dna.journey_guide_video_title`
+- journey-guide resolution order:
+  1. configured provider + `journey_guide_video_id`
+  2. configured `journey_guide_video_url`
+  3. fallback image/title stage using existing `professional_dna.hero_fallback_image_url`
   - O*NET
   - DOL WARN overview
 - source-backed claims must remain distinguishable from inference-backed claims in both prompt output and UI copy

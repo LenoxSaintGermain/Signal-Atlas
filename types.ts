@@ -667,6 +667,10 @@ export interface AppConfig {
     hero_loop?: boolean;
     hero_fallback_image_url?: string;
     hero_visible?: boolean;
+    journey_guide_video_provider?: 'youtube' | 'vimeo' | 'direct';
+    journey_guide_video_id?: string;
+    journey_guide_video_url?: string;
+    journey_guide_video_title?: string;
     voice_agent_enabled?: boolean;
     voice_agent_persona?: string;
     voice_arc_sections?: string[];
@@ -742,6 +746,10 @@ export interface PublicConfig {
     | 'hero_loop'
     | 'hero_fallback_image_url'
     | 'hero_visible'
+    | 'journey_guide_video_provider'
+    | 'journey_guide_video_id'
+    | 'journey_guide_video_url'
+    | 'journey_guide_video_title'
     | 'voice_agent_enabled'
     | 'voice_model'
     | 'voice_transcription_visible'

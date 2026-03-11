@@ -39,7 +39,7 @@ Source of truth backlog:
 | E07-S01 Shared Brand Token System | E07 | P1 | Done | Public/admin config now carries brand identity, palette, hierarchy, toggles, and module copy. |
 | E07-S02 Admin Brand Studio + Preview | E07 | P1 | Done | Admin now exposes ordered brand controls with a live editorial-grid preview. |
 | E07-S03 Logo Propagation | E07 | P1 | Done | Optional logo URL now propagates through the suite shell and prologue. |
-| E07-S04 Workflow Label + Overlay Sync | E07 | P1 | In Progress | Suite shell and overlays are synced to the Lucid workflow language; artifact-body copy is still separately owned. |
+| E07-S04 Workflow Label + Overlay Sync | E07 | P1 | In Progress | Suite shell and overlays are synced to the Lucid workflow language; the home `Your Journey Guide` now runs as a four-act personalized briefing with admin-configured media, while deeper artifact-body copy is still separately owned. |
 | E08-S01 Client Episodes View vs BTS Mode | E08 | P1 | Done | Default Episodes experience now hides operator-generation apparatus from normal users and keeps BTS controls in admin-only operator mode. |
 | E08-S02 Cinematic Vertical Micro-Drama Player | E08 | P1 | Done | Episodes now read as a cinematic cold-open-to-resolution player rather than a BTS lesson surface. |
 | E08-S03 Editorial Context Overlays + Challenge Cards | E08 | P1 | Done | Context notes and challenge cards now teach concepts without exposing backend-generation language. |

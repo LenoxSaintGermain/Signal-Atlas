@@ -48,6 +48,10 @@ const DEFAULT_PUBLIC_CONFIG: PublicConfig = {
     hero_loop: true,
     hero_fallback_image_url: '',
     hero_visible: false,
+    journey_guide_video_provider: 'youtube',
+    journey_guide_video_id: '',
+    journey_guide_video_url: '',
+    journey_guide_video_title: '',
     voice_agent_enabled: true,
     voice_model: 'gemini_live',
     voice_transcription_visible: false,
@@ -93,6 +97,7 @@ const tileIndexClass = {
 type JourneyActId = 'act_1' | 'act_2' | 'act_3' | 'act_4';
 
 const JOURNEY_GUIDE_STORAGE_KEY = 'career_concierge_journey_guide_dismissed';
+const JOURNEY_GUIDE_VISITS_STORAGE_KEY = 'career_concierge_journey_guide_visits';
 
 const JOURNEY_ACTS: Array<{
   id: JourneyActId;
@@ -136,8 +141,9 @@ const toText = (value: unknown) => String(value ?? '').trim();
 const getClientFirstName = (client: ClientDoc | null, user: User | null) => {
   const display = toText(client?.display_name) || toText(client?.demo_profile?.name);
   if (display) return display.split(/\s+/)[0];
-  const email = toText(user?.email);
-  return email ? email.split('@')[0] : 'you';
+  const intakeName = toText(client?.intake?.answers?.name);
+  if (intakeName) return intakeName.split(/\s+/)[0];
+  return 'you';
 };
 
 const getClientTargetRole = (client: ClientDoc | null) => {
@@ -155,6 +161,37 @@ const getClientFocusLabel = (client: ClientDoc | null) => {
   if (focus === 'job_search') return 'market movement';
   if (focus === 'leadership') return 'leadership leverage';
   return 'working signal';
+};
+
+const hasPlayableDirectVideo = (url: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url);
+
+const toSeed = (value: string) =>
+  value.split('').reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0);
+
+const parseYouTubeId = (input: string) => {
+  const value = toText(input);
+  if (!value) return '';
+  if (/^[a-zA-Z0-9_-]{11}$/.test(value)) return value;
+  try {
+    const url = new URL(value);
+    if (url.hostname.includes('youtu.be')) return url.pathname.replace(/\//g, '');
+    return url.searchParams.get('v') || '';
+  } catch {
+    return '';
+  }
+};
+
+const parseVimeoId = (input: string) => {
+  const value = toText(input);
+  if (!value) return '';
+  if (/^\d+$/.test(value)) return value;
+  try {
+    const url = new URL(value);
+    const segments = url.pathname.split('/').filter(Boolean);
+    return segments.pop() || '';
+  } catch {
+    return '';
+  }
 };
 
 const App: React.FC = () => {
@@ -194,6 +231,7 @@ const App: React.FC = () => {
   const [journeyGuideOpen, setJourneyGuideOpen] = useState(false);
   const [journeyGuideDismissed, setJourneyGuideDismissed] = useState(false);
   const [activeJourneyAct, setActiveJourneyAct] = useState<JourneyActId>('act_1');
+  const [journeyGuideVisits, setJourneyGuideVisits] = useState(0);
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -234,12 +272,18 @@ const App: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setJourneyGuideDismissed(window.localStorage.getItem(JOURNEY_GUIDE_STORAGE_KEY) === 'true');
+    setJourneyGuideVisits(Number(window.localStorage.getItem(JOURNEY_GUIDE_VISITS_STORAGE_KEY) || 0) || 0);
   }, []);
 
   useEffect(() => {
     if (!journeyGuideDismissed || typeof window === 'undefined') return;
     window.localStorage.setItem(JOURNEY_GUIDE_STORAGE_KEY, 'true');
   }, [journeyGuideDismissed]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(JOURNEY_GUIDE_VISITS_STORAGE_KEY, String(journeyGuideVisits));
+  }, [journeyGuideVisits]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -448,6 +492,16 @@ const App: React.FC = () => {
     setOpenModuleId(id);
   };
 
+  const openJourneyGuide = () => {
+    setJourneyGuideOpen(true);
+    setJourneyGuideVisits((current) => current + 1);
+  };
+
+  const closeJourneyGuide = () => {
+    setJourneyGuideOpen(false);
+    setJourneyGuideDismissed(true);
+  };
+
   if (!authReady || launchBootstrapPending) {
     return (
       <div
@@ -478,7 +532,105 @@ const App: React.FC = () => {
   const journeyFirstName = getClientFirstName(client, user);
   const journeyTargetRole = getClientTargetRole(client);
   const journeyFocusLabel = getClientFocusLabel(client);
+  const journeyGuestLabel = journeyFirstName === 'you' ? 'you' : journeyFirstName;
+  const journeyTargetPhrase = journeyTargetRole === 'your next move' ? 'your next move' : journeyTargetRole;
+  const journeySeed = Math.abs(toSeed(`${client?.uid || user.uid}|${journeyTargetPhrase}|${journeyFocusLabel}`));
+  const journeyVoiceIndex = (journeySeed + journeyGuideVisits) % 3;
+  const journeyOverlayTitle = [
+    'Read the suite as a living brief, not a menu.',
+    'Your suite, framed before it starts speaking back.',
+    'A concierge briefing for how this system is meant to move with you.',
+  ][journeyVoiceIndex];
+  const journeyInvite = (
+    journeyGuideDismissed
+      ? [
+          'Return to the journey overview.',
+          'Pick back up where the concierge left the briefing.',
+          'Reopen the suite briefing and reorient the next move.',
+        ]
+      : [
+          `See how this suite is staged for ${journeyTargetPhrase}.`,
+          `Understand how the suite is being built around ${journeyTargetPhrase}.`,
+          'Let the concierge frame the journey before you dive into modules.',
+        ]
+  )[journeyVoiceIndex];
+  const journeyTopline = intakeComplete
+    ? `The dossier already has signal on ${journeyTargetPhrase}. This guide shows how the suite turns that signal into interpretation, movement, and reinforcement.`
+    : `This guide shows how the suite uses one strong intake to calibrate your dossier, your ${journeyFocusLabel}, and the story around ${journeyTargetPhrase}.`;
+  const journeyMetaLabel = intakeComplete ? 'Dossier in motion' : 'Pre-brief alignment';
+  const journeyGuideHintMessage = intakeComplete
+    ? 'Reopen the suite briefing at any time. It highlights the modules that matter for the current act and keeps the orientation personal to the dossier on file.'
+    : 'Open the suite briefing to see the four-act arc, the modules it activates, and the concierge context that shapes the first move.';
   const visibleModuleIds = new Set(visibleModules.map((module) => module.id));
+  const journeyGuideVideoProvider = publicConfig.professional_dna.journey_guide_video_provider || 'youtube';
+  const journeyGuideVideoId = toText(publicConfig.professional_dna.journey_guide_video_id);
+  const journeyGuideVideoUrl =
+    toText(publicConfig.professional_dna.journey_guide_video_url) ||
+    toText(publicConfig.professional_dna.hero_video_url);
+  const journeyGuideVideoTitle =
+    toText(publicConfig.professional_dna.journey_guide_video_title) ||
+    toText(publicConfig.professional_dna.hero_video_title) ||
+    'How the suite works for you';
+  const journeyGuideFallbackImage = toText(publicConfig.professional_dna.hero_fallback_image_url);
+  const journeyGuideMedia = (() => {
+    if (journeyGuideVideoProvider === 'youtube') {
+      const id = journeyGuideVideoId || parseYouTubeId(journeyGuideVideoUrl);
+      if (id) {
+        return {
+          kind: 'embed' as const,
+          src: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`,
+          title: journeyGuideVideoTitle,
+          providerLabel: 'YouTube briefing',
+        };
+      }
+    }
+    if (journeyGuideVideoProvider === 'vimeo') {
+      const id = journeyGuideVideoId || parseVimeoId(journeyGuideVideoUrl);
+      if (id) {
+        return {
+          kind: 'embed' as const,
+          src: `https://player.vimeo.com/video/${id}?title=0&byline=0&portrait=0`,
+          title: journeyGuideVideoTitle,
+          providerLabel: 'Vimeo briefing',
+        };
+      }
+    }
+    if (journeyGuideVideoProvider === 'direct' && journeyGuideVideoUrl) {
+      return {
+        kind: hasPlayableDirectVideo(journeyGuideVideoUrl) ? ('direct' as const) : ('embed' as const),
+        src: journeyGuideVideoUrl,
+        title: journeyGuideVideoTitle,
+        providerLabel: 'Direct briefing',
+      };
+    }
+    const youtubeId = parseYouTubeId(journeyGuideVideoUrl);
+    if (youtubeId) {
+      return {
+        kind: 'embed' as const,
+        src: `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1&playsinline=1`,
+        title: journeyGuideVideoTitle,
+        providerLabel: 'YouTube briefing',
+      };
+    }
+    const vimeoId = parseVimeoId(journeyGuideVideoUrl);
+    if (vimeoId) {
+      return {
+        kind: 'embed' as const,
+        src: `https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0`,
+        title: journeyGuideVideoTitle,
+        providerLabel: 'Vimeo briefing',
+      };
+    }
+    if (journeyGuideVideoUrl && hasPlayableDirectVideo(journeyGuideVideoUrl)) {
+      return {
+        kind: 'direct' as const,
+        src: journeyGuideVideoUrl,
+        title: journeyGuideVideoTitle,
+        providerLabel: 'Direct briefing',
+      };
+    }
+    return null;
+  })();
   const journeyActs = JOURNEY_ACTS.map((act) => {
     const visibleActModules = act.moduleIds.filter((id) => visibleModuleIds.has(id));
     const activationTitles = visibleActModules.map((id) => ({
@@ -487,39 +639,99 @@ const App: React.FC = () => {
     }));
 
     if (act.id === 'act_1') {
+      const variants = [
+        {
+          headline: `Before the suite can move, it needs a clean read on ${journeyGuestLabel}.`,
+          body: `Module 01 is the doorway. A short concierge intake calibrates your dossier, your ${journeyFocusLabel}, and how ${journeyTargetPhrase} should be framed before the rest of the suite starts speaking back.`,
+        },
+        {
+          headline: 'The first act is calibration, not administration.',
+          body: `This is where the suite stops being generic. Intake turns your context, proof, and ambition into a briefing the rest of the system can actually use around ${journeyTargetPhrase}.`,
+        },
+        {
+          headline: `The suite only becomes intelligent after it understands ${journeyGuestLabel}.`,
+          body: `One serious intake gives the Brief, Profile, and Plan the signal they need to interpret your next move with more precision than a static onboarding form ever could.`,
+        },
+      ];
+      const variant = variants[(journeySeed + journeyGuideVisits) % variants.length];
       return {
         ...act,
-        headline: `Before the suite can move, it needs to know ${journeyFirstName}.`,
-        body: `Module 01 is the only required start. A short concierge conversation calibrates your dossier, your ${journeyFocusLabel}, and how ${journeyTargetRole} should be framed before the rest of the suite starts speaking back.`,
+        headline: variant.headline,
+        body: variant.body,
         ctaLabel: intakeComplete ? 'Open The Brief' : 'Begin With Intake',
         ctaModule: intakeComplete ? ('brief' as SuiteModuleId) : ('intake' as SuiteModuleId),
         activationTitles,
       };
     }
     if (act.id === 'act_2') {
+      const variants = [
+        {
+          headline: 'The Brief is your market position, stated cleanly.',
+          body: `This act reads the dossier back to you in plain language: what the market is likely to reward, what is suppressing the ask, and where ${journeyTargetPhrase} becomes more or less credible.`,
+        },
+        {
+          headline: 'This is where the suite starts behaving like intelligence.',
+          body: `The Brief, Profile, and distilled read turn raw context into a strategic interpretation layer before you make decisions or push for a bigger move.`,
+        },
+        {
+          headline: 'Act II is interpretation before execution.',
+          body: `You are not asked to move blind. This layer tells you what the dossier sees, what the market is signaling, and what needs to be true before the next ask lands well.`,
+        },
+      ];
+      const variant = variants[(journeySeed + journeyGuideVisits + 1) % variants.length];
       return {
         ...act,
-        headline: 'The Brief is your market position, in plain language.',
-        body: `This act translates what the market is likely to reward, what is suppressing the ask, and where ${journeyTargetRole} becomes more or less credible. It is the reading layer before you make decisions.`,
+        headline: variant.headline,
+        body: variant.body,
         ctaLabel: 'Next Act',
         ctaModule: 'plan' as SuiteModuleId,
         activationTitles,
       };
     }
     if (act.id === 'act_3') {
+      const variants = [
+        {
+          headline: 'Your Plan is the executable layer. Everything else feeds it.',
+          body: `This is where the suite turns interpretation into movement. The Brief gives the strategy; this act turns it into a controlled action path for ${journeyTargetPhrase}.`,
+        },
+        {
+          headline: 'Act III is where signal becomes momentum.',
+          body: `Once the suite understands what matters, it starts routing the next actions, operator help, and execution surfaces that move the ask forward.`,
+        },
+        {
+          headline: 'The middle of the suite is built for controlled movement.',
+          body: `Plan, concierge execution, and the horizon tools exist to keep ${journeyTargetPhrase} moving with structure instead of spraying effort across too many fronts.`,
+        },
+      ];
+      const variant = variants[(journeySeed + journeyGuideVisits + 2) % variants.length];
       return {
         ...act,
-        headline: 'Your Plan is the executable layer. Everything else feeds it.',
-        body: `This is where the suite turns interpretation into movement. The Brief gives the strategy; this act turns it into a controlled action path for ${journeyTargetRole}.`,
+        headline: variant.headline,
+        body: variant.body,
         ctaLabel: 'Next Act',
         ctaModule: 'plan' as SuiteModuleId,
         activationTitles,
       };
     }
+    const variants = [
+      {
+        headline: 'The suite learns as you move. Keep it current.',
+        body: 'Episodes, TV, flash cards, events, and the team layer are the reinforcement environment. This act keeps the suite current as your profile evolves instead of freezing after one good session.',
+      },
+      {
+        headline: 'Act IV keeps the suite sharp after the first breakthrough.',
+        body: `The reinforcement layer prevents drift. It helps the system keep teaching, refreshing, and supporting the version of ${journeyTargetPhrase} you are growing into.`,
+      },
+      {
+        headline: 'The last act is retention, not decoration.',
+        body: `Learning rails, flash cards, events, and support keep the dossier alive so the next phase of work compounds instead of fading after the plan is written.`,
+      },
+    ];
+    const variant = variants[(journeySeed + journeyGuideVisits + 3) % variants.length];
     return {
       ...act,
-      headline: 'The suite learns as you move. Keep it current.',
-      body: `Episodes, TV, flash cards, events, and the team layer are the reinforcement environment. This act keeps the suite current as your profile evolves instead of freezing after one good session.`,
+      headline: variant.headline,
+      body: variant.body,
       ctaLabel: intakeComplete ? 'Return To The Brief' : 'Begin With Intake',
       ctaModule: intakeComplete ? ('brief' as SuiteModuleId) : ('intake' as SuiteModuleId),
       activationTitles,
@@ -531,9 +743,6 @@ const App: React.FC = () => {
   journeyActs.forEach((act) => {
     act.moduleIds.forEach((id) => journeyModuleToAct.set(id, act.id));
   });
-  const journeyInvite = journeyGuideDismissed
-    ? 'Return to the journey overview.'
-    : 'Understand how your suite is built to move with you.';
 
   return (
     <div
@@ -674,66 +883,82 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                if (journeyGuideOpen) {
-                  setJourneyGuideOpen(false);
-                  setJourneyGuideDismissed(true);
-                  return;
-                }
-                setJourneyGuideOpen(true);
-              }}
-              className="mt-6 w-full border px-6 py-5 text-left transition-colors hover:bg-white/55"
-              style={{ borderColor: brand.colors.grid_line, backgroundColor: hexToRgba(brand.colors.surface_background, 0.82) }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                    • Your Journey Guide
+            <div className="mt-5">
+              <AmbientGuide
+                label="Journey guide"
+                message={journeyGuideHintMessage}
+                align="right"
+                delayMs={520}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (journeyGuideOpen) {
+                      closeJourneyGuide();
+                      return;
+                    }
+                    openJourneyGuide();
+                  }}
+                  className="w-full border px-4 py-3 text-left transition-colors hover:bg-[#fbf8f0] sm:px-5"
+                  style={{
+                    borderColor: hexToRgba(brand.colors.ink, 0.1),
+                    backgroundColor: '#f7f3ea',
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                        • Your Journey Guide
+                      </div>
+                      <div className="mt-1 text-base leading-6 text-[#171412] md:text-lg">{journeyInvite}</div>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-black/36">
+                      <span>{journeyActs.length} Acts</span>
+                      <span>{visibleModules.length} Modules</span>
+                      <span>{journeyGuideOpen ? 'Close ×' : 'Reveal →'}</span>
+                    </div>
                   </div>
-                  <div className="mt-2 text-2xl leading-tight text-[#171412] font-editorial">{journeyInvite}</div>
-                </div>
-                <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.2em] text-black/34">
-                  <span>{journeyActs.length} Acts</span>
-                  <span>·</span>
-                  <span>{visibleModules.length} Modules</span>
-                  <span>{journeyGuideOpen ? 'Close ×' : 'Reveal →'}</span>
-                </div>
-              </div>
-            </button>
+                </button>
+              </AmbientGuide>
+            </div>
 
             {journeyGuideOpen && (
               <section
-                className="mt-6 overflow-hidden border text-[#F2ECE4]"
+                className="mt-4 overflow-hidden border shadow-[0_28px_60px_-44px_rgba(0,0,0,0.28)]"
                 style={{
-                  borderColor: hexToRgba(brand.colors.accent, 0.35),
+                  borderColor: hexToRgba(brand.colors.ink, 0.1),
                   background:
-                    'radial-gradient(circle at top right, rgba(99,205,183,0.08), transparent 28%), linear-gradient(145deg, #101714 0%, #0D1311 56%, #0E1513 100%)',
+                    'radial-gradient(circle at top right, rgba(99,205,183,0.09), transparent 24%), linear-gradient(180deg, #fcfaf5 0%, #f3eee3 100%)',
                 }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.28) }}>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
+                <div
+                  className="flex flex-wrap items-start justify-between gap-4 border-b px-4 py-4 md:px-5"
+                  style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
+                >
+                  <div className="max-w-3xl">
+                    <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
                       • Your Journey Guide
                     </div>
-                    <div className="mt-2 text-xl leading-tight text-[#DDD5C9] font-editorial">Reading the suite as a story, not a menu.</div>
+                    <div className="mt-2 text-xl leading-tight text-[#171412] font-editorial md:text-[28px]">
+                      {journeyOverlayTitle}
+                    </div>
+                    <div className="mt-2 max-w-2xl text-sm leading-6 text-black/62">{journeyTopline}</div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setJourneyGuideOpen(false);
-                      setJourneyGuideDismissed(true);
-                    }}
-                    className="text-[10px] uppercase tracking-[0.22em] text-[#7FCFBD] transition-opacity hover:opacity-70"
+                    onClick={closeJourneyGuide}
+                    className="text-[10px] uppercase tracking-[0.22em] text-black/48 transition-opacity hover:opacity-70"
                   >
                     Close ×
                   </button>
                 </div>
 
-                <div className="grid border-b md:grid-cols-[270px_minmax(0,1fr)_280px]" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
-                  <aside className="border-r px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
-                    <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">The Arc</div>
+                <div
+                  className="grid border-b md:grid-cols-[230px_minmax(0,1fr)_minmax(340px,0.95fr)]"
+                  style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
+                >
+                  <aside className="border-r px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-black/36">The Arc</div>
                     <div className="mt-6 space-y-2">
                       {journeyActs.map((act) => {
                         const isActive = act.id === activeJourney.id;
@@ -742,34 +967,44 @@ const App: React.FC = () => {
                             key={act.id}
                             type="button"
                             onClick={() => setActiveJourneyAct(act.id)}
-                            className="w-full border px-4 py-4 text-left transition-colors"
+                            className="w-full border px-4 py-4 text-left transition-colors hover:bg-white/70"
                             style={{
-                              borderColor: isActive ? hexToRgba(act.accent, 0.38) : hexToRgba(brand.colors.accent, 0.1),
-                              backgroundColor: isActive ? hexToRgba(act.accent, 0.08) : 'transparent',
+                              borderColor: isActive ? hexToRgba(act.accent, 0.38) : hexToRgba(brand.colors.ink, 0.08),
+                              backgroundColor: isActive ? hexToRgba(act.accent, 0.08) : 'rgba(255,255,255,0.44)',
                             }}
                           >
-                            <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: isActive ? act.accent : 'rgba(255,255,255,0.38)' }}>
+                            <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: isActive ? act.accent : 'rgba(23,20,18,0.42)' }}>
                               {act.label}
                             </div>
-                            <div className="mt-2 text-3xl leading-none text-[#F2ECE4] font-editorial">{act.title}</div>
-                            <div className="mt-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: isActive ? act.accent : 'rgba(255,255,255,0.34)' }}>
+                            <div className="mt-2 text-[32px] leading-none text-[#171412] font-editorial">{act.title}</div>
+                            <div className="mt-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: isActive ? act.accent : 'rgba(23,20,18,0.34)' }}>
                               {act.activationTitles.map((item) => visibleModules.find((module) => module.id === item.id)?.index).filter(Boolean).join(' ')}
                             </div>
                           </button>
                         );
                       })}
                     </div>
-                    <div className="mt-6 border-t pt-6 text-[10px] uppercase tracking-[0.2em] text-white/34" style={{ borderColor: hexToRgba(brand.colors.accent, 0.12) }}>
-                      Hover any tile below to see its role in the arc.
+                    <div
+                      className="mt-6 border-t pt-6 text-[10px] uppercase tracking-[0.2em] text-black/34"
+                      style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}
+                    >
+                      Hover any tile below to see where it belongs in the briefing.
                     </div>
                   </aside>
 
                   <div className="px-5 py-6 md:px-8 md:py-8">
                     <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
-                      {activeJourney.label} • {activeJourney.title.toUpperCase()}
+                      {activeJourney.label} • {journeyMetaLabel}
                     </div>
-                    <div className="mt-5 max-w-3xl text-5xl leading-[0.94] text-[#F2ECE4] font-editorial">{activeJourney.headline}</div>
-                    <div className="mt-6 max-w-3xl text-lg leading-9 text-white/72">{activeJourney.body}</div>
+                    <div className="mt-4 max-w-3xl text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
+                      {activeJourney.headline}
+                    </div>
+                    <div className="mt-5 max-w-3xl text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
+                    <div className="mt-5 max-w-2xl border-l-2 pl-4 text-sm leading-6 text-black/54" style={{ borderColor: hexToRgba(activeJourney.accent, 0.32) }}>
+                      {intakeComplete
+                        ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
+                        : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
+                    </div>
                     <div className="mt-8 flex flex-wrap gap-3">
                       {activeJourney.activationTitles.map((item) => {
                         const module = visibleModules.find((entry) => entry.id === item.id);
@@ -778,8 +1013,8 @@ const App: React.FC = () => {
                             key={item.id}
                             type="button"
                             onClick={() => openModuleById(item.id)}
-                            className="border px-4 py-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white/5"
-                            style={{ borderColor: hexToRgba(activeJourney.accent, 0.4), color: activeJourney.accent }}
+                            className="border bg-white/68 px-4 py-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white"
+                            style={{ borderColor: hexToRgba(activeJourney.accent, 0.28), color: activeJourney.accent }}
                           >
                             {module.index} • {item.title}
                           </button>
@@ -791,8 +1026,8 @@ const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setActiveJourneyAct(journeyActs[journeyActIndex - 1].id)}
-                          className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] text-white/55 transition-colors hover:bg-white/5"
-                          style={{ borderColor: hexToRgba(brand.colors.accent, 0.16) }}
+                          className="border bg-white/62 px-5 py-3 text-[10px] uppercase tracking-[0.24em] text-black/52 transition-colors hover:bg-white"
+                          style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
                         >
                           ← Prev Act
                         </button>
@@ -808,8 +1043,8 @@ const App: React.FC = () => {
                         }}
                         className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors hover:opacity-90"
                         style={{
-                          borderColor: hexToRgba(activeJourney.accent, 0.48),
-                          backgroundColor: hexToRgba(activeJourney.accent, 0.14),
+                          borderColor: hexToRgba(activeJourney.accent, 0.28),
+                          backgroundColor: hexToRgba(activeJourney.accent, 0.1),
                           color: activeJourney.accent,
                         }}
                       >
@@ -818,28 +1053,73 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <aside className="border-l px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
-                    <div className="border px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.14), backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                  <aside className="border-l px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
+                    <div className="border bg-white/70 px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
                       <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
-                          Professional DNA • Intro
+                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                          Journey briefing
                         </div>
-                        <div className="text-[10px] uppercase tracking-[0.2em] text-white/34">2:14</div>
-                      </div>
-                      <div className="mt-8 flex items-center justify-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full border text-xl" style={{ borderColor: hexToRgba(brand.colors.accent, 0.5), color: brand.colors.accent }}>
-                          ▶
+                        <div className="text-[10px] uppercase tracking-[0.2em] text-black/34">
+                          {journeyGuideMedia ? journeyGuideMedia.providerLabel : 'Fallback stage'}
                         </div>
                       </div>
-                      <div className="mt-8 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
-                        How the suite works for {journeyFirstName}.
+                      <div className="mt-4 overflow-hidden border bg-[#efe8dc]" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                        {journeyGuideMedia ? (
+                          <div className="aspect-video bg-[#ece5d8]">
+                            {journeyGuideMedia.kind === 'direct' ? (
+                              <video
+                                controls
+                                playsInline
+                                preload="metadata"
+                                className="h-full w-full object-cover"
+                                src={journeyGuideMedia.src}
+                              />
+                            ) : (
+                              <iframe
+                                src={journeyGuideMedia.src}
+                                title={journeyGuideMedia.title}
+                                className="h-full w-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            className="relative aspect-video overflow-hidden"
+                            style={
+                              journeyGuideFallbackImage
+                                ? {
+                                    backgroundImage: `linear-gradient(180deg, rgba(244,241,232,0.24) 0%, rgba(237,231,219,0.82) 100%), url(${journeyGuideFallbackImage})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                  }
+                                : {
+                                    background:
+                                      'radial-gradient(circle at top, rgba(99,205,183,0.12), transparent 42%), linear-gradient(180deg, #f6f2e9 0%, #e7dece 100%)',
+                                  }
+                            }
+                          >
+                            <div className="absolute inset-0 flex flex-col justify-end p-5">
+                              <div className="text-[10px] uppercase tracking-[0.22em] text-black/38">
+                                Global default briefing
+                              </div>
+                              <div className="mt-2 text-2xl font-editorial leading-tight text-[#171412]">
+                                {journeyGuideVideoTitle}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-2 text-sm leading-6 text-white/58">
-                        Context is shaped around {journeyTargetRole} and the current dossier, not a generic product demo.
+                      <div className="mt-4 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                        {journeyGuideVideoTitle}
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-black/58">
+                        This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
                       </div>
                     </div>
 
-                    <div className="mt-4 border px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.14), backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <div className="mt-4 border bg-white/62 px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
                       <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: activeJourney.accent }}>
                         This Act Activates
                       </div>
@@ -847,7 +1127,7 @@ const App: React.FC = () => {
                         {activeJourney.activationTitles.map((item) => {
                           const module = visibleModules.find((entry) => entry.id === item.id);
                           return module ? (
-                            <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-white/72">
+                            <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-black/66">
                               <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
                                 {module.index}
                               </span>
@@ -855,6 +1135,9 @@ const App: React.FC = () => {
                             </div>
                           ) : null;
                         })}
+                      </div>
+                      <div className="mt-5 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                        The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
                       </div>
                     </div>
                   </aside>
@@ -954,18 +1237,20 @@ const App: React.FC = () => {
       </main>
 
       {journeyGuideDismissed && !journeyGuideOpen && !openModuleId && (
-        <button
-          type="button"
-          onClick={() => setJourneyGuideOpen(true)}
-          className="fixed bottom-5 right-5 z-20 border px-4 py-3 text-[10px] uppercase tracking-[0.24em] shadow-[0_18px_36px_-24px_rgba(0,0,0,0.35)] transition-colors hover:bg-[#101714] hover:text-[#7FCFBD]"
-          style={{
-            borderColor: hexToRgba(brand.colors.accent, 0.28),
-            backgroundColor: '#101714',
-            color: brand.colors.accent,
-          }}
-        >
-          • Your Journey Guide
-        </button>
+        <div className="fixed bottom-5 right-5 z-20">
+          <AmbientGuide label="Journey guide" message={journeyGuideHintMessage} align="right" delayMs={520}>
+            <button
+              type="button"
+              onClick={openJourneyGuide}
+              className="border bg-[#f7f3ea] px-4 py-3 text-[10px] uppercase tracking-[0.24em] text-[#2a3732] shadow-[0_18px_36px_-24px_rgba(0,0,0,0.22)] transition-colors hover:bg-white"
+              style={{
+                borderColor: hexToRgba(brand.colors.ink, 0.12),
+              }}
+            >
+              • Your Journey Guide
+            </button>
+          </AmbientGuide>
+        </div>
       )}
 
       {/* Module Modal */}

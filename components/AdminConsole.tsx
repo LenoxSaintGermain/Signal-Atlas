@@ -1852,6 +1852,85 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 </FieldCard>
 
                 <FieldCard
+                  eyebrow="Journey guide media"
+                  title="Home briefing video"
+                  description="Controls the more prominent media block inside the client home Journey Guide. This is a global default for new and returning users, while the surrounding copy stays personalized to the current dossier."
+                >
+                  <div className="grid gap-4">
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <SelectField
+                        label="Journey guide provider"
+                        value={config.professional_dna.journey_guide_video_provider ?? 'youtube'}
+                        options={[
+                          { value: 'youtube', label: 'YouTube' },
+                          { value: 'vimeo', label: 'Vimeo' },
+                          { value: 'direct', label: 'Direct URL / MP4' },
+                        ]}
+                        onChange={(value) =>
+                          setConfig((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  professional_dna: {
+                                    ...prev.professional_dna,
+                                    journey_guide_video_provider:
+                                      value === 'vimeo' ? 'vimeo' : value === 'direct' ? 'direct' : 'youtube',
+                                  },
+                                }
+                              : prev
+                          )
+                        }
+                      />
+                      <TextField
+                        label="Journey guide video ID"
+                        value={config.professional_dna.journey_guide_video_id ?? ''}
+                        placeholder="YouTube/Vimeo unique ID"
+                        onChange={(value) =>
+                          setConfig((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  professional_dna: { ...prev.professional_dna, journey_guide_video_id: value },
+                                }
+                              : prev
+                          )
+                        }
+                      />
+                    </div>
+                    <TextField
+                      label="Journey guide fallback URL"
+                      value={config.professional_dna.journey_guide_video_url ?? ''}
+                      placeholder="Optional full URL if no ID is supplied"
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, journey_guide_video_url: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    <TextField
+                      label="Journey guide title"
+                      value={config.professional_dna.journey_guide_video_title ?? ''}
+                      placeholder="How the suite works for you"
+                      onChange={(value) =>
+                        setConfig((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                professional_dna: { ...prev.professional_dna, journey_guide_video_title: value },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </div>
+                </FieldCard>
+
+                <FieldCard
                   eyebrow="Voice agent"
                   title="Smart Start voice lane"
                   description="Controls the live intake agent posture, transcript visibility, and voice-to-form autofill behavior."

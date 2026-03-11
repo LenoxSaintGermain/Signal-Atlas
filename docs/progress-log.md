@@ -4,6 +4,24 @@ This log tracks implementation progress against the V1 MVP backlog plus the queu
 Detailed story-level status and pass-by-pass execution entries now live in `docs/backlog-ledger.md`.
 Update both files in each delivery pass so roadmap visuals and implementation status stay aligned.
 
+## 2026-03-11
+
+### Delivery: Journey Guide Editorial Concierge Pass
+
+- Rebuilt the signed-in home guidance from a large usage strip into a lighter editorial `Your Journey Guide` system:
+  - compact invite rail in the closed state
+  - four-act concierge briefing overlay in the open state
+  - persistent bottom-right re-entry pill after dismissal
+- Made the guide context-aware instead of static:
+  - invite copy, act headlines, and supporting lines now vary by returning-visit count
+  - copy now personalizes from client-safe dossier/intake context rather than leaking admin email prefixes
+  - the grid continues to respond by act, lifting relevant modules and dimming the rest
+- Promoted the video rail into a real configurable briefing surface:
+  - public config now exposes `journey_guide_video_provider`, `journey_guide_video_id`, `journey_guide_video_url`, and `journey_guide_video_title`
+  - admin `Experience -> Professional DNA` exposes those controls directly
+  - the home guide resolves that slot before falling back to the existing hero image/title treatment
+- Softened the presentation from dark terminal styling to a lighter editorial / WSJ-adjacent briefing surface without regressing the act-based interaction model.
+
 ## 2026-03-10
 
 ### Delivery: Professional DNA Bloomberg-Grade Dossier Pass

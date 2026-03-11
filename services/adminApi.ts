@@ -405,6 +405,15 @@ const normalizeAdminConfig = (input: any): AppConfig => {
       hero_loop: Boolean(source?.professional_dna?.hero_loop ?? true),
       hero_fallback_image_url: String(source?.professional_dna?.hero_fallback_image_url ?? ''),
       hero_visible: Boolean(source?.professional_dna?.hero_visible ?? false),
+      journey_guide_video_provider:
+        source?.professional_dna?.journey_guide_video_provider === 'vimeo'
+          ? 'vimeo'
+          : source?.professional_dna?.journey_guide_video_provider === 'direct'
+            ? 'direct'
+            : 'youtube',
+      journey_guide_video_id: String(source?.professional_dna?.journey_guide_video_id ?? ''),
+      journey_guide_video_url: String(source?.professional_dna?.journey_guide_video_url ?? ''),
+      journey_guide_video_title: String(source?.professional_dna?.journey_guide_video_title ?? ''),
       voice_agent_enabled: Boolean(source?.professional_dna?.voice_agent_enabled ?? true),
       voice_agent_persona: String(source?.professional_dna?.voice_agent_persona ?? ''),
       voice_arc_sections: Array.isArray(source?.professional_dna?.voice_arc_sections)
@@ -512,6 +521,15 @@ export const fetchPublicConfig = async (): Promise<PublicConfig> => {
       hero_loop: Boolean(source?.professional_dna?.hero_loop ?? true),
       hero_fallback_image_url: String(source?.professional_dna?.hero_fallback_image_url ?? ''),
       hero_visible: Boolean(source?.professional_dna?.hero_visible ?? false),
+      journey_guide_video_provider:
+        source?.professional_dna?.journey_guide_video_provider === 'vimeo'
+          ? 'vimeo'
+          : source?.professional_dna?.journey_guide_video_provider === 'direct'
+            ? 'direct'
+            : 'youtube',
+      journey_guide_video_id: String(source?.professional_dna?.journey_guide_video_id ?? ''),
+      journey_guide_video_url: String(source?.professional_dna?.journey_guide_video_url ?? ''),
+      journey_guide_video_title: String(source?.professional_dna?.journey_guide_video_title ?? ''),
       voice_agent_enabled: Boolean(source?.professional_dna?.voice_agent_enabled ?? true),
       voice_model:
         source?.professional_dna?.voice_model === 'elevenlabs_conversational'
