@@ -90,6 +90,73 @@ const tileIndexClass = {
   title: 'text-[10px] opacity-20',
 };
 
+type JourneyActId = 'act_1' | 'act_2' | 'act_3' | 'act_4';
+
+const JOURNEY_GUIDE_STORAGE_KEY = 'career_concierge_journey_guide_dismissed';
+
+const JOURNEY_ACTS: Array<{
+  id: JourneyActId;
+  label: string;
+  title: string;
+  accent: string;
+  moduleIds: SuiteModuleId[];
+}> = [
+  {
+    id: 'act_1',
+    label: 'Act I',
+    title: 'Establish Your Signal',
+    accent: '#63CDB7',
+    moduleIds: ['intake', 'brief', 'profile', 'ai_profile'],
+  },
+  {
+    id: 'act_2',
+    label: 'Act II',
+    title: 'Read The Intelligence',
+    accent: '#63CDB7',
+    moduleIds: ['brief', 'suite_distilled', 'gaps', 'readiness'],
+  },
+  {
+    id: 'act_3',
+    label: 'Act III',
+    title: 'Build The Momentum',
+    accent: '#D19A47',
+    moduleIds: ['plan', 'cjs_execution', 'my_concierge', 'telescope'],
+  },
+  {
+    id: 'act_4',
+    label: 'Act IV',
+    title: 'Stay Sharp',
+    accent: '#63CDB7',
+    moduleIds: ['episodes', 'tv', 'flash_cards', 'events', 'team'],
+  },
+];
+
+const toText = (value: unknown) => String(value ?? '').trim();
+
+const getClientFirstName = (client: ClientDoc | null, user: User | null) => {
+  const display = toText(client?.display_name) || toText(client?.demo_profile?.name);
+  if (display) return display.split(/\s+/)[0];
+  const email = toText(user?.email);
+  return email ? email.split('@')[0] : 'you';
+};
+
+const getClientTargetRole = (client: ClientDoc | null) => {
+  const answers = client?.intake?.answers ?? {};
+  return (
+    toText(answers.target) ||
+    toText(answers.current_or_target_job_title) ||
+    toText(answers.current_title) ||
+    'your next move'
+  );
+};
+
+const getClientFocusLabel = (client: ClientDoc | null) => {
+  const focus = toText(client?.preferences?.focus);
+  if (focus === 'job_search') return 'market movement';
+  if (focus === 'leadership') return 'leadership leverage';
+  return 'working signal';
+};
+
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -124,6 +191,9 @@ const App: React.FC = () => {
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const launchQueryHandledRef = useRef(false);
   const [shellScrollDepth, setShellScrollDepth] = useState(0);
+  const [journeyGuideOpen, setJourneyGuideOpen] = useState(false);
+  const [journeyGuideDismissed, setJourneyGuideDismissed] = useState(false);
+  const [activeJourneyAct, setActiveJourneyAct] = useState<JourneyActId>('act_1');
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -160,6 +230,16 @@ const App: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setJourneyGuideDismissed(window.localStorage.getItem(JOURNEY_GUIDE_STORAGE_KEY) === 'true');
+  }, []);
+
+  useEffect(() => {
+    if (!journeyGuideDismissed || typeof window === 'undefined') return;
+    window.localStorage.setItem(JOURNEY_GUIDE_STORAGE_KEY, 'true');
+  }, [journeyGuideDismissed]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -395,69 +475,65 @@ const App: React.FC = () => {
 
   // Relationship highlighting
   const hovered = hoveredModuleId ? visibleModules.find((m) => m.id === hoveredModuleId) ?? null : null;
-  const suiteGuideSteps = intakeComplete
-    ? [
-        {
-          step: '01',
-          eyebrow: 'Read first',
-          title: 'Open The Brief',
-          detail: 'Start with the verdict, market signal, and 72-hour war room.',
-          moduleId: 'brief' as SuiteModuleId,
-          locked: false,
-        },
-        {
-          step: '02',
-          eyebrow: 'Then act',
-          title: 'Run Your Plan',
-          detail: 'Convert the brief into controlled movement over the next 72 hours and two weeks.',
-          moduleId: 'plan' as SuiteModuleId,
-          locked: false,
-        },
-        {
-          step: '03',
-          eyebrow: 'Reinforce',
-          title: isFreeTier ? 'Watch Episodes' : 'Use TV + Flash Cards',
-          detail: isFreeTier
-            ? 'Use Episodes to keep learning momentum alive between decisions.'
-            : 'Revisit the learning layer after execution so recall compounds instead of fading.',
-          moduleId: isFreeTier ? ('episodes' as SuiteModuleId) : ('flash_cards' as SuiteModuleId),
-          locked: false,
-        },
-      ]
-    : [
-        {
-          step: '01',
-          eyebrow: 'Start here',
-          title: 'Complete Smart Start Intake',
-          detail: 'This calibrates your profile, generates your Brief, and unlocks the rest of the suite graph.',
-          moduleId: 'intake' as SuiteModuleId,
-          locked: false,
-        },
-        {
-          step: '02',
-          eyebrow: 'Then read',
-          title: 'Open The Brief',
-          detail: 'Your market position, leverage, and the first correction to make.',
-          moduleId: 'brief' as SuiteModuleId,
-          locked: true,
-        },
-        {
-          step: '03',
-          eyebrow: 'Then move',
-          title: 'Run Your Plan',
-          detail: 'A controlled action path, not a pile of advice.',
-          moduleId: 'plan' as SuiteModuleId,
-          locked: true,
-        },
-        {
-          step: '04',
-          eyebrow: 'Then reinforce',
-          title: isFreeTier ? 'Watch Episodes' : 'Use TV + Flash Cards',
-          detail: 'Come back here between execution cycles to keep signal and memory tight.',
-          moduleId: isFreeTier ? ('episodes' as SuiteModuleId) : ('flash_cards' as SuiteModuleId),
-          locked: true,
-        },
-      ];
+  const journeyFirstName = getClientFirstName(client, user);
+  const journeyTargetRole = getClientTargetRole(client);
+  const journeyFocusLabel = getClientFocusLabel(client);
+  const visibleModuleIds = new Set(visibleModules.map((module) => module.id));
+  const journeyActs = JOURNEY_ACTS.map((act) => {
+    const visibleActModules = act.moduleIds.filter((id) => visibleModuleIds.has(id));
+    const activationTitles = visibleActModules.map((id) => ({
+      id,
+      title: getBrandModuleCopy(brand, id).title,
+    }));
+
+    if (act.id === 'act_1') {
+      return {
+        ...act,
+        headline: `Before the suite can move, it needs to know ${journeyFirstName}.`,
+        body: `Module 01 is the only required start. A short concierge conversation calibrates your dossier, your ${journeyFocusLabel}, and how ${journeyTargetRole} should be framed before the rest of the suite starts speaking back.`,
+        ctaLabel: intakeComplete ? 'Open The Brief' : 'Begin With Intake',
+        ctaModule: intakeComplete ? ('brief' as SuiteModuleId) : ('intake' as SuiteModuleId),
+        activationTitles,
+      };
+    }
+    if (act.id === 'act_2') {
+      return {
+        ...act,
+        headline: 'The Brief is your market position, in plain language.',
+        body: `This act translates what the market is likely to reward, what is suppressing the ask, and where ${journeyTargetRole} becomes more or less credible. It is the reading layer before you make decisions.`,
+        ctaLabel: 'Next Act',
+        ctaModule: 'plan' as SuiteModuleId,
+        activationTitles,
+      };
+    }
+    if (act.id === 'act_3') {
+      return {
+        ...act,
+        headline: 'Your Plan is the executable layer. Everything else feeds it.',
+        body: `This is where the suite turns interpretation into movement. The Brief gives the strategy; this act turns it into a controlled action path for ${journeyTargetRole}.`,
+        ctaLabel: 'Next Act',
+        ctaModule: 'plan' as SuiteModuleId,
+        activationTitles,
+      };
+    }
+    return {
+      ...act,
+      headline: 'The suite learns as you move. Keep it current.',
+      body: `Episodes, TV, flash cards, events, and the team layer are the reinforcement environment. This act keeps the suite current as your profile evolves instead of freezing after one good session.`,
+      ctaLabel: intakeComplete ? 'Return To The Brief' : 'Begin With Intake',
+      ctaModule: intakeComplete ? ('brief' as SuiteModuleId) : ('intake' as SuiteModuleId),
+      activationTitles,
+    };
+  });
+  const activeJourney = journeyActs.find((act) => act.id === activeJourneyAct) ?? journeyActs[0];
+  const journeyActIndex = Math.max(0, journeyActs.findIndex((act) => act.id === activeJourney.id));
+  const journeyModuleToAct = new Map<SuiteModuleId, JourneyActId>();
+  journeyActs.forEach((act) => {
+    act.moduleIds.forEach((id) => journeyModuleToAct.set(id, act.id));
+  });
+  const journeyInvite = journeyGuideDismissed
+    ? 'Return to the journey overview.'
+    : 'Understand how your suite is built to move with you.';
 
   return (
     <div
@@ -598,37 +674,193 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <section className="mt-6 border-y py-3" style={{ borderColor: brand.colors.grid_line }}>
-              <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-[0.24em]">
-                <span style={{ color: brand.colors.accent_dark }}>How To Use The Suite</span>
-                <span className="text-black/34">
-                  {intakeComplete ? 'Read the Brief, move into Plan, then reinforce between execution cycles.' : 'Start with Intake. Everything else follows from that calibration.'}
-                </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (journeyGuideOpen) {
+                  setJourneyGuideOpen(false);
+                  setJourneyGuideDismissed(true);
+                  return;
+                }
+                setJourneyGuideOpen(true);
+              }}
+              className="mt-6 w-full border px-6 py-5 text-left transition-colors hover:bg-white/55"
+              style={{ borderColor: brand.colors.grid_line, backgroundColor: hexToRgba(brand.colors.surface_background, 0.82) }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                    • Your Journey Guide
+                  </div>
+                  <div className="mt-2 text-2xl leading-tight text-[#171412] font-editorial">{journeyInvite}</div>
+                </div>
+                <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.2em] text-black/34">
+                  <span>{journeyActs.length} Acts</span>
+                  <span>·</span>
+                  <span>{visibleModules.length} Modules</span>
+                  <span>{journeyGuideOpen ? 'Close ×' : 'Reveal →'}</span>
+                </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {suiteGuideSteps.map((step) => (
+            </button>
+
+            {journeyGuideOpen && (
+              <section
+                className="mt-6 overflow-hidden border text-[#F2ECE4]"
+                style={{
+                  borderColor: hexToRgba(brand.colors.accent, 0.35),
+                  background:
+                    'radial-gradient(circle at top right, rgba(99,205,183,0.08), transparent 28%), linear-gradient(145deg, #101714 0%, #0D1311 56%, #0E1513 100%)',
+                }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.28) }}>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
+                      • Your Journey Guide
+                    </div>
+                    <div className="mt-2 text-xl leading-tight text-[#DDD5C9] font-editorial">Reading the suite as a story, not a menu.</div>
+                  </div>
                   <button
-                    key={step.step}
                     type="button"
                     onClick={() => {
-                      if (!step.locked) openModuleById(step.moduleId);
+                      setJourneyGuideOpen(false);
+                      setJourneyGuideDismissed(true);
                     }}
-                    disabled={step.locked}
-                    className={`border px-3 py-2 text-left text-[10px] uppercase tracking-[0.2em] transition-colors ${
-                      step.locked ? 'cursor-default text-black/38' : 'text-[#171412] hover:bg-white'
-                    }`}
-                    style={{
-                      borderColor: step.locked ? hexToRgba(brand.colors.ink, 0.08) : hexToRgba(brand.colors.accent_dark, 0.2),
-                      backgroundColor: step.locked ? hexToRgba(brand.colors.surface_background, 0.72) : hexToRgba(brand.colors.accent, 0.08),
-                    }}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#7FCFBD] transition-opacity hover:opacity-70"
                   >
-                    <span style={{ color: step.locked ? undefined : brand.colors.accent_dark }}>{step.step}</span>
-                    <span className="mx-2 opacity-35">/</span>
-                    <span>{step.title}</span>
+                    Close ×
                   </button>
-                ))}
-              </div>
-            </section>
+                </div>
+
+                <div className="grid border-b md:grid-cols-[270px_minmax(0,1fr)_280px]" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
+                  <aside className="border-r px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">The Arc</div>
+                    <div className="mt-6 space-y-2">
+                      {journeyActs.map((act) => {
+                        const isActive = act.id === activeJourney.id;
+                        return (
+                          <button
+                            key={act.id}
+                            type="button"
+                            onClick={() => setActiveJourneyAct(act.id)}
+                            className="w-full border px-4 py-4 text-left transition-colors"
+                            style={{
+                              borderColor: isActive ? hexToRgba(act.accent, 0.38) : hexToRgba(brand.colors.accent, 0.1),
+                              backgroundColor: isActive ? hexToRgba(act.accent, 0.08) : 'transparent',
+                            }}
+                          >
+                            <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: isActive ? act.accent : 'rgba(255,255,255,0.38)' }}>
+                              {act.label}
+                            </div>
+                            <div className="mt-2 text-3xl leading-none text-[#F2ECE4] font-editorial">{act.title}</div>
+                            <div className="mt-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: isActive ? act.accent : 'rgba(255,255,255,0.34)' }}>
+                              {act.activationTitles.map((item) => visibleModules.find((module) => module.id === item.id)?.index).filter(Boolean).join(' ')}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-6 border-t pt-6 text-[10px] uppercase tracking-[0.2em] text-white/34" style={{ borderColor: hexToRgba(brand.colors.accent, 0.12) }}>
+                      Hover any tile below to see its role in the arc.
+                    </div>
+                  </aside>
+
+                  <div className="px-5 py-6 md:px-8 md:py-8">
+                    <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
+                      {activeJourney.label} • {activeJourney.title.toUpperCase()}
+                    </div>
+                    <div className="mt-5 max-w-3xl text-5xl leading-[0.94] text-[#F2ECE4] font-editorial">{activeJourney.headline}</div>
+                    <div className="mt-6 max-w-3xl text-lg leading-9 text-white/72">{activeJourney.body}</div>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                      {activeJourney.activationTitles.map((item) => {
+                        const module = visibleModules.find((entry) => entry.id === item.id);
+                        return module ? (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => openModuleById(item.id)}
+                            className="border px-4 py-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white/5"
+                            style={{ borderColor: hexToRgba(activeJourney.accent, 0.4), color: activeJourney.accent }}
+                          >
+                            {module.index} • {item.title}
+                          </button>
+                        ) : null;
+                      })}
+                    </div>
+                    <div className="mt-8 flex flex-wrap gap-4">
+                      {journeyActIndex > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setActiveJourneyAct(journeyActs[journeyActIndex - 1].id)}
+                          className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] text-white/55 transition-colors hover:bg-white/5"
+                          style={{ borderColor: hexToRgba(brand.colors.accent, 0.16) }}
+                        >
+                          ← Prev Act
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (journeyActIndex < journeyActs.length - 1) {
+                            setActiveJourneyAct(journeyActs[journeyActIndex + 1].id);
+                            return;
+                          }
+                          openModuleById(activeJourney.ctaModule);
+                        }}
+                        className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors hover:opacity-90"
+                        style={{
+                          borderColor: hexToRgba(activeJourney.accent, 0.48),
+                          backgroundColor: hexToRgba(activeJourney.accent, 0.14),
+                          color: activeJourney.accent,
+                        }}
+                      >
+                        {journeyActIndex < journeyActs.length - 1 ? 'Next Act →' : `${activeJourney.ctaLabel} →`}
+                      </button>
+                    </div>
+                  </div>
+
+                  <aside className="border-l px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.18) }}>
+                    <div className="border px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.14), backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
+                          Professional DNA • Intro
+                        </div>
+                        <div className="text-[10px] uppercase tracking-[0.2em] text-white/34">2:14</div>
+                      </div>
+                      <div className="mt-8 flex items-center justify-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full border text-xl" style={{ borderColor: hexToRgba(brand.colors.accent, 0.5), color: brand.colors.accent }}>
+                          ▶
+                        </div>
+                      </div>
+                      <div className="mt-8 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent }}>
+                        How the suite works for {journeyFirstName}.
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-white/58">
+                        Context is shaped around {journeyTargetRole} and the current dossier, not a generic product demo.
+                      </div>
+                    </div>
+
+                    <div className="mt-4 border px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.accent, 0.14), backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: activeJourney.accent }}>
+                        This Act Activates
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {activeJourney.activationTitles.map((item) => {
+                          const module = visibleModules.find((entry) => entry.id === item.id);
+                          return module ? (
+                            <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-white/72">
+                              <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
+                                {module.index}
+                              </span>
+                              <span className="font-editorial">{item.title}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </section>
+            )}
           </div>
 
           <div
@@ -644,7 +876,10 @@ const App: React.FC = () => {
             {visibleModules.map((m, idx) => {
               const isHovered = hoveredModuleId === m.id;
               const isRelated = hovered?.relatedIds?.includes(m.id) ?? false;
-              const constellationDimmed = hovered && !isHovered && !isRelated;
+              const journeyActForModule = journeyModuleToAct.get(m.id);
+              const inActiveJourneyAct = journeyGuideOpen && journeyActForModule === activeJourney.id;
+              const journeyDimmed = journeyGuideOpen && journeyActForModule !== activeJourney.id;
+              const constellationDimmed = journeyGuideOpen ? journeyDimmed : hovered && !isHovered && !isRelated;
               const locked = m.id !== 'intake' && !intakeComplete;
               const display = getBrandModuleCopy(brand, m.id);
 
@@ -655,12 +890,21 @@ const App: React.FC = () => {
                   key={m.id}
                   className={`cursor-pointer select-none p-4 transition-all dur-md ease-exit md:p-5 ${
                     constellationDimmed ? 'opacity-20' : 'opacity-100'
-                  } ${mobileFocused ? 'bg-white ring-1 ring-black/5 shadow-card-hover border-brand-teal' : 'hover:bg-white/95'} ${
+                  } ${
+                    inActiveJourneyAct
+                      ? 'bg-white ring-1 ring-black/5 shadow-card-hover border-brand-teal -translate-y-1'
+                      : mobileFocused
+                        ? 'bg-white ring-1 ring-black/5 shadow-card-hover border-brand-teal'
+                        : 'hover:bg-white/95'
+                  } ${
                     !locked ? 'relative before:absolute before:left-0 before:top-0 before:h-[2px] before:w-14 before:bg-brand-teal/60' : ''
                   }`}
                   style={{ backgroundColor: brand.colors.surface_background }}
                   onClick={(e) => handleModuleClick(e, m)}
-                  onMouseEnter={() => !isMobile && setHoveredModuleId(m.id)}
+                  onMouseEnter={() => {
+                    if (!isMobile) setHoveredModuleId(m.id);
+                    if (journeyGuideOpen && journeyActForModule) setActiveJourneyAct(journeyActForModule);
+                  }}
                 >
                   <div className="flex justify-between items-start gap-4">
                     {brand.toggles.show_module_indices ? (
@@ -668,7 +912,18 @@ const App: React.FC = () => {
                     ) : (
                       <span />
                     )}
-                    {brand.toggles.show_module_status && (
+                    {inActiveJourneyAct ? (
+                      <div
+                        className="border px-2 py-1 text-[9px] uppercase tracking-[0.18em]"
+                        style={{
+                          borderColor: hexToRgba(activeJourney.accent, 0.35),
+                          backgroundColor: hexToRgba(activeJourney.accent, 0.08),
+                          color: activeJourney.accent,
+                        }}
+                      >
+                        In This Act
+                      </div>
+                    ) : brand.toggles.show_module_status && (
                       <div
                         className={`uppercase tracking-widest ${locked ? 'opacity-40' : ''}`}
                         style={{ fontSize: '9px', color: locked ? undefined : brand.colors.accent_dark }}
@@ -697,6 +952,21 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {journeyGuideDismissed && !journeyGuideOpen && !openModuleId && (
+        <button
+          type="button"
+          onClick={() => setJourneyGuideOpen(true)}
+          className="fixed bottom-5 right-5 z-20 border px-4 py-3 text-[10px] uppercase tracking-[0.24em] shadow-[0_18px_36px_-24px_rgba(0,0,0,0.35)] transition-colors hover:bg-[#101714] hover:text-[#7FCFBD]"
+          style={{
+            borderColor: hexToRgba(brand.colors.accent, 0.28),
+            backgroundColor: '#101714',
+            color: brand.colors.accent,
+          }}
+        >
+          • Your Journey Guide
+        </button>
+      )}
 
       {/* Module Modal */}
       {openModule && (
