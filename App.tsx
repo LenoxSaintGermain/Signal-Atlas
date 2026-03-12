@@ -1001,7 +1001,7 @@ const App: React.FC = () => {
                     <div className="px-5 py-4 md:px-6 md:py-5">
                       <div>
                         <div
-                          className="max-w-[760px] overflow-hidden border bg-white/72 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]"
+                          className="w-full overflow-hidden border bg-white/72 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]"
                           style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}
                         >
                           <div className="flex items-start justify-between gap-3 border-b px-4 py-3" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
@@ -1084,17 +1084,17 @@ const App: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_240px]">
                           <div>
                             <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
                               {activeJourney.label} • {journeyMetaLabel}
                             </div>
-                            <div className="mt-3 max-w-[620px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
+                            <div className="mt-3 max-w-[760px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
                               {activeJourney.headline}
                             </div>
-                            <div className="mt-4 max-w-[560px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
+                            <div className="mt-4 max-w-[700px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
                             <div
-                              className="mt-4 max-w-[560px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
+                              className="mt-4 max-w-[700px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
                               style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
                             >
                               {intakeComplete
