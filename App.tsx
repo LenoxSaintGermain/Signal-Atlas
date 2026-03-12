@@ -956,10 +956,7 @@ const App: React.FC = () => {
                   </button>
                 </div>
 
-                <div
-                  className="grid border-b md:grid-cols-[172px_minmax(0,1fr)_380px] xl:grid-cols-[172px_minmax(0,1fr)_420px]"
-                  style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
-                >
+                <div className="grid border-b md:grid-cols-[172px_minmax(0,1fr)]" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
                   <aside className="border-r px-3 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
                     <div className="text-[10px] uppercase tracking-[0.24em] text-black/36">The Arc</div>
                     <div className="mt-4 space-y-1.5">
@@ -1000,177 +997,184 @@ const App: React.FC = () => {
                     </div>
                   </aside>
 
-                  <div className="px-5 py-4 md:px-6 md:py-5">
-                    <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
-                      {activeJourney.label} • {journeyMetaLabel}
-                    </div>
-                    <div className="mt-3 max-w-[560px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
-                      {activeJourney.headline}
-                    </div>
-                    <div className="mt-4 max-w-[480px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
-                    <div
-                      className="mt-4 max-w-[480px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
-                      style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
-                    >
-                      {intakeComplete
-                        ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
-                        : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
-                    </div>
-                    <div className="mt-4 flex max-w-[520px] flex-wrap gap-2.5">
-                      {activeJourney.activationTitles.map((item) => {
-                        const module = visibleModules.find((entry) => entry.id === item.id);
-                        return module ? (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => openModuleById(item.id)}
-                            className="border bg-white/68 px-4 py-2.5 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white"
-                            style={{ borderColor: hexToRgba(activeJourney.accent, 0.28), color: activeJourney.accent }}
-                          >
-                            {module.index} • {item.title}
-                          </button>
-                        ) : null;
-                      })}
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      {journeyActIndex > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setActiveJourneyAct(journeyActs[journeyActIndex - 1].id)}
-                          className="border bg-white/62 px-5 py-3 text-[10px] uppercase tracking-[0.24em] text-black/52 transition-colors hover:bg-white"
-                          style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
-                        >
-                          ← Prev Act
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (journeyActIndex < journeyActs.length - 1) {
-                            setActiveJourneyAct(journeyActs[journeyActIndex + 1].id);
-                            return;
-                          }
-                          openModuleById(activeJourney.ctaModule);
-                        }}
-                        className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors hover:opacity-90"
-                        style={{
-                          borderColor: hexToRgba(activeJourney.accent, 0.28),
-                          backgroundColor: hexToRgba(activeJourney.accent, 0.1),
-                          color: activeJourney.accent,
-                        }}
-                      >
-                        {journeyActIndex < journeyActs.length - 1 ? 'Next Act →' : `${activeJourney.ctaLabel} →`}
-                      </button>
-                      <div className="text-[10px] uppercase tracking-[0.22em] text-black/22">
-                        {journeyActIndex + 1} / {journeyActs.length}
-                      </div>
-                    </div>
-                  </div>
-
-                  <aside className="border-l px-4 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
-                    <div className="overflow-hidden border bg-white/70 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="px-4 pt-4 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                          Journey briefing
-                        </div>
+                  <div className="border-l" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
+                    <div className="grid gap-5 px-5 py-4 md:px-6 md:py-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+                      <div>
                         <div
-                          className="px-4 pt-4 text-[10px] uppercase tracking-[0.2em]"
-                          style={{ color: hexToRgba(journeyWarmAccent, 0.84) }}
+                          className="max-w-[760px] overflow-hidden border bg-white/72 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]"
+                          style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}
                         >
-                          {journeyGuideMedia ? 'Configured briefing' : 'Fallback stage'}
-                        </div>
-                      </div>
-                      <div className="mt-3 overflow-hidden bg-[#efe8dc]">
-                        {journeyGuideMedia ? (
-                          <div className="aspect-video bg-[#ece5d8]">
-                            {journeyGuideMedia.kind === 'direct' ? (
-                              <video
-                                controls
-                                playsInline
-                                preload="metadata"
-                                className="h-full w-full object-cover"
-                                src={journeyGuideMedia.src}
-                              />
+                          <div className="flex items-start justify-between gap-3 border-b px-4 py-3" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                            <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                              Journey briefing
+                            </div>
+                            <div
+                              className="text-[10px] uppercase tracking-[0.2em]"
+                              style={{ color: hexToRgba(journeyWarmAccent, 0.84) }}
+                            >
+                              {journeyGuideMedia ? 'Configured briefing' : 'Fallback stage'}
+                            </div>
+                          </div>
+                          <div className="overflow-hidden bg-[#efe8dc]">
+                            {journeyGuideMedia ? (
+                              <div className="aspect-video bg-[#ece5d8]">
+                                {journeyGuideMedia.kind === 'direct' ? (
+                                  <video
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                    className="h-full w-full object-cover"
+                                    src={journeyGuideMedia.src}
+                                  />
+                                ) : (
+                                  <iframe
+                                    src={journeyGuideMedia.src}
+                                    title={journeyGuideMedia.title}
+                                    className="h-full w-full border-0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                  />
+                                )}
+                              </div>
                             ) : (
-                              <iframe
-                                src={journeyGuideMedia.src}
-                                title={journeyGuideMedia.title}
-                                className="h-full w-full border-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowFullScreen
-                              />
+                              <div
+                                className="relative aspect-video overflow-hidden"
+                                style={
+                                  journeyGuideFallbackImage
+                                    ? {
+                                        backgroundImage: `linear-gradient(180deg, rgba(244,241,232,0.24) 0%, rgba(237,231,219,0.82) 100%), url(${journeyGuideFallbackImage})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                      }
+                                    : {
+                                        background:
+                                          'radial-gradient(circle at top, rgba(99,205,183,0.12), transparent 42%), linear-gradient(180deg, #f6f2e9 0%, #e7dece 100%)',
+                                      }
+                                }
+                              >
+                                <div className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.18em] text-black/32">
+                                  2:14
+                                </div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div
+                                    className="flex h-16 w-16 items-center justify-center border bg-white/78 text-2xl text-[#171412] shadow-[0_10px_24px_-18px_rgba(0,0,0,0.35)]"
+                                    style={{ borderColor: hexToRgba(brand.colors.ink, 0.12) }}
+                                  >
+                                    ▶
+                                  </div>
+                                </div>
+                                <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(239,232,220,0)_0%,rgba(230,221,208,0.72)_45%,rgba(214,203,188,0.96)_100%)] p-6">
+                                  <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">
+                                    Global default briefing
+                                  </div>
+                                  <div className="mt-2 text-[38px] font-editorial leading-[0.94] text-[#171412]">
+                                    {journeyGuideVideoTitle}
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        ) : (
-                          <div
-                            className="relative aspect-video overflow-hidden"
-                            style={
-                              journeyGuideFallbackImage
-                                ? {
-                                    backgroundImage: `linear-gradient(180deg, rgba(244,241,232,0.24) 0%, rgba(237,231,219,0.82) 100%), url(${journeyGuideFallbackImage})`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                  }
-                                : {
-                                    background:
-                                      'radial-gradient(circle at top, rgba(99,205,183,0.12), transparent 42%), linear-gradient(180deg, #f6f2e9 0%, #e7dece 100%)',
-                                  }
-                            }
-                          >
-                            <div className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.18em] text-black/32">
-                              2:14
+                          <div className="bg-[#faf7f0] px-4 py-4">
+                            <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                              {journeyGuideVideoTitle}
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div
-                                className="flex h-14 w-14 items-center justify-center border bg-white/72 text-xl text-[#171412] shadow-[0_10px_24px_-18px_rgba(0,0,0,0.35)]"
-                                style={{ borderColor: hexToRgba(brand.colors.ink, 0.12) }}
-                              >
-                                ▶
-                              </div>
-                            </div>
-                            <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(239,232,220,0)_0%,rgba(230,221,208,0.72)_45%,rgba(214,203,188,0.96)_100%)] p-5">
-                              <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">
-                                Global default briefing
-                              </div>
-                              <div className="mt-2 text-[34px] font-editorial leading-[0.96] text-[#171412]">
-                                {journeyGuideVideoTitle}
-                              </div>
+                            <div className="mt-2 max-w-[620px] text-sm leading-7 text-black/64">
+                              This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
                             </div>
                           </div>
-                        )}
-                      </div>
-                      <div className="bg-[#faf7f0] px-4 pb-4 pt-4">
-                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                          {journeyGuideVideoTitle}
                         </div>
-                        <div className="mt-2 text-sm leading-7 text-black/64">
-                          This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="mt-3 border bg-white/62 px-4 py-4" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: journeyWarmAccent }}>
-                        This Act Activates
+                        <div className="mt-5 text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
+                          {activeJourney.label} • {journeyMetaLabel}
+                        </div>
+                        <div className="mt-3 max-w-[620px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
+                          {activeJourney.headline}
+                        </div>
+                        <div className="mt-4 max-w-[520px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
+                        <div
+                          className="mt-4 max-w-[520px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
+                          style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
+                        >
+                          {intakeComplete
+                            ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
+                            : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
+                        </div>
+                        <div className="mt-4 flex max-w-[760px] flex-wrap gap-2.5">
+                          {activeJourney.activationTitles.map((item) => {
+                            const module = visibleModules.find((entry) => entry.id === item.id);
+                            return module ? (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => openModuleById(item.id)}
+                                className="border bg-white/68 px-4 py-2.5 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white"
+                                style={{ borderColor: hexToRgba(activeJourney.accent, 0.28), color: activeJourney.accent }}
+                              >
+                                {module.index} • {item.title}
+                              </button>
+                            ) : null;
+                          })}
+                        </div>
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                          {journeyActIndex > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setActiveJourneyAct(journeyActs[journeyActIndex - 1].id)}
+                              className="border bg-white/62 px-5 py-3 text-[10px] uppercase tracking-[0.24em] text-black/52 transition-colors hover:bg-white"
+                              style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
+                            >
+                              ← Prev Act
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (journeyActIndex < journeyActs.length - 1) {
+                                setActiveJourneyAct(journeyActs[journeyActIndex + 1].id);
+                                return;
+                              }
+                              openModuleById(activeJourney.ctaModule);
+                            }}
+                            className="border px-5 py-3 text-[10px] uppercase tracking-[0.24em] transition-colors hover:opacity-90"
+                            style={{
+                              borderColor: hexToRgba(activeJourney.accent, 0.28),
+                              backgroundColor: hexToRgba(activeJourney.accent, 0.1),
+                              color: activeJourney.accent,
+                            }}
+                          >
+                            {journeyActIndex < journeyActs.length - 1 ? 'Next Act →' : `${activeJourney.ctaLabel} →`}
+                          </button>
+                          <div className="text-[10px] uppercase tracking-[0.22em] text-black/22">
+                            {journeyActIndex + 1} / {journeyActs.length}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-3 space-y-2.5">
-                        {activeJourney.activationTitles.map((item) => {
-                          const module = visibleModules.find((entry) => entry.id === item.id);
-                          return module ? (
-                            <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-black/66">
-                              <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
-                                {module.index}
-                              </span>
-                              <span className="font-editorial">{item.title}</span>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                      <div className="mt-4 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                        The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
-                      </div>
+
+                      <aside>
+                        <div className="border bg-white/62 px-4 py-4" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                          <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: journeyWarmAccent }}>
+                            This Act Activates
+                          </div>
+                          <div className="mt-3 space-y-2.5">
+                            {activeJourney.activationTitles.map((item) => {
+                              const module = visibleModules.find((entry) => entry.id === item.id);
+                              return module ? (
+                                <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-black/66">
+                                  <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
+                                    {module.index}
+                                  </span>
+                                  <span className="font-editorial">{item.title}</span>
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                          <div className="mt-4 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                            The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
+                          </div>
+                        </div>
+                      </aside>
                     </div>
-                  </aside>
+                  </div>
                 </div>
               </section>
             )}
