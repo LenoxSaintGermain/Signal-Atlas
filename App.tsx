@@ -957,7 +957,7 @@ const App: React.FC = () => {
                 </div>
 
                 <div
-                  className="grid border-b md:grid-cols-[172px_minmax(0,1fr)_320px]"
+                  className="grid border-b md:grid-cols-[172px_minmax(0,1fr)_380px] xl:grid-cols-[172px_minmax(0,1fr)_420px]"
                   style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
                 >
                   <aside className="border-r px-3 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
@@ -1068,7 +1068,7 @@ const App: React.FC = () => {
                   </div>
 
                   <aside className="border-l px-4 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
-                    <div className="border bg-white/70" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                    <div className="overflow-hidden border bg-white/70 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="px-4 pt-4 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
                           Journey briefing
@@ -1117,22 +1117,33 @@ const App: React.FC = () => {
                                   }
                             }
                           >
-                            <div className="absolute inset-0 flex flex-col justify-end p-5">
-                              <div className="text-[10px] uppercase tracking-[0.22em] text-black/38">
+                            <div className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.18em] text-black/32">
+                              2:14
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div
+                                className="flex h-14 w-14 items-center justify-center border bg-white/72 text-xl text-[#171412] shadow-[0_10px_24px_-18px_rgba(0,0,0,0.35)]"
+                                style={{ borderColor: hexToRgba(brand.colors.ink, 0.12) }}
+                              >
+                                ▶
+                              </div>
+                            </div>
+                            <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(239,232,220,0)_0%,rgba(230,221,208,0.72)_45%,rgba(214,203,188,0.96)_100%)] p-5">
+                              <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">
                                 Global default briefing
                               </div>
-                              <div className="mt-2 text-2xl font-editorial leading-tight text-[#171412]">
+                              <div className="mt-2 text-[34px] font-editorial leading-[0.96] text-[#171412]">
                                 {journeyGuideVideoTitle}
                               </div>
                             </div>
                           </div>
                         )}
                       </div>
-                      <div className="px-4 pb-4 pt-3">
+                      <div className="bg-[#faf7f0] px-4 pb-4 pt-4">
                         <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
                           {journeyGuideVideoTitle}
                         </div>
-                        <div className="mt-2 text-sm leading-6 text-black/58">
+                        <div className="mt-2 text-sm leading-7 text-black/64">
                           This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
                         </div>
                       </div>

@@ -287,11 +287,19 @@ export const buildProfileTelemetry = (profile: ProfileContent) => {
   };
 };
 
-export const EditorialList = ({ items, accent = 'teal' }: { items: string[]; accent?: 'teal' | 'amber' | 'red' | 'ink' }) => {
+export const EditorialList = ({
+  items,
+  accent = 'teal',
+  theme = 'light',
+}: {
+  items: string[];
+  accent?: 'teal' | 'amber' | 'red' | 'ink';
+  theme?: 'light' | 'dark';
+}) => {
   const dotClass =
     accent === 'amber' ? 'bg-[#b8893a]' : accent === 'red' ? 'bg-[#a25555]' : accent === 'ink' ? 'bg-[#28211E]' : 'bg-[#5FAF95]';
   return (
-    <ul className="space-y-3 text-sm leading-7 text-black/72 font-body">
+    <ul className={`space-y-3 text-sm leading-7 font-body ${theme === 'dark' ? 'text-white/78' : 'text-black/72'}`}>
       {items.map((item, index) => (
         <li key={`${item}-${index}`} className="flex gap-3">
           <span className={`mt-[10px] h-1.5 w-1.5 flex-none rounded-full ${dotClass}`} />
@@ -319,7 +327,7 @@ export const DnaCommandBar = ({ items }: { items: DnaSignalStripItem[] }) => (
                 {item.tone}
               </span>
             </div>
-            {item.detail ? <div className="mt-2 text-xs leading-5 text-white/55 font-body">{item.detail}</div> : null}
+            {item.detail ? <div className="mt-2 text-xs leading-5 text-white/68 font-body">{item.detail}</div> : null}
           </div>
         );
       })}
@@ -348,7 +356,7 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
           <div className="mt-4 text-5xl font-data tracking-tight text-white">+{signal.composite_score}</div>
           <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45 font-data">{signal.momentum_label}</div>
         </div>
-        <div className="max-w-[250px] text-right text-xs leading-5 text-white/55 font-body">
+        <div className="max-w-[250px] text-right text-xs leading-5 text-white/68 font-body">
           <div>{signal.trajectory_type === 'history' ? 'Historical trajectory' : 'Projection path'}</div>
           <div className="mt-2">{signal.trajectory_basis}</div>
         </div>
@@ -382,11 +390,11 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
             return <rect key={point.label} x={x - 4} y={y - 4} width="8" height="8" fill="#f7f1e8" stroke="#8DD9BF" strokeWidth="2" />;
           })}
         </svg>
-        <div className="mt-3 grid grid-cols-4 gap-3 text-[10px] uppercase tracking-[0.22em] text-white/42 font-data">
+        <div className="mt-3 grid grid-cols-4 gap-3 text-[10px] uppercase tracking-[0.22em] text-white/50 font-data">
           {signal.trajectory.map((point) => (
             <div key={point.label} className="flex flex-col gap-1">
               <span>{point.label}</span>
-              <span className="text-white/72">{point.score}</span>
+              <span className="text-white/82">{point.score}</span>
             </div>
           ))}
         </div>
@@ -475,9 +483,9 @@ export const DnaCompensationLadderPanel = ({
     <div className="mt-6 grid gap-4 md:grid-cols-3">
       {ladder.map((rung) => (
         <div key={rung.id} className="border border-white/10 bg-white/[0.04] p-4">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">{rung.label}</div>
+          <div className="text-[10px] uppercase tracking-[0.22em] text-white/56 font-data">{rung.label}</div>
           <div className="mt-3 text-4xl font-data tracking-tight text-white">{rung.grade}</div>
-          <div className="mt-3 text-sm leading-6 text-white/62 font-body">{rung.detail}</div>
+          <div className="mt-3 text-sm leading-6 text-white/76 font-body">{rung.detail}</div>
         </div>
       ))}
     </div>
@@ -485,7 +493,7 @@ export const DnaCompensationLadderPanel = ({
       <div className="mt-6 border border-white/10 bg-white/[0.03] p-5">
         <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">Needle Movers</div>
         <div className="mt-4">
-          <EditorialList items={receipt} />
+          <EditorialList items={receipt} theme="dark" />
         </div>
       </div>
     ) : null}
@@ -542,7 +550,7 @@ export const DnaEvidenceNodeGrid = ({ nodes }: { nodes: DnaEvidenceNode[] }) => 
 
 export const DnaTickerBar = ({ ticker }: { ticker: DnaReportTicker }) => (
   <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] px-5 py-4 text-[#f7f1e8] shadow-[0_18px_50px_-44px_rgba(40,33,30,0.4)]">
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] uppercase tracking-[0.26em] text-white/48 font-data">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] uppercase tracking-[0.26em] text-white/58 font-data">
       <span>Report generated {ticker.generated_at}</span>
       <span>Model {ticker.model_version}</span>
       <span>Evidence nodes {ticker.evidence_nodes}</span>
