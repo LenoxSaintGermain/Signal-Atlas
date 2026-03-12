@@ -558,6 +558,7 @@ const App: React.FC = () => {
     ? `The dossier already has signal on ${journeyTargetPhrase}. This guide shows how the suite turns that signal into interpretation, movement, and reinforcement.`
     : `This guide shows how the suite uses one strong intake to calibrate your dossier, your ${journeyFocusLabel}, and the story around ${journeyTargetPhrase}.`;
   const journeyMetaLabel = intakeComplete ? 'Dossier in motion' : 'Pre-brief alignment';
+  const journeyWarmAccent = '#A07A55';
   const journeyGuideHintMessage = intakeComplete
     ? 'Reopen the suite briefing at any time. It highlights the modules that matter for the current act and keeps the orientation personal to the dossier on file.'
     : 'Open the suite briefing to see the four-act arc, the modules it activates, and the concierge context that shapes the first move.';
@@ -910,7 +911,9 @@ const App: React.FC = () => {
                       <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
                         • Your Journey Guide
                       </div>
-                      <div className="mt-1 text-base leading-6 text-[#171412] md:text-lg">{journeyInvite}</div>
+                      <div className="mt-1 max-w-[560px] font-editorial text-[20px] leading-tight text-[#171412] md:text-[22px]">
+                        {journeyInvite}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-black/36">
                       <span>{journeyActs.length} Acts</span>
@@ -932,7 +935,7 @@ const App: React.FC = () => {
                 }}
               >
                 <div
-                  className="flex flex-wrap items-start justify-between gap-4 border-b px-4 py-4 md:px-5"
+                  className="flex flex-wrap items-start justify-between gap-4 border-b px-4 py-3.5 md:px-5 md:py-4"
                   style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
                 >
                   <div className="max-w-3xl">
@@ -954,12 +957,12 @@ const App: React.FC = () => {
                 </div>
 
                 <div
-                  className="grid border-b md:grid-cols-[230px_minmax(0,1fr)_minmax(340px,0.95fr)]"
+                  className="grid border-b md:grid-cols-[172px_minmax(0,1fr)_320px]"
                   style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}
                 >
-                  <aside className="border-r px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
+                  <aside className="border-r px-3 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
                     <div className="text-[10px] uppercase tracking-[0.24em] text-black/36">The Arc</div>
-                    <div className="mt-6 space-y-2">
+                    <div className="mt-4 space-y-1.5">
                       {journeyActs.map((act) => {
                         const isActive = act.id === activeJourney.id;
                         return (
@@ -967,17 +970,22 @@ const App: React.FC = () => {
                             key={act.id}
                             type="button"
                             onClick={() => setActiveJourneyAct(act.id)}
-                            className="w-full border px-4 py-4 text-left transition-colors hover:bg-white/70"
+                            className="w-full border-l-[3px] px-3 py-3 text-left transition-colors hover:bg-white/70"
                             style={{
-                              borderColor: isActive ? hexToRgba(act.accent, 0.38) : hexToRgba(brand.colors.ink, 0.08),
-                              backgroundColor: isActive ? hexToRgba(act.accent, 0.08) : 'rgba(255,255,255,0.44)',
+                              borderTopColor: hexToRgba(brand.colors.ink, 0.08),
+                              borderRightColor: hexToRgba(brand.colors.ink, 0.08),
+                              borderBottomColor: hexToRgba(brand.colors.ink, 0.08),
+                              borderLeftColor: isActive ? act.accent : 'transparent',
+                              backgroundColor: isActive ? hexToRgba(act.accent, 0.12) : 'rgba(255,255,255,0.28)',
                             }}
                           >
                             <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: isActive ? act.accent : 'rgba(23,20,18,0.42)' }}>
                               {act.label}
                             </div>
-                            <div className="mt-2 text-[32px] leading-none text-[#171412] font-editorial">{act.title}</div>
-                            <div className="mt-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: isActive ? act.accent : 'rgba(23,20,18,0.34)' }}>
+                            <div className="mt-1.5 text-[20px] leading-[0.96] text-[#171412] font-editorial md:text-[22px]">
+                              {act.title}
+                            </div>
+                            <div className="mt-2 text-[9px] uppercase tracking-[0.18em]" style={{ color: isActive ? hexToRgba(act.accent, 0.72) : 'rgba(23,20,18,0.24)' }}>
                               {act.activationTitles.map((item) => visibleModules.find((module) => module.id === item.id)?.index).filter(Boolean).join(' ')}
                             </div>
                           </button>
@@ -985,27 +993,30 @@ const App: React.FC = () => {
                       })}
                     </div>
                     <div
-                      className="mt-6 border-t pt-6 text-[10px] uppercase tracking-[0.2em] text-black/34"
+                      className="mt-5 border-t pt-5 text-[10px] uppercase tracking-[0.2em] text-black/34"
                       style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}
                     >
                       Hover any tile below to see where it belongs in the briefing.
                     </div>
                   </aside>
 
-                  <div className="px-5 py-6 md:px-8 md:py-8">
+                  <div className="px-5 py-4 md:px-6 md:py-5">
                     <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
                       {activeJourney.label} • {journeyMetaLabel}
                     </div>
-                    <div className="mt-4 max-w-3xl text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
+                    <div className="mt-3 max-w-[560px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
                       {activeJourney.headline}
                     </div>
-                    <div className="mt-5 max-w-3xl text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
-                    <div className="mt-5 max-w-2xl border-l-2 pl-4 text-sm leading-6 text-black/54" style={{ borderColor: hexToRgba(activeJourney.accent, 0.32) }}>
+                    <div className="mt-4 max-w-[480px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
+                    <div
+                      className="mt-4 max-w-[480px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
+                      style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
+                    >
                       {intakeComplete
                         ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
                         : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
                     </div>
-                    <div className="mt-8 flex flex-wrap gap-3">
+                    <div className="mt-4 flex max-w-[520px] flex-wrap gap-2.5">
                       {activeJourney.activationTitles.map((item) => {
                         const module = visibleModules.find((entry) => entry.id === item.id);
                         return module ? (
@@ -1013,7 +1024,7 @@ const App: React.FC = () => {
                             key={item.id}
                             type="button"
                             onClick={() => openModuleById(item.id)}
-                            className="border bg-white/68 px-4 py-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white"
+                            className="border bg-white/68 px-4 py-2.5 text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-white"
                             style={{ borderColor: hexToRgba(activeJourney.accent, 0.28), color: activeJourney.accent }}
                           >
                             {module.index} • {item.title}
@@ -1021,7 +1032,7 @@ const App: React.FC = () => {
                         ) : null;
                       })}
                     </div>
-                    <div className="mt-8 flex flex-wrap gap-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
                       {journeyActIndex > 0 ? (
                         <button
                           type="button"
@@ -1050,20 +1061,26 @@ const App: React.FC = () => {
                       >
                         {journeyActIndex < journeyActs.length - 1 ? 'Next Act →' : `${activeJourney.ctaLabel} →`}
                       </button>
+                      <div className="text-[10px] uppercase tracking-[0.22em] text-black/22">
+                        {journeyActIndex + 1} / {journeyActs.length}
+                      </div>
                     </div>
                   </div>
 
-                  <aside className="border-l px-4 py-6 md:px-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
-                    <div className="border bg-white/70 px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                  <aside className="border-l px-4 py-4 md:py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
+                    <div className="border bg-white/70" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
                       <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                        <div className="px-4 pt-4 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
                           Journey briefing
                         </div>
-                        <div className="text-[10px] uppercase tracking-[0.2em] text-black/34">
-                          {journeyGuideMedia ? journeyGuideMedia.providerLabel : 'Fallback stage'}
+                        <div
+                          className="px-4 pt-4 text-[10px] uppercase tracking-[0.2em]"
+                          style={{ color: hexToRgba(journeyWarmAccent, 0.84) }}
+                        >
+                          {journeyGuideMedia ? 'Configured briefing' : 'Fallback stage'}
                         </div>
                       </div>
-                      <div className="mt-4 overflow-hidden border bg-[#efe8dc]" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                      <div className="mt-3 overflow-hidden bg-[#efe8dc]">
                         {journeyGuideMedia ? (
                           <div className="aspect-video bg-[#ece5d8]">
                             {journeyGuideMedia.kind === 'direct' ? (
@@ -1111,19 +1128,21 @@ const App: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <div className="mt-4 text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
-                        {journeyGuideVideoTitle}
-                      </div>
-                      <div className="mt-2 text-sm leading-6 text-black/58">
-                        This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
+                      <div className="px-4 pb-4 pt-3">
+                        <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: brand.colors.accent_dark }}>
+                          {journeyGuideVideoTitle}
+                        </div>
+                        <div className="mt-2 text-sm leading-6 text-black/58">
+                          This briefing stays globally configured for new clients, then reads differently as the suite learns more about {journeyTargetPhrase}.
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-4 border bg-white/62 px-4 py-5" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: activeJourney.accent }}>
+                    <div className="mt-3 border bg-white/62 px-4 py-4" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                      <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: journeyWarmAccent }}>
                         This Act Activates
                       </div>
-                      <div className="mt-4 space-y-3">
+                      <div className="mt-3 space-y-2.5">
                         {activeJourney.activationTitles.map((item) => {
                           const module = visibleModules.find((entry) => entry.id === item.id);
                           return module ? (
@@ -1136,7 +1155,7 @@ const App: React.FC = () => {
                           ) : null;
                         })}
                       </div>
-                      <div className="mt-5 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                      <div className="mt-4 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
                         The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
                       </div>
                     </div>
