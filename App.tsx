@@ -998,7 +998,7 @@ const App: React.FC = () => {
                   </aside>
 
                   <div className="border-l" style={{ borderColor: hexToRgba(brand.colors.ink, 0.1) }}>
-                    <div className="grid gap-5 px-5 py-4 md:px-6 md:py-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+                    <div className="px-5 py-4 md:px-6 md:py-5">
                       <div>
                         <div
                           className="max-w-[760px] overflow-hidden border bg-white/72 shadow-[0_18px_48px_-40px_rgba(40,33,30,0.24)]"
@@ -1084,21 +1084,50 @@ const App: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="mt-5 text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
-                          {activeJourney.label} • {journeyMetaLabel}
+                        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                          <div>
+                            <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeJourney.accent }}>
+                              {activeJourney.label} • {journeyMetaLabel}
+                            </div>
+                            <div className="mt-3 max-w-[620px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
+                              {activeJourney.headline}
+                            </div>
+                            <div className="mt-4 max-w-[560px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
+                            <div
+                              className="mt-4 max-w-[560px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
+                              style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
+                            >
+                              {intakeComplete
+                                ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
+                                : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
+                            </div>
+                          </div>
+
+                          <aside>
+                            <div className="border bg-white/62 px-4 py-4" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                              <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: journeyWarmAccent }}>
+                                This Act Activates
+                              </div>
+                              <div className="mt-3 space-y-2.5">
+                                {activeJourney.activationTitles.map((item) => {
+                                  const module = visibleModules.find((entry) => entry.id === item.id);
+                                  return module ? (
+                                    <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-black/66">
+                                      <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
+                                        {module.index}
+                                      </span>
+                                      <span className="font-editorial">{item.title}</span>
+                                    </div>
+                                  ) : null;
+                                })}
+                              </div>
+                              <div className="mt-4 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
+                                The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
+                              </div>
+                            </div>
+                          </aside>
                         </div>
-                        <div className="mt-3 max-w-[620px] text-4xl leading-[0.96] text-[#171412] font-editorial md:text-5xl">
-                          {activeJourney.headline}
-                        </div>
-                        <div className="mt-4 max-w-[520px] text-base leading-8 text-black/66 md:text-lg">{activeJourney.body}</div>
-                        <div
-                          className="mt-4 max-w-[520px] border-l-[3px] bg-[#efe5d7]/55 px-4 py-3 text-sm italic leading-7"
-                          style={{ borderColor: journeyWarmAccent, color: hexToRgba(journeyWarmAccent, 0.92) }}
-                        >
-                          {intakeComplete
-                            ? `The suite is currently shaping this act around ${journeyTargetPhrase} and the signal already present in your dossier.`
-                            : `Right now the suite still needs a stronger first read before it can shape the downstream modules around ${journeyTargetPhrase}.`}
-                        </div>
+
                         <div className="mt-4 flex max-w-[760px] flex-wrap gap-2.5">
                           {activeJourney.activationTitles.map((item) => {
                             const module = visibleModules.find((entry) => entry.id === item.id);
@@ -1149,30 +1178,6 @@ const App: React.FC = () => {
                           </div>
                         </div>
                       </div>
-
-                      <aside>
-                        <div className="border bg-white/62 px-4 py-4" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                          <div className="text-[10px] uppercase tracking-[0.24em]" style={{ color: journeyWarmAccent }}>
-                            This Act Activates
-                          </div>
-                          <div className="mt-3 space-y-2.5">
-                            {activeJourney.activationTitles.map((item) => {
-                              const module = visibleModules.find((entry) => entry.id === item.id);
-                              return module ? (
-                                <div key={item.id} className="flex items-center gap-3 text-sm leading-6 text-black/66">
-                                  <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: activeJourney.accent }}>
-                                    {module.index}
-                                  </span>
-                                  <span className="font-editorial">{item.title}</span>
-                                </div>
-                              ) : null;
-                            })}
-                          </div>
-                          <div className="mt-4 border-t pt-4 text-xs leading-6 text-black/48" style={{ borderColor: hexToRgba(brand.colors.ink, 0.08) }}>
-                            The board responds to this act in real time: relevant modules lift, everything else quiets down, and the suite narrates itself.
-                          </div>
-                        </div>
-                      </aside>
                     </div>
                   </div>
                 </div>
