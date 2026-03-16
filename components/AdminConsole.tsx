@@ -508,8 +508,8 @@ function TextField({
   step?: number;
 }) {
   return (
-    <label className="space-y-2">
-      <div className="text-xs text-gray-700">{label}</div>
+    <label className="space-y-0.5">
+      <div className="text-[10px] text-gray-500">{label}</div>
       <input
         type={type}
         min={min}
@@ -518,7 +518,7 @@ function TextField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border-b border-black/10 bg-transparent py-2 text-sm outline-none transition-colors focus:border-brand-teal"
+        className="w-full border-b border-black/10 bg-transparent py-1 text-xs outline-none transition-colors focus:border-brand-teal"
       />
     </label>
   );
@@ -536,12 +536,12 @@ function TextAreaField({
   minHeight?: string;
 }) {
   return (
-    <label className="space-y-2">
-      <div className="text-xs text-gray-700">{label}</div>
+    <label className="space-y-0.5">
+      <div className="text-[10px] text-gray-500">{label}</div>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full ${minHeight} border border-black/10 bg-[#fcfcfb] p-3 text-sm outline-none transition-colors focus:border-brand-teal`}
+        className={`w-full ${minHeight} border border-black/10 bg-[#fcfcfb] p-1.5 text-xs outline-none transition-colors focus:border-brand-teal`}
       />
     </label>
   );
@@ -564,12 +564,12 @@ function SelectField({
       : { value: option.value, label: option.label || labelize(option.value) }
   );
   return (
-    <label className="space-y-2">
-      <div className="text-xs text-gray-700">{label}</div>
+    <label className="space-y-0.5">
+      <div className="text-[10px] text-gray-500">{label}</div>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border-b border-black/10 bg-transparent py-2 text-sm outline-none transition-colors focus:border-brand-teal"
+        className="w-full border-b border-black/10 bg-transparent py-1 text-xs outline-none transition-colors focus:border-brand-teal"
       >
         {normalizedOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -658,12 +658,12 @@ function ChipToggleGroup({
   onToggle: (value: string) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <div>
-        <div className="text-xs text-gray-700">{label}</div>
-        {description ? <div className="mt-1 text-xs leading-5 text-black/50">{description}</div> : null}
+    <div className="space-y-1">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[10px] text-gray-600">{label}</span>
+        {description ? <span className="text-[9px] text-black/40">{description}</span> : null}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
         {options.map((option) => {
           const active = selected.includes(option.value);
           return (
@@ -671,14 +671,14 @@ function ChipToggleGroup({
               key={option.value}
               type="button"
               onClick={() => onToggle(option.value)}
-              className={`border px-3 py-2 text-left transition-colors ${
+              className={`border px-2 py-1 text-left transition-colors ${
                 active
                   ? 'border-brand-teal bg-brand-soft text-brand-teal'
                   : 'border-black/10 bg-white text-[#09161a] hover:border-brand-teal'
               }`}
             >
-              <div className="text-[10px] uppercase tracking-[0.2em]">{option.label || labelize(option.value)}</div>
-              {option.description ? <div className="mt-2 text-xs leading-5 opacity-80">{option.description}</div> : null}
+              <div className="text-[9px] uppercase tracking-[0.14em]">{option.label || labelize(option.value)}</div>
+              {option.description ? <div className="text-[10px] leading-snug opacity-70">{option.description}</div> : null}
             </button>
           );
         })}
@@ -702,10 +702,10 @@ function OrderedListField({
 }) {
   const optionMap = new Map(options.map((option) => [option.value, option]));
   return (
-    <div className="space-y-3">
-      <div>
-        <div className="text-xs text-gray-700">{label}</div>
-        {description ? <div className="mt-1 text-xs leading-5 text-black/50">{description}</div> : null}
+    <div className="space-y-1">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[10px] text-gray-600">{label}</span>
+        {description ? <span className="text-[9px] text-black/40">{description}</span> : null}
       </div>
       <div className="space-y-2">
         {values.length === 0 ? (
@@ -1409,7 +1409,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     return (
       <SectionShell {...sectionCopy.experience}>
         <div className="mx-auto grid max-w-[1120px] gap-5">
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="grid gap-1.5 lg:grid-cols-3">
             {EXPERIENCE_GUIDE_CARDS.map((card) => (
               <GuideCard
                 key={card.title}
@@ -1420,7 +1420,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             ))}
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className="grid gap-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
             <Panel title="Generation routing" eyebrow="Models" meta="Primary rails">
               <div className="grid gap-4">
                 <FieldCard
@@ -1428,7 +1428,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   title="Start with a routing preset."
                   description="Preset routes align suite, episodes, and media models together before you fine-tune individual fields."
                 >
-                  <div className="grid gap-3 lg:grid-cols-3">
+                  <div className="grid gap-1.5 lg:grid-cols-3">
                     {GEMINI_ROUTE_PRESETS.map((preset) => (
                       <button
                         key={preset.id}
@@ -1529,7 +1529,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   title="Entry posture"
                   description="Use these switches when you want to reshape how a client first enters the suite."
                 >
-                  <div className="grid gap-3">
+                  <div className="grid gap-1.5">
                     <ToggleField
                       checked={config.ui.show_prologue}
                       onChange={(checked) =>
@@ -1555,7 +1555,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   title="Operator-visible surfaces"
                   description="These switches control whether execution and safeguards remain visible in the live product."
                 >
-                  <div className="grid gap-3">
+                  <div className="grid gap-1.5">
                     <ToggleField
                       checked={config.operations.cjs_enabled}
                       onChange={(checked) =>
@@ -1582,7 +1582,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             </Panel>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+          <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
             <Panel title="Prompt overlays" eyebrow="Prompt stack" meta="Appendices">
               <div className="grid gap-4 xl:grid-cols-2">
                 {PROMPT_OVERLAY_FIELDS.map((field) => (
@@ -1621,7 +1621,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   title="Post-intake research pass"
                   description="Runs a dedicated dossier enrichment step for Brief and Profile after the base suite is generated."
                 >
-                  <div className="grid gap-3">
+                  <div className="grid gap-1.5">
                     <ToggleField
                       checked={config.professional_dna.enabled}
                       onChange={(checked) =>
@@ -1784,7 +1784,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                         )
                       }
                     />
-                    <div className="grid gap-3 lg:grid-cols-2">
+                    <div className="grid gap-1.5 lg:grid-cols-2">
                       <ToggleField
                         checked={config.professional_dna.hero_autoplay_muted ?? true}
                         onChange={(checked) =>
@@ -2160,22 +2160,16 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     return (
       <SectionShell {...sectionCopy.media}>
         <Panel title="Pipeline monitor" eyebrow="Operator boundary" meta="Lineage stays operator-only">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 border border-black/10 bg-[#f8faf8] p-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Monitoring posture</div>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-                  Client-facing screens should only render final assembled media. Queue state, prompts, retries, and
-                  review decisions stay in this operator surface.
-                </p>
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2 border border-black/10 bg-[#f8faf8] px-2.5 py-1.5">
+              <span className="text-[10px] text-black/50">Operator surface — queue state, prompts, retries stay here.</span>
               <button
                 type="button"
                 onClick={refreshMediaPipeline}
                 disabled={mediaPipelineBusyKey !== null}
-                className="border border-black/15 px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
+                className="border border-black/15 px-2.5 py-1 text-[9px] uppercase tracking-[0.16em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
               >
-                Refresh pipeline
+                Refresh
               </button>
             </div>
 
@@ -2206,9 +2200,9 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </div>
         </Panel>
 
-        <div className="grid gap-5">
+        <div className="grid gap-2">
           <Panel title="Media routing stack" eyebrow="Generation" meta="Primary configuration">
-            <div className="grid gap-5">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
               <SelectField
                 label="Image model"
                 value={config.media.image_model}
@@ -2271,13 +2265,13 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 }
               />
             </div>
-            <div className="mt-5 border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
-              Episodes still generate one image route and one video route per pack today. The client now stages them per beat, but the backend scene-asset plan is still a follow-up item.
+            <div className="mt-1.5 text-[10px] text-black/45">
+              Episodes generate one image + one video route per pack. Backend scene-asset plan is a follow-up.
             </div>
           </Panel>
 
           <Panel title="Media posture" eyebrow="Operator switches" meta={`${config.media.curated_library.length} library items`}>
-            <div className="grid gap-3">
+            <div className="grid gap-1.5">
               <ToggleField
                 checked={config.media.enabled}
                 onChange={(checked) =>
@@ -2321,7 +2315,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         </div>
 
         <Panel title="Recent pipeline jobs" eyebrow="Queue watch" meta={`${mediaPipeline?.jobs.length ?? 0} recent jobs`}>
-          <div className="space-y-3">
+          <div className="space-y-1">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -2337,7 +2331,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 const retryKey = `retry:${job.client_uid}:${job.job_id}`;
                 const processKey = `process:${job.client_uid}:${job.job_id}`;
                 return (
-                  <article key={`${job.client_uid}-${job.job_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-3">
+                  <article key={`${job.client_uid}-${job.job_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-1">
                         <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
@@ -2412,10 +2406,10 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         </Panel>
 
         <Panel title="Manifest review" eyebrow="Client-safe output" meta={`${mediaPipeline?.manifests.length ?? 0} recent manifests`}>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {mediaPipeline?.manifests?.length ? (
               mediaPipeline.manifests.map((manifest) => (
-                <article key={`${manifest.client_uid}-${manifest.manifest_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-3">
+                <article key={`${manifest.client_uid}-${manifest.manifest_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="space-y-1">
                       <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
@@ -2443,7 +2437,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                     <div>{manifest.updated_at ? new Date(manifest.updated_at).toLocaleString() : 'No update time'}</div>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-1.5 md:grid-cols-2">
                     <div className="border border-black/10 bg-white px-3 py-3">
                       <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Image prompt lineage</div>
                       <div className="mt-2 text-xs leading-5 text-black/60">{manifest.image_prompt || 'No stored image prompt'}</div>
@@ -2481,7 +2475,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         </Panel>
 
         <Panel title="Style direction" eyebrow="Art direction" meta="Narrative language">
-          <div className="grid gap-5">
+          <div className="grid gap-2">
             <TextAreaField
               label="Image style direction"
               value={config.media.image_style}
@@ -2532,7 +2526,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1">
             {config.media.curated_library.length === 0 ? (
               <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
                 No curated items yet. Add the first reusable concept asset, scene, or reference route here.
@@ -2545,39 +2539,33 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                     <button
                       type="button"
                       onClick={() => setExpandedMediaId(expanded ? null : item.id)}
-                      className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-black/[0.015]"
+                      className="flex h-10 w-full items-center gap-2 px-2 text-left transition-colors hover:bg-black/[0.015]"
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
-                          Media item {String(index + 1).padStart(2, '0')}
-                        </div>
-                        <div className="truncate text-lg font-editorial leading-tight text-[#09161a]">
-                          {item.title || 'Untitled library route'}
-                        </div>
-                        <div className="truncate text-xs text-black/50">
-                          {item.source_url || 'No source URL'} • {labelize(item.rule.audience)} • {item.enabled ? 'enabled' : 'disabled'}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
-                            item.enabled
-                              ? 'border-brand-teal/25 bg-brand-soft text-brand-teal'
-                              : 'border-black/10 bg-white text-black/45'
-                          }`}
-                        >
-                          {item.enabled ? 'live' : 'off'}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-black/40">
-                          {expanded ? 'collapse' : 'expand'}
-                        </span>
-                      </div>
+                      <span className="text-[9px] text-black/30">&#9656;</span>
+                      <span className="text-[9px] uppercase tracking-[0.12em] text-black/35 shrink-0">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                        {item.title || 'Untitled'}
+                      </span>
+                      <span className="hidden truncate text-[9px] text-black/40 sm:inline">
+                        {item.source_url || ''}
+                      </span>
+                      <span
+                        className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${
+                          item.enabled
+                            ? 'border-brand-teal/25 bg-brand-soft text-brand-teal'
+                            : 'border-black/10 bg-white text-black/45'
+                        }`}
+                      >
+                        {item.enabled ? 'live' : 'off'}
+                      </span>
                     </button>
 
                     {expanded ? (
-                      <div className="border-t border-black/10 px-4 py-4 md:px-5">
-                        <div className="mb-4 flex items-center justify-between gap-3">
-                          <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Item controls</div>
+                      <div className="border-t border-black/10 px-2.5 py-2">
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">Controls</span>
                           <button
                             type="button"
                             onClick={() => removeMediaItem(index)}
@@ -2587,8 +2575,8 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                           </button>
                         </div>
 
-                        <div className="grid gap-5">
-                          <div className="space-y-5">
+                        <div className="grid gap-2">
+                          <div className="space-y-2">
                             <ToggleField
                               checked={item.enabled}
                               onChange={(checked) => updateMediaItem(index, (prev) => ({ ...prev, enabled: checked }))}
@@ -2611,7 +2599,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                               onChange={(value) => updateMediaItem(index, (prev) => ({ ...prev, source_url: value }))}
                               placeholder="https://www.youtube.com/watch?v=... or playlist URL"
                             />
-                            <div className="grid gap-5">
+                            <div className="grid gap-2">
                               <SelectField
                                 label="Platform"
                                 value={item.platform}
@@ -2682,11 +2670,11 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                                 }))
                               }
                             />
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">
                                 Taxonomy shortcuts
                               </div>
-                              <div className="space-y-3 border border-black/10 bg-white p-3">
+                              <div className="space-y-1 border border-black/10 bg-white p-3">
                                 {MEDIA_LIBRARY_TAXONOMY_GROUPS.map((group) => (
                                   <div key={group.id} className="space-y-2">
                                     <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">
@@ -2724,8 +2712,8 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                             </div>
                           </div>
 
-                          <div className="space-y-5">
-                            <div className="space-y-3">
+                          <div className="space-y-2">
+                            <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Journey surfaces</div>
                               <div className="flex flex-wrap gap-2">
                                 {JOURNEY_SURFACES.map((surface) => {
@@ -2755,7 +2743,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                               </div>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Intent filters</div>
                               <div className="flex flex-wrap gap-2">
                                 {CLIENT_INTENTS.map((intent) => {
@@ -2788,7 +2776,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                               </div>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Focus filters</div>
                               <div className="flex flex-wrap gap-2">
                                 {FOCUS_PREFS.map((focus) => {
@@ -2821,7 +2809,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                               </div>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Pace filters</div>
                               <div className="flex flex-wrap gap-2">
                                 {PACE_PREFS.map((pace) => {
@@ -2893,7 +2881,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     return (
       <SectionShell {...sectionCopy.voice}>
         <Panel title="Voice posture" eyebrow="Presets" meta="Primary operating modes">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-1.5 md:grid-cols-3">
             {VOICE_PRESETS.map((preset) => {
               const active =
                 config.voice.temperature === preset.temperature &&
@@ -2921,7 +2909,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         </Panel>
 
         <Panel title="Voice lane readiness" eyebrow="Runtime map" meta="Gemini live now, others gated">
-          <div className="grid gap-3">
+          <div className="grid gap-1.5">
             {VOICE_RUNTIME_LANES.map((lane) => {
               const isSelected = lane.id === config.voice.provider;
               const stateLabel =
@@ -2984,9 +2972,9 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </div>
         </Panel>
 
-        <div className="grid gap-5">
+        <div className="grid gap-2">
           <Panel title="Provider and transport" eyebrow="Runtime" meta={config.voice.provider}>
-            <div className="grid gap-5">
+            <div className="grid gap-2">
               <ToggleField
                 checked={config.voice.enabled}
                 onChange={(checked) =>
@@ -3062,7 +3050,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </Panel>
 
           <Panel title="Voice identity" eyebrow="Narration" meta={config.voice.gemini_live_model}>
-            <div className="grid gap-5">
+            <div className="grid gap-2">
               <TextField
                 label="Speaker"
                 value={config.voice.speaker}
@@ -3121,7 +3109,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           meta={showAdvancedVoice ? 'expanded' : 'collapsed'}
           dense
         >
-          <div className="space-y-4">
+          <div className="space-y-1.5">
             <button
               type="button"
               onClick={() => setShowAdvancedVoice((prev) => !prev)}
@@ -3131,7 +3119,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             </button>
 
             {showAdvancedVoice ? (
-              <div className="grid gap-5">
+              <div className="grid gap-2">
                 <ToggleField
                   checked={config.voice.gemini_input_audio_transcription_enabled}
                   onChange={(checked) =>
@@ -3342,7 +3330,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     return (
       <SectionShell {...sectionCopy.governance}>
         <Panel title="Access and entitlements" eyebrow="Operator policy" meta="Commercial posture">
-          <div className="grid gap-5">
+          <div className="grid gap-2">
             <ToggleField
               checked={config.operations.onboarding_email_enabled}
               onChange={(checked) =>
@@ -3380,14 +3368,14 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
         </Panel>
 
         <Panel title="Concierge requests" eyebrow="Smart Start ops" meta={`${bookings.pending_count} new`}>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {bookings.items.length === 0 ? (
               <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-5 text-sm text-black/55">
                 No public concierge or Smart Start requests yet.
               </div>
             ) : (
               bookings.items.map((request) => (
-                <article key={request.id} className="space-y-3 border border-black/10 bg-[#fbfcfa] p-4">
+                <article key={request.id} className="space-y-1 border border-black/10 bg-[#fbfcfa] p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">
@@ -3449,13 +3437,13 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </div>
         </Panel>
 
-        <div className="grid gap-5">
+        <div className="grid gap-2">
           <Panel
             title="Orchestration control plane"
             eyebrow="Staff policy"
             meta={`${orchestrationOverview?.summary.run_count ?? 0} tracked runs`}
           >
-            <div className="space-y-4">
+            <div className="space-y-1.5">
               <div className="flex flex-col gap-3 border border-black/10 bg-[#f8faf8] p-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Operating posture</div>
@@ -3477,7 +3465,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 <div className="border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700">{orchestrationError}</div>
               ) : null}
 
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-4">
                 {[
                   {
                     label: 'Active roles',
@@ -3510,8 +3498,8 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
 
               {orchestrationOverview ? (
                 <>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-3">
+                  <div className="grid gap-1.5 md:grid-cols-2">
+                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
                       <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Approval triggers</div>
                       <div className="flex flex-wrap gap-2">
                         {orchestrationOverview.policy.approval_triggers.map((trigger) => (
@@ -3524,7 +3512,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                         ))}
                       </div>
                     </div>
-                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-3">
+                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
                       <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Current stack</div>
                       <div className="flex flex-wrap gap-2">
                         {orchestrationOverview.policy.current_stack.map((entry) => (
@@ -3539,14 +3527,14 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {orchestrationOverview.runs.length === 0 ? (
                       <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
                         No orchestration runs recorded yet.
                       </div>
                     ) : (
                       orchestrationOverview.runs.map((run) => (
-                        <article key={`${run.client_uid}-${run.run_id}`} className="space-y-3 border border-black/10 bg-[#fbfcfa] p-4">
+                        <article key={`${run.client_uid}-${run.run_id}`} className="space-y-1 border border-black/10 bg-[#fbfcfa] p-4">
                           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div className="space-y-1">
                               <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">
