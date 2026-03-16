@@ -290,6 +290,30 @@ const PROMPT_OVERLAY_FIELDS = [
   },
 ] as const;
 
+const PROMPT_PACKS: Record<string, Record<string, string>> = {
+  editorial: {
+    suite_appendix: 'Favor long-form editorial prose over bullet lists. Lean into narrative structure and professional storytelling.',
+    binge_appendix: 'Episodes should feel cinematic. Use scene-setting openings and cliffhanger transitions between beats.',
+    rom_appendix: 'Maintain a warm but authoritative counselor voice. Never sound robotic or overly formal.',
+    live_appendix: 'In live sessions, keep responses conversational and grounded. Mirror the user\'s energy level.',
+    art_director_appendix: 'Visuals should evoke premium editorial magazines. Muted palettes, strong typography, minimal stock-photo energy.',
+  },
+  precision: {
+    suite_appendix: 'Prioritize data-backed claims and structured formatting. Every assertion needs supporting evidence.',
+    binge_appendix: 'Keep episodes tight and actionable. Each beat should deliver a concrete takeaway within 90 seconds.',
+    rom_appendix: 'Be direct and efficient. The user values speed and accuracy over warmth.',
+    live_appendix: 'In live sessions, get to the point quickly. Confirm understanding before expanding.',
+    art_director_appendix: 'Clean, minimal visuals. Data visualization over illustration. White space is a feature.',
+  },
+  warmth: {
+    suite_appendix: 'Lead with empathy. Acknowledge the emotional weight of career transitions before diving into strategy.',
+    binge_appendix: 'Episodes should feel like a trusted mentor sharing wisdom. Personal anecdotes welcome.',
+    rom_appendix: 'Be genuinely encouraging without being patronizing. Celebrate small wins.',
+    live_appendix: 'In live sessions, actively listen. Reflect back what you hear before responding.',
+    art_director_appendix: 'Warm tones, organic textures, human photography. Avoid corporate sterility.',
+  },
+};
+
 const DNA_SECTION_OPTIONS: SelectOption[] = [
   { value: 'case_summary', label: 'Case Summary', description: 'Opening thesis and core framing for the dossier.' },
   { value: 'genome_markers', label: 'Genome Markers', description: 'Primary career traits, signal markers, and durable strengths.' },
@@ -1408,744 +1432,369 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
 
     return (
       <SectionShell {...sectionCopy.experience}>
-        <div className="mx-auto grid max-w-[1120px] gap-5">
-          <div className="grid gap-1.5 lg:grid-cols-3">
-            {EXPERIENCE_GUIDE_CARDS.map((card) => (
-              <GuideCard
-                key={card.title}
-                eyebrow={card.eyebrow}
-                title={card.title}
-                description={card.description}
-              />
-            ))}
-          </div>
-
+        <div className="mx-auto grid max-w-[1120px] gap-2">
           <div className="grid gap-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
             <Panel title="Generation routing" eyebrow="Models" meta="Primary rails">
-              <div className="grid gap-4">
-                <FieldCard
-                  eyebrow="Preset routes"
-                  title="Start with a routing preset."
-                  description="Preset routes align suite, episodes, and media models together before you fine-tune individual fields."
-                >
-                  <div className="grid gap-1.5 lg:grid-cols-3">
-                    {GEMINI_ROUTE_PRESETS.map((preset) => (
+              {/* ── Subway-diagram route presets ── */}
+              <div className="mb-2">
+                <div className="flex items-center gap-3">
+                  {GEMINI_ROUTE_PRESETS.map((preset, i) => {
+                    const isActive =
+                      config.generation.suite_model === preset.suite_model &&
+                      config.generation.binge_model === preset.binge_model;
+                    return (
                       <button
                         key={preset.id}
                         type="button"
                         onClick={() => applyModelPreset(preset.id)}
-                        className="border border-black/10 bg-white p-4 text-left transition-colors hover:border-brand-teal"
+                        className="group/route flex items-center gap-2"
                       >
-                        <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{preset.label}</div>
-                        <div className="mt-2 text-base font-editorial leading-tight text-[#09161a]">{preset.summary}</div>
-                        <div className="mt-3 text-xs leading-5 text-black/55">
-                          Suite: {preset.suite_model} | Episodes: {preset.binge_model}
-                        </div>
+                        {/* Station dot */}
+                        <span className={`relative flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors ${
+                          isActive
+                            ? 'border-brand-teal bg-brand-teal'
+                            : 'border-black/20 bg-white group-hover/route:border-brand-teal'
+                        }`}>
+                          {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                        </span>
+                        {/* Route label */}
+                        <span className={`text-[10px] uppercase tracking-[0.14em] transition-colors ${
+                          isActive ? 'text-brand-teal font-medium' : 'text-black/45 group-hover/route:text-black/70'
+                        }`}>
+                          {preset.label}
+                        </span>
+                        {/* Connecting line to next stop */}
+                        {i < GEMINI_ROUTE_PRESETS.length - 1 && (
+                          <span className="h-px w-6 bg-black/12" />
+                        )}
                       </button>
-                    ))}
-                  </div>
-                </FieldCard>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <FieldCard
-                    eyebrow="Primary suite"
-                    title="Suite model"
-                    description="Controls Brief, Plan, Profile, and the baseline artifact pass."
-                  >
-                    <SelectField
-                      label="Active suite model"
-                      value={config.generation.suite_model}
-                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                        value: option.id,
-                        label: option.label,
-                      }))}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, generation: { ...prev.generation, suite_model: value } } : prev
-                        )
-                      }
-                    />
-                  </FieldCard>
-                  <FieldCard
-                    eyebrow="Learning rail"
-                    title="Episodes model"
-                    description="Controls the binge-learning rail and flash-card-adjacent generation paths."
-                  >
-                    <SelectField
-                      label="Active episodes model"
-                      value={config.generation.binge_model}
-                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                        value: option.id,
-                        label: option.label,
-                      }))}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, generation: { ...prev.generation, binge_model: value } } : prev
-                        )
-                      }
-                    />
-                  </FieldCard>
-                  <FieldCard
-                    eyebrow="Precision"
-                    title="Suite temperature"
-                    description="Lower values tighten structure and reduce creative drift."
-                  >
-                    <TextField
-                      label="Suite temperature"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={config.generation.suite_temperature}
-                      onChange={(value) => setNumber('suite_temperature', Number(value))}
-                    />
-                  </FieldCard>
-                  <FieldCard
-                    eyebrow="Momentum"
-                    title="Episodes temperature"
-                    description="Higher values allow more texture and motion in learning content."
-                  >
-                    <TextField
-                      label="Episodes temperature"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={config.generation.binge_temperature}
-                      onChange={(value) => setNumber('binge_temperature', Number(value))}
-                    />
-                  </FieldCard>
+                    );
+                  })}
                 </div>
-                <div className="border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/60">
-                  Production still defaults toward stable `Gemini 2.5` routes. `Gemini 3.x` stays exposed here for
-                  controlled operator testing, not as the implied default.
+                <div className="ml-6 mt-0.5 text-[9px] text-black/40">
+                  {GEMINI_ROUTE_PRESETS.find(
+                    (p) => config.generation.suite_model === p.suite_model && config.generation.binge_model === p.binge_model
+                  )?.summary || 'Custom route — fine-tuned below'}
                 </div>
+              </div>
+
+              {/* ── Compact 2x2 model + temperature grid ── */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                <SelectField
+                  label="Suite model"
+                  value={config.generation.suite_model}
+                  options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                    value: option.id,
+                    label: option.label,
+                  }))}
+                  onChange={(value) =>
+                    setConfig((prev) =>
+                      prev ? { ...prev, generation: { ...prev.generation, suite_model: value } } : prev
+                    )
+                  }
+                />
+                <SelectField
+                  label="Episodes model"
+                  value={config.generation.binge_model}
+                  options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
+                    value: option.id,
+                    label: option.label,
+                  }))}
+                  onChange={(value) =>
+                    setConfig((prev) =>
+                      prev ? { ...prev, generation: { ...prev.generation, binge_model: value } } : prev
+                    )
+                  }
+                />
+                <TextField
+                  label="Suite temp"
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={config.generation.suite_temperature}
+                  onChange={(value) => setNumber('suite_temperature', Number(value))}
+                />
+                <TextField
+                  label="Episodes temp"
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={config.generation.binge_temperature}
+                  onChange={(value) => setNumber('binge_temperature', Number(value))}
+                />
               </div>
             </Panel>
 
-            <Panel title="Client-facing toggles" eyebrow="Surface posture" meta="Immediate switches">
-              <div className="grid gap-4">
-                <FieldCard
-                  eyebrow="Intro"
-                  title="Entry posture"
-                  description="Use these switches when you want to reshape how a client first enters the suite."
-                >
-                  <div className="grid gap-1.5">
-                    <ToggleField
-                      checked={config.ui.show_prologue}
-                      onChange={(checked) =>
-                        setConfig((prev) => (prev ? { ...prev, ui: { ...prev.ui, show_prologue: checked } } : prev))
-                      }
-                      label="Show prologue"
-                      hint="Controls the introductory editorial entry sequence."
-                    />
-                    <ToggleField
-                      checked={config.ui.episodes_enabled}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, ui: { ...prev.ui, episodes_enabled: checked } } : prev
-                        )
-                      }
-                      label="Episodes module enabled"
-                      hint="Hides or reveals the cinematic learning rail."
-                    />
-                  </div>
-                </FieldCard>
-                <FieldCard
-                  eyebrow="Operations"
-                  title="Operator-visible surfaces"
-                  description="These switches control whether execution and safeguards remain visible in the live product."
-                >
-                  <div className="grid gap-1.5">
-                    <ToggleField
-                      checked={config.operations.cjs_enabled}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, operations: { ...prev.operations, cjs_enabled: checked } } : prev
-                        )
-                      }
-                      label="ConciergeJobSearch enabled"
-                      hint="Keeps the operator search execution surface active."
-                    />
-                    <ToggleField
-                      checked={config.safety.tone_guard_enabled}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, safety: { ...prev.safety, tone_guard_enabled: checked } } : prev
-                        )
-                      }
-                      label="Tone guard enabled"
-                      hint="Applies brand and policy checks before content leaves the rail."
-                    />
-                  </div>
-                </FieldCard>
+            <Panel title="Surface posture" eyebrow="Switches" meta="Client-facing">
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { label: 'Prologue', checked: config.ui.show_prologue, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, ui: { ...prev.ui, show_prologue: v } } : prev) },
+                  { label: 'Episodes', checked: config.ui.episodes_enabled, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, ui: { ...prev.ui, episodes_enabled: v } } : prev) },
+                  { label: 'CJS', checked: config.operations.cjs_enabled, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, operations: { ...prev.operations, cjs_enabled: v } } : prev) },
+                  { label: 'Tone guard', checked: config.safety.tone_guard_enabled, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, safety: { ...prev.safety, tone_guard_enabled: v } } : prev) },
+                ].map((sw) => (
+                  <button
+                    key={sw.label}
+                    type="button"
+                    onClick={() => sw.onChange(!sw.checked)}
+                    className={`border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition-colors ${
+                      sw.checked
+                        ? 'border-brand-teal bg-brand-soft text-brand-teal'
+                        : 'border-black/12 bg-white text-black/40 hover:border-black/25'
+                    }`}
+                  >
+                    {sw.label}
+                    <span className="ml-1.5 text-[8px]">{sw.checked ? 'on' : 'off'}</span>
+                  </button>
+                ))}
               </div>
             </Panel>
           </div>
 
           <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
             <Panel title="Prompt overlays" eyebrow="Prompt stack" meta="Appendices">
-              <div className="grid gap-4 xl:grid-cols-2">
-                {PROMPT_OVERLAY_FIELDS.map((field) => (
-                  <FieldCard
-                    key={field.key}
-                    eyebrow={field.eyebrow}
-                    title={field.label}
-                    description={field.description}
+              {/* Prompt packs quick-load */}
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-[0.12em] text-black/40">Pack:</span>
+                {Object.keys(PROMPT_PACKS).map((packId) => (
+                  <button
+                    key={packId}
+                    type="button"
+                    onClick={() => setConfig((prev) => prev ? {
+                      ...prev,
+                      prompts: { ...prev.prompts, ...PROMPT_PACKS[packId] },
+                    } : prev)}
+                    className="border border-black/10 bg-white px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-black/50 transition-colors hover:border-brand-teal hover:text-brand-teal"
                   >
-                    <textarea
-                      value={config.prompts[field.key]}
-                      onChange={(event) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                prompts: {
-                                  ...prev.prompts,
-                                  [field.key]: event.target.value,
-                                },
-                              }
-                            : prev
-                        )
-                      }
-                      className={`w-full ${field.minHeight} border border-black/10 bg-white p-3 text-sm leading-relaxed outline-none transition-colors focus:border-brand-teal`}
-                    />
-                  </FieldCard>
+                    {packId}
+                  </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setConfig((prev) => prev ? {
+                    ...prev,
+                    prompts: Object.fromEntries(
+                      PROMPT_OVERLAY_FIELDS.map((f) => [f.key, ''])
+                    ) as typeof prev.prompts,
+                  } : prev)}
+                  className="border border-black/10 bg-white px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-red-400/70 transition-colors hover:border-red-300 hover:text-red-500"
+                >
+                  clear
+                </button>
+              </div>
+              {/* Collapsible overlay rows */}
+              <div className="space-y-0.5">
+                {PROMPT_OVERLAY_FIELDS.map((field) => {
+                  const hasContent = !!config.prompts[field.key]?.trim();
+                  return (
+                    <details key={field.key} open={hasContent} className="border border-black/10 bg-[#fcfbf7]">
+                      <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                        <span className="text-[9px] text-black/30">&#9656;</span>
+                        <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">{field.eyebrow}</span>
+                        <span className="font-editorial text-[#09161a]">{field.label}</span>
+                        {hasContent && <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-brand-teal">set</span>}
+                      </summary>
+                      <div className="border-t border-black/6 p-1.5">
+                        <textarea
+                          value={config.prompts[field.key]}
+                          onChange={(event) =>
+                            setConfig((prev) =>
+                              prev
+                                ? { ...prev, prompts: { ...prev.prompts, [field.key]: event.target.value } }
+                                : prev
+                            )
+                          }
+                          placeholder={field.description}
+                          className="w-full min-h-14 border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
+                        />
+                      </div>
+                    </details>
+                  );
+                })}
               </div>
             </Panel>
 
             <Panel title="Professional DNA" eyebrow="Research lane" meta="Configurable dossier">
-              <div className="grid gap-4">
-                <FieldCard
-                  eyebrow="Activation"
-                  title="Post-intake research pass"
-                  description="Runs a dedicated dossier enrichment step for Brief and Profile after the base suite is generated."
-                >
-                  <div className="grid gap-1.5">
-                    <ToggleField
-                      checked={config.professional_dna.enabled}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, enabled: checked } } : prev
-                        )
-                      }
-                      label="Professional DNA research enabled"
-                      hint="Disable only if you need the suite to skip the dossier enrichment pass."
-                    />
-                    <ToggleField
-                      checked={config.professional_dna.company_posture_notes_enabled}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: {
-                                  ...prev.professional_dna,
-                                  company_posture_notes_enabled: checked,
-                                },
-                              }
-                            : prev
-                        )
-                      }
-                      label="Include company posture notes"
-                      hint="Allows the report to include directional notes on pay posture, churn, and environment tradeoffs."
+              {/* ── Activation row: inline toggles + model routing ── */}
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                {[
+                  { label: 'DNA research', checked: config.professional_dna.enabled, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, enabled: v } } : prev) },
+                  { label: 'Company notes', checked: config.professional_dna.company_posture_notes_enabled, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, company_posture_notes_enabled: v } } : prev) },
+                ].map((sw) => (
+                  <button key={sw.label} type="button" onClick={() => sw.onChange(!sw.checked)} className={`border px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] transition-colors ${sw.checked ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/12 bg-white text-black/40 hover:border-black/25'}`}>
+                    {sw.label} <span className="text-[8px]">{sw.checked ? 'on' : 'off'}</span>
+                  </button>
+                ))}
+                <span className="mx-1 h-3 w-px bg-black/10" />
+                <span className="text-[9px] text-black/35">Refresh: {config.professional_dna.refresh_window_days}d</span>
+              </div>
+
+              {/* Model routing inline */}
+              <div className="grid grid-cols-3 gap-x-2 gap-y-1 mb-2">
+                <SelectField label="Base model" value={config.professional_dna.base_model} options={GEMINI_TEXT_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: v } } : prev)} />
+                <SelectField label="Research model" value={config.professional_dna.research_model} options={GEMINI_TEXT_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: v } } : prev)} />
+                <TextField label="Refresh (days)" type="number" min={1} max={90} step={1} value={config.professional_dna.refresh_window_days} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, refresh_window_days: Math.max(1, Math.min(90, Number(v) || 14)) } } : prev)} />
+              </div>
+
+              {/* Collapsible sub-sections */}
+              <div className="space-y-0.5">
+                {/* Hero media */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Hero</span>
+                    <span className="font-editorial text-[#09161a]">Intake hero media</span>
+                    <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{config.professional_dna.hero_visible ? 'visible' : 'hidden'}</span>
+                  </summary>
+                  <div className="border-t border-black/6 p-2 grid grid-cols-2 gap-x-2 gap-y-1">
+                    <div className="col-span-2 flex gap-1.5">
+                      {[
+                        { label: 'Show hero', checked: config.professional_dna.hero_visible ?? false, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_visible: v } } : prev) },
+                        { label: 'Autoplay muted', checked: config.professional_dna.hero_autoplay_muted ?? true, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_autoplay_muted: v } } : prev) },
+                        { label: 'Loop', checked: config.professional_dna.hero_loop ?? true, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_loop: v } } : prev) },
+                      ].map((sw) => (
+                        <button key={sw.label} type="button" onClick={() => sw.onChange(!sw.checked)} className={`border px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] ${sw.checked ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 bg-white text-black/40'}`}>
+                          {sw.label} <span className="text-[8px]">{sw.checked ? 'on' : 'off'}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <TextField label="Video URL" value={config.professional_dna.hero_video_url ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_video_url: v } } : prev)} />
+                    <TextField label="Hero title" value={config.professional_dna.hero_video_title ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_video_title: v } } : prev)} />
+                    <TextField label="Fallback image" value={config.professional_dna.hero_fallback_image_url ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, hero_fallback_image_url: v } } : prev)} />
+                  </div>
+                </details>
+
+                {/* Journey guide media */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Guide</span>
+                    <span className="font-editorial text-[#09161a]">Journey guide video</span>
+                  </summary>
+                  <div className="border-t border-black/6 p-2 grid grid-cols-2 gap-x-2 gap-y-1">
+                    <SelectField label="Provider" value={config.professional_dna.journey_guide_video_provider ?? 'youtube'} options={[{ value: 'youtube', label: 'YouTube' }, { value: 'vimeo', label: 'Vimeo' }, { value: 'direct', label: 'Direct' }]} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, journey_guide_video_provider: v === 'vimeo' ? 'vimeo' : v === 'direct' ? 'direct' : 'youtube' } } : prev)} />
+                    <TextField label="Video ID" value={config.professional_dna.journey_guide_video_id ?? ''} placeholder="YouTube/Vimeo ID" onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, journey_guide_video_id: v } } : prev)} />
+                    <TextField label="Fallback URL" value={config.professional_dna.journey_guide_video_url ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, journey_guide_video_url: v } } : prev)} />
+                    <TextField label="Title" value={config.professional_dna.journey_guide_video_title ?? ''} placeholder="How the suite works for you" onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, journey_guide_video_title: v } } : prev)} />
+                  </div>
+                </details>
+
+                {/* Voice agent */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Voice</span>
+                    <span className="font-editorial text-[#09161a]">Smart Start voice lane</span>
+                    <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{(config.professional_dna.voice_agent_enabled ?? true) ? 'active' : 'off'}</span>
+                  </summary>
+                  <div className="border-t border-black/6 p-2 space-y-1">
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        { label: 'Voice agent', checked: config.professional_dna.voice_agent_enabled ?? true, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_agent_enabled: v } } : prev) },
+                        { label: 'Transcript', checked: config.professional_dna.voice_transcription_visible ?? false, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_transcription_visible: v } } : prev) },
+                        { label: 'Autofill', checked: config.professional_dna.voice_to_form_autofill ?? true, onChange: (v: boolean) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_to_form_autofill: v } } : prev) },
+                      ].map((sw) => (
+                        <button key={sw.label} type="button" onClick={() => sw.onChange(!sw.checked)} className={`border px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] ${sw.checked ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 bg-white text-black/40'}`}>
+                          {sw.label} <span className="text-[8px]">{sw.checked ? 'on' : 'off'}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                      <SelectField label="Voice model" value={config.professional_dna.voice_model ?? 'gemini_live'} options={[{ value: 'gemini_live', label: 'Gemini Live' }, { value: 'elevenlabs_conversational', label: 'ElevenLabs' }]} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_model: v === 'elevenlabs_conversational' ? 'elevenlabs_conversational' : 'gemini_live' } } : prev)} />
+                      <TextField label="Voice ID" value={config.professional_dna.voice_agent_voice_id ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_agent_voice_id: v } } : prev)} />
+                    </div>
+                    <TextAreaField label="Voice arc sections (one per line)" value={(config.professional_dna.voice_arc_sections ?? []).join('\n')} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_arc_sections: v.split('\n').map((e) => e.trim().toLowerCase()).filter(Boolean) } } : prev)} minHeight="min-h-12" />
+                    <TextAreaField label="Voice persona appendix" value={config.professional_dna.voice_agent_persona ?? ''} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, voice_agent_persona: v } } : prev)} minHeight="min-h-12" />
+                  </div>
+                </details>
+
+                {/* Prompt appendix */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Prompt</span>
+                    <span className="font-editorial text-[#09161a]">DNA operator notes</span>
+                    {config.professional_dna.prompt_appendix?.trim() && <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-brand-teal">set</span>}
+                  </summary>
+                  <div className="border-t border-black/6 p-1.5">
+                    <textarea
+                      value={config.professional_dna.prompt_appendix}
+                      onChange={(event) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, prompt_appendix: event.target.value } } : prev)}
+                      placeholder="Extra research posture, client-type instructions, or sector-specific criteria"
+                      className="min-h-14 w-full border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
                     />
                   </div>
-                </FieldCard>
+                </details>
 
-                <div className="grid gap-4">
-                  <FieldCard
-                    eyebrow="Model routing"
-                    title="Baseline dossier model"
-                    description="Used for the structured dossier synthesis and final artifact merge."
-                  >
-                    <SelectField
-                      label="DNA base model"
-                      value={config.professional_dna.base_model}
-                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                        value: option.id,
-                        label: option.label,
-                      }))}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: value } } : prev
-                        )
+                {/* Dossier sections */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Sections</span>
+                    <span className="font-editorial text-[#09161a]">Dossier sections + order</span>
+                    <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{knownEnabledSections.length} active</span>
+                  </summary>
+                  <div className="border-t border-black/6 p-2 space-y-2">
+                    <ChipToggleGroup
+                      label="Enabled sections"
+                      options={DNA_SECTION_OPTIONS}
+                      selected={knownEnabledSections}
+                      onToggle={(value) =>
+                        setConfig((prev) => {
+                          if (!prev) return prev;
+                          const nextKnownEnabled = normalizeList(toggleListValue(knownEnabledSections, value));
+                          const nextEnabledSections = normalizeList([...nextKnownEnabled, ...customEnabledSections]);
+                          const nextSectionOrder = normalizeList([
+                            ...effectiveSectionOrder.filter((section) => nextEnabledSections.includes(section)),
+                            ...nextEnabledSections,
+                          ]);
+                          return { ...prev, professional_dna: { ...prev.professional_dna, enabled_sections: nextEnabledSections, section_order: nextSectionOrder } };
+                        })
                       }
                     />
-                  </FieldCard>
-                  <FieldCard
-                    eyebrow="Research model"
-                    title="Evidence-heavy analysis model"
-                    description="Used when the dossier needs a deeper research posture and more synthesis depth."
-                  >
-                    <SelectField
-                      label="DNA research model"
-                      value={config.professional_dna.research_model}
-                      options={GEMINI_TEXT_MODEL_OPTIONS.map((option) => ({
-                        value: option.id,
-                        label: option.label,
-                      }))}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: value } } : prev
-                        )
-                      }
-                    />
-                  </FieldCard>
-                  <FieldCard
-                    eyebrow="Refresh cadence"
-                    title="Refresh window"
-                    description="Controls the max age of the dossier before the lane should be refreshed again."
-                  >
-                    <TextField
-                      label="Refresh window (days)"
-                      type="number"
-                      min={1}
-                      max={90}
-                      step={1}
-                      value={config.professional_dna.refresh_window_days}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: {
-                                  ...prev.professional_dna,
-                                  refresh_window_days: Math.max(1, Math.min(90, Number(value) || 14)),
-                                },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                  </FieldCard>
-                </div>
-
-                <FieldCard
-                  eyebrow="Hero video"
-                  title="Intake hero media"
-                  description="Controls the premium video or fallback panel shown at the top of Smart Start Intake."
-                >
-                  <div className="grid gap-4">
-                    <ToggleField
-                      checked={config.professional_dna.hero_visible ?? false}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, hero_visible: checked },
-                              }
-                            : prev
-                        )
-                      }
-                      label="Show intake hero media"
-                      hint="When off, the intake opens without the hero video stage."
-                    />
-                    <TextField
-                      label="Hero video URL"
-                      value={config.professional_dna.hero_video_url ?? ''}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, hero_video_url: value },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                    <TextField
-                      label="Hero title"
-                      value={config.professional_dna.hero_video_title ?? ''}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, hero_video_title: value },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                    <TextField
-                      label="Fallback image URL"
-                      value={config.professional_dna.hero_fallback_image_url ?? ''}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, hero_fallback_image_url: value },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                    <div className="grid gap-1.5 lg:grid-cols-2">
-                      <ToggleField
-                        checked={config.professional_dna.hero_autoplay_muted ?? true}
-                        onChange={(checked) =>
-                          setConfig((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  professional_dna: { ...prev.professional_dna, hero_autoplay_muted: checked },
-                                }
-                              : prev
-                          )
-                        }
-                        label="Autoplay muted"
-                      />
-                      <ToggleField
-                        checked={config.professional_dna.hero_loop ?? true}
-                        onChange={(checked) =>
-                          setConfig((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  professional_dna: { ...prev.professional_dna, hero_loop: checked },
-                                }
-                              : prev
-                          )
-                        }
-                        label="Loop hero media"
-                      />
-                    </div>
-                  </div>
-                </FieldCard>
-
-                <FieldCard
-                  eyebrow="Journey guide media"
-                  title="Home briefing video"
-                  description="Controls the more prominent media block inside the client home Journey Guide. This is a global default for new and returning users, while the surrounding copy stays personalized to the current dossier."
-                >
-                  <div className="grid gap-4">
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <SelectField
-                        label="Journey guide provider"
-                        value={config.professional_dna.journey_guide_video_provider ?? 'youtube'}
-                        options={[
-                          { value: 'youtube', label: 'YouTube' },
-                          { value: 'vimeo', label: 'Vimeo' },
-                          { value: 'direct', label: 'Direct URL / MP4' },
-                        ]}
-                        onChange={(value) =>
-                          setConfig((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  professional_dna: {
-                                    ...prev.professional_dna,
-                                    journey_guide_video_provider:
-                                      value === 'vimeo' ? 'vimeo' : value === 'direct' ? 'direct' : 'youtube',
-                                  },
-                                }
-                              : prev
-                          )
-                        }
-                      />
-                      <TextField
-                        label="Journey guide video ID"
-                        value={config.professional_dna.journey_guide_video_id ?? ''}
-                        placeholder="YouTube/Vimeo unique ID"
-                        onChange={(value) =>
-                          setConfig((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  professional_dna: { ...prev.professional_dna, journey_guide_video_id: value },
-                                }
-                              : prev
-                          )
-                        }
-                      />
-                    </div>
-                    <TextField
-                      label="Journey guide fallback URL"
-                      value={config.professional_dna.journey_guide_video_url ?? ''}
-                      placeholder="Optional full URL if no ID is supplied"
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, journey_guide_video_url: value },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                    <TextField
-                      label="Journey guide title"
-                      value={config.professional_dna.journey_guide_video_title ?? ''}
-                      placeholder="How the suite works for you"
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, journey_guide_video_title: value },
-                              }
-                            : prev
-                        )
+                    {customEnabledSections.length ? (
+                      <div className="text-[9px] text-black/40">Custom keys: {customEnabledSections.join(', ')}</div>
+                    ) : null}
+                    <OrderedListField
+                      label="Section order"
+                      description="Controls dossier render order."
+                      values={effectiveSectionOrder}
+                      options={DNA_SECTION_OPTIONS}
+                      onMove={(index, direction) =>
+                        setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, section_order: moveListValue(effectiveSectionOrder, index, direction) } } : prev)
                       }
                     />
                   </div>
-                </FieldCard>
+                </details>
 
-                <FieldCard
-                  eyebrow="Voice agent"
-                  title="Smart Start voice lane"
-                  description="Controls the live intake agent posture, transcript visibility, and voice-to-form autofill behavior."
-                >
-                  <div className="grid gap-4">
-                    <ToggleField
-                      checked={config.professional_dna.voice_agent_enabled ?? true}
-                      onChange={(checked) =>
+                {/* Research domains */}
+                <details className="border border-black/10 bg-[#fcfbf7]">
+                  <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Domains</span>
+                    <span className="font-editorial text-[#09161a]">Research coverage</span>
+                    <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{selectedResearchDomains.filter((d) => knownResearchDomains.includes(d)).length} active</span>
+                  </summary>
+                  <div className="border-t border-black/6 p-2">
+                    <ChipToggleGroup
+                      label="Research domains"
+                      options={DNA_RESEARCH_DOMAIN_OPTIONS}
+                      selected={selectedResearchDomains.filter((domain) => knownResearchDomains.includes(domain))}
+                      onToggle={(value) =>
                         setConfig((prev) =>
                           prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, voice_agent_enabled: checked },
-                              }
-                            : prev
-                        )
-                      }
-                      label="Enable Smart Start voice agent"
-                      hint="Hides the immersive voice rail when disabled."
-                    />
-                    <SelectField
-                      label="Voice lane model"
-                      value={config.professional_dna.voice_model ?? 'gemini_live'}
-                      options={[
-                        { value: 'gemini_live', label: 'Gemini Live' },
-                        { value: 'elevenlabs_conversational', label: 'ElevenLabs Conversational' },
-                      ]}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: {
-                                  ...prev.professional_dna,
-                                  voice_model:
-                                    value === 'elevenlabs_conversational'
-                                      ? 'elevenlabs_conversational'
-                                      : 'gemini_live',
-                                },
-                              }
+                            ? { ...prev, professional_dna: { ...prev.professional_dna, research_domains: normalizeList([...toggleListValue(selectedResearchDomains.filter((d) => knownResearchDomains.includes(d)), value), ...customResearchDomains]) } }
                             : prev
                         )
                       }
                     />
-                    <ToggleField
-                      checked={config.professional_dna.voice_transcription_visible ?? false}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, voice_transcription_visible: checked },
-                              }
-                            : prev
-                        )
-                      }
-                      label="Show transcript inside intake"
-                    />
-                    <ToggleField
-                      checked={config.professional_dna.voice_to_form_autofill ?? true}
-                      onChange={(checked) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, voice_to_form_autofill: checked },
-                              }
-                            : prev
-                        )
-                      }
-                      label="Enable voice-to-form autofill"
-                      hint="Only fills empty fields. User-entered form values stay authoritative."
-                    />
-                    <TextField
-                      label="Voice agent voice ID"
-                      value={config.professional_dna.voice_agent_voice_id ?? ''}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, voice_agent_voice_id: value },
-                              }
-                            : prev
-                        )
-                      }
-                    />
-                    <TextAreaField
-                      label="Voice arc sections"
-                      value={(config.professional_dna.voice_arc_sections ?? []).join('\n')}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: {
-                                  ...prev.professional_dna,
-                                  voice_arc_sections: value
-                                    .split('\n')
-                                    .map((entry) => entry.trim().toLowerCase())
-                                    .filter(Boolean),
-                                },
-                              }
-                            : prev
-                        )
-                      }
-                      minHeight="min-h-24"
-                    />
-                    <TextAreaField
-                      label="Voice agent persona appendix"
-                      value={config.professional_dna.voice_agent_persona ?? ''}
-                      onChange={(value) =>
-                        setConfig((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                professional_dna: { ...prev.professional_dna, voice_agent_persona: value },
-                              }
-                            : prev
-                        )
-                      }
-                      minHeight="min-h-28"
-                    />
+                    {customResearchDomains.length ? (
+                      <div className="mt-1 text-[9px] text-black/40">Custom domains: {customResearchDomains.join(', ')}</div>
+                    ) : null}
                   </div>
-                </FieldCard>
-
-                <FieldCard
-                  eyebrow="Prompt appendix"
-                  title="Professional DNA operator notes"
-                  description="Use this for extra research posture, client-type instructions, or sector-specific criteria."
-                >
-                  <textarea
-                    value={config.professional_dna.prompt_appendix}
-                    onChange={(event) =>
-                      setConfig((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              professional_dna: {
-                                ...prev.professional_dna,
-                                prompt_appendix: event.target.value,
-                              },
-                            }
-                          : prev
-                      )
-                    }
-                    className="min-h-20 w-full border border-black/10 bg-white p-2 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
-                  />
-                </FieldCard>
-
-                <FieldCard
-                  eyebrow="Section selection"
-                  title="Enabled dossier sections"
-                  description="Turn sections on or off without editing raw keys. Existing custom keys remain preserved in config."
-                >
-                  <ChipToggleGroup
-                    label="Enabled sections"
-                    description="These sections will be available to the dossier generator and renderer."
-                    options={DNA_SECTION_OPTIONS}
-                    selected={knownEnabledSections}
-                    onToggle={(value) =>
-                      setConfig((prev) => {
-                        if (!prev) return prev;
-                        const nextKnownEnabled = normalizeList(toggleListValue(knownEnabledSections, value));
-                        const nextEnabledSections = normalizeList([...nextKnownEnabled, ...customEnabledSections]);
-                        const nextSectionOrder = normalizeList([
-                          ...effectiveSectionOrder.filter((section) => nextEnabledSections.includes(section)),
-                          ...nextEnabledSections,
-                        ]);
-                        return {
-                          ...prev,
-                          professional_dna: {
-                            ...prev.professional_dna,
-                            enabled_sections: nextEnabledSections,
-                            section_order: nextSectionOrder,
-                          },
-                        };
-                      })
-                    }
-                  />
-                  {customEnabledSections.length ? (
-                    <div className="mt-3 border border-dashed border-black/12 bg-white/65 px-4 py-3 text-xs leading-5 text-black/52">
-                      Custom section keys preserved: {customEnabledSections.join(', ')}
-                    </div>
-                  ) : null}
-                </FieldCard>
-
-                <FieldCard
-                  eyebrow="Render order"
-                  title="Section order"
-                  description="Reorder enabled sections without editing a newline list."
-                >
-                  <OrderedListField
-                    label="Current section order"
-                    description="This order controls how the dossier renders in the client-facing report."
-                    values={effectiveSectionOrder}
-                    options={DNA_SECTION_OPTIONS}
-                    onMove={(index, direction) =>
-                      setConfig((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              professional_dna: {
-                                ...prev.professional_dna,
-                                section_order: moveListValue(effectiveSectionOrder, index, direction),
-                              },
-                            }
-                          : prev
-                      )
-                    }
-                  />
-                </FieldCard>
-
-                <FieldCard
-                  eyebrow="Research coverage"
-                  title="Active research domains"
-                  description="These domains determine which market lenses the Professional DNA agent is allowed to use."
-                >
-                  <ChipToggleGroup
-                    label="Research domains"
-                    description="Reduce this set only if you want a narrower dossier posture for a specific deployment."
-                    options={DNA_RESEARCH_DOMAIN_OPTIONS}
-                    selected={selectedResearchDomains.filter((domain) => knownResearchDomains.includes(domain))}
-                    onToggle={(value) =>
-                      setConfig((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              professional_dna: {
-                                ...prev.professional_dna,
-                                research_domains: normalizeList([
-                                  ...toggleListValue(
-                                    selectedResearchDomains.filter((domain) => knownResearchDomains.includes(domain)),
-                                    value
-                                  ),
-                                  ...customResearchDomains,
-                                ]),
-                              },
-                            }
-                          : prev
-                      )
-                    }
-                  />
-                  {customResearchDomains.length ? (
-                    <div className="mt-3 border border-dashed border-black/12 bg-white/65 px-4 py-3 text-xs leading-5 text-black/52">
-                      Custom research domains preserved: {customResearchDomains.join(', ')}
-                    </div>
-                  ) : null}
-                </FieldCard>
+                </details>
               </div>
             </Panel>
           </div>
@@ -3760,7 +3409,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-3">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
       <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[56px_minmax(0,1fr)]">
-        <aside className="group/rail hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] transition-all duration-200 xl:flex xl:w-14 xl:flex-col xl:hover:w-56 xl:hover:shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
+        <aside className="group/rail hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] transition-all duration-200 xl:flex xl:w-14 xl:flex-col xl:hover:absolute xl:hover:z-30 xl:hover:h-full xl:hover:w-44 xl:hover:shadow-[4px_0_16px_-6px_rgba(0,0,0,0.18)]">
           <div className="border-b border-black/10 px-2 py-2">
             <div className="text-[9px] uppercase tracking-[0.2em] text-brand-teal">OS</div>
             <span
