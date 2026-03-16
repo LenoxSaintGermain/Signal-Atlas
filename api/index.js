@@ -41,6 +41,7 @@ import {
   DEFAULT_GEMINI_VIDEO_MODEL,
 } from './config/geminiModels.js';
 import { STARTER_MEDIA_LIBRARY_PACK } from './config/starterMediaLibrary.js';
+import { syncArtifactsToGoogleDocs } from './gws/syncArtifacts.js';
 
 const app = express();
 
@@ -1793,6 +1794,114 @@ const composeSamplePersonaArtifacts = (persona) => {
       what_i_learned: brief.learned,
       what_needs_to_happen: brief.needle,
       next_to_do: brief.next_72_hours,
+      title: 'Your Command Center',
+      subtitle: 'A living execution sequence recalibrated by market signal, proof, and momentum.',
+      strategy_status: 'internal_strategy_draft',
+      command_center_status: 'recalibrating',
+      strategy_thesis: `${persona.name} can move toward ${target}, but the market will only reward that move if the signal is tighter and more legible.`,
+      current_position: `${persona.name} reads as strong in execution, but still under-packaged for the next market step.`,
+      future_alpha: 'Future upside comes from proof density, tighter lane selection, and clearer stakeholder-safe narrative control.',
+      market_frame: {
+        market_sentiment_summary: 'Selective hiring rewards proof, scope, and clarity over broad activity.',
+        hot_skill_premiums: [
+          `Proof-led communication for ${target}`,
+          'AI-assisted execution under pressure',
+          'Clear operating range with visible ownership',
+        ],
+        restructuring_or_cooling_signals: [
+          'Broad search volume is less effective than tighter, evidence-led sequencing.',
+          'Narrative ambiguity suppresses the speed at which the market can price a profile.',
+        ],
+        what_changed: 'This is no longer a volume game. It is a packaging and proof game.',
+        freshness_note: 'Sample-persona internal strategy draft.',
+      },
+      positioning_matrix: {
+        current_state: 'Challenger',
+        rationale: 'There is viable demand, but the story still needs stronger proof and tighter market framing.',
+        demand_strength: '68/100 demand fit',
+        proof_strength: '43/100 proof density',
+        narrative_strength: '48/100 narrative clarity',
+        next_state_target: 'Leader',
+      },
+      career_lane_recommendation: {
+        primary_lane: `Selective ${target} opportunities that reward visible execution and strategic range`,
+        secondary_lane: 'Mid-market or transformation-heavy teams with room for repositioning',
+        why_this_lane_now: 'This route prices signal quality and adaptability better than brand-only environments.',
+        avoid_for_now: [
+          'Broad-volume application behavior without proof packaging',
+          'Habitats that punish range and over-index on narrow credentials',
+        ],
+      },
+      surgical_ai_playbooks: {
+        proxy_interview_playbook: [
+          `Simulate a hiring panel for ${target} with one skeptic, one operator, and one executive sponsor.`,
+          'Turn every weak answer into a tighter, business-safe version.',
+        ],
+        narrative_shaping_playbook: [
+          'Rewrite evidence into recruiter-safe language.',
+          'Strip out jargon and generic ambition.',
+        ],
+        recruiter_language_playbook: [
+          'Convert effort into scope, outcomes, and decision impact.',
+          'Draft short and long versions of the same positioning case.',
+        ],
+        evidence_hardening_playbook: [
+          'Identify the missing metrics on every proof point.',
+          'Promote only the receipts that can survive executive scrutiny.',
+        ],
+      },
+      living_sequence: {
+        current_branch: 'Proof-hardening branch before broad outreach.',
+        alternate_branch: 'If the market reads the story as too technical, shift to executive-framing branch.',
+        unlock_conditions: [
+          'One quantified proof point is packaged cleanly.',
+          'One concise positioning statement survives review.',
+          'Two conversations confirm the lane is credible.',
+        ],
+        proof_targets: [
+          'Quantified outcome',
+          'Visible artifact',
+          'Recruiter-safe narrative asset',
+        ],
+        recalibration_triggers: [
+          'Feedback says the story is too broad.',
+          'A narrower lane starts producing better signal.',
+          'Compensation math shifts based on new evidence.',
+        ],
+        next_72_hours: brief.next_72_hours,
+        next_2_weeks: [
+          { id: 'distilled-2w-01', label: 'Run two selective conversations with explicit asks.', done: false },
+          { id: 'distilled-2w-02', label: 'Turn one proof point into a market-facing asset.', done: false },
+          { id: 'distilled-2w-03', label: 'Review feedback and tighten the branch.', done: false },
+        ],
+      },
+      advisor_bridge: {
+        what_changed_since_last_review: [
+          'The market path is clearer, but still under-supported by proof.',
+          'The right lane is becoming narrower and more selective.',
+        ],
+        needs_advisor_judgment: [
+          'Which role framing is most credible right now?',
+          'Where should compensation ambition be tightened or stretched?',
+          'What habitat should be avoided even if title looks attractive?',
+        ],
+        can_be_ai_delegated: [
+          'Mock panels and answer drills.',
+          'Evidence restructuring.',
+          'Narrative variants for different stakeholders.',
+        ],
+        strategic_questions: [
+          'What would make this profile look immediately more expensive?',
+          'Which proof gaps are fatal versus tolerable?',
+          'Should the next sprint focus on packaging or new evidence?',
+        ],
+      },
+      evidence_ledger: [
+        { label: 'Observed 1', class: 'observed', note: brief.learned[0] },
+        { label: 'Observed 2', class: 'observed', note: brief.learned[1] },
+        { label: 'Inferred 1', class: 'inferred', note: brief.needle[0] },
+        { label: 'External 1', class: 'external', note: 'Selective hiring rewards fit, proof, and clarity over broad activity.' },
+      ],
     },
     plan: {
       next_72_hours: [
@@ -3690,6 +3799,16 @@ const AGENT_REGISTRY = [
     access_model: 'read_write_scoped',
     policy_version: '2026-03-08.1',
   },
+  {
+    role_id: 'document_publisher',
+    title: 'Document Publisher',
+    objective: 'Publish and sync Career Concierge artifacts to Google Docs for client access and sharing.',
+    reads: ['clients/{uid}/artifacts/*', 'clients/{uid}/doc_registry/*'],
+    writes: ['clients/{uid}/doc_registry/*'],
+    approval_required: false,
+    access_model: 'read_write_scoped',
+    policy_version: '2026-03-15.1',
+  },
 ];
 
 const DEFAULT_ORCHESTRATION_POLICY = {
@@ -3710,6 +3829,7 @@ const DEFAULT_ORCHESTRATION_POLICY = {
     'media_pipeline_worker',
     'evaluator',
     'human_concierge_coach',
+    'document_publisher',
   ],
   free_roles: ['intake_concierge', 'artifact_composer_pack', 'episode_showrunner'],
   approval_triggers: [
@@ -5664,6 +5784,13 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       console.error('content_director_seed_error', planningError);
       contentDirector = { status: 'error', detail: sanitizeError(planningError, 'content_director_seed_failed') };
     }
+    let documentPublisher = { status: 'skipped' };
+    try {
+      documentPublisher = await syncArtifactsToGoogleDocs(db, uid, finalArtifacts);
+    } catch (docPubError) {
+      console.error('document_publisher_error', docPubError);
+      documentPublisher = { status: 'error', detail: sanitizeError(docPubError, 'document_publisher_failed') };
+    }
     return res.json({
       meta,
       artifacts: finalArtifacts,
@@ -5671,6 +5798,7 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
         chief_of_staff: chiefOfStaff,
         dna_research_analyst: dnaResearch,
         content_director: contentDirector,
+        document_publisher: documentPublisher,
       },
     });
   }
@@ -5763,6 +5891,13 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       console.error('content_director_seed_error', planningError);
       contentDirector = { status: 'error', detail: sanitizeError(planningError, 'content_director_seed_failed') };
     }
+    let documentPublisher = { status: 'skipped' };
+    try {
+      documentPublisher = await syncArtifactsToGoogleDocs(db, uid, finalArtifacts);
+    } catch (docPubError) {
+      console.error('document_publisher_error', docPubError);
+      documentPublisher = { status: 'error', detail: sanitizeError(docPubError, 'document_publisher_failed') };
+    }
     return res.json({
       meta,
       artifacts: finalArtifacts,
@@ -5770,6 +5905,7 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
         chief_of_staff: chiefOfStaff,
         dna_research_analyst: dnaResearch,
         content_director: contentDirector,
+        document_publisher: documentPublisher,
       },
     });
   } catch (error) {
@@ -5829,6 +5965,13 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
       console.error('content_director_seed_error', planningError);
       contentDirector = { status: 'error', detail: sanitizeError(planningError, 'content_director_seed_failed') };
     }
+    let documentPublisher = { status: 'skipped' };
+    try {
+      documentPublisher = await syncArtifactsToGoogleDocs(db, uid, finalArtifacts);
+    } catch (docPubError) {
+      console.error('document_publisher_error', docPubError);
+      documentPublisher = { status: 'error', detail: sanitizeError(docPubError, 'document_publisher_failed') };
+    }
     return res.json({
       meta,
       artifacts: finalArtifacts,
@@ -5836,6 +5979,7 @@ app.post('/v1/suite/generate', requireAuth, async (req, res) => {
         chief_of_staff: chiefOfStaff,
         dna_research_analyst: dnaResearch,
         content_director: contentDirector,
+        document_publisher: documentPublisher,
       },
     });
   }

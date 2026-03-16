@@ -4,6 +4,26 @@ import { resolveApiOrigin } from '../services/apiOrigin';
 
 type Mode = 'login' | 'register';
 
+const normalizeAuthError = (error: any, mode: Mode) => {
+  const code = String(error?.code || '').trim();
+  if (code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') {
+    return 'That email and password combination did not match our records. Check the credentials and try again.';
+  }
+  if (code === 'auth/user-disabled') {
+    return 'This account is currently disabled. Contact an operator for access.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many sign-in attempts were made. Wait a moment, then try again.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'That email is already registered. Sign in instead, or use a different address.';
+  }
+  if (code === 'auth/weak-password' && mode === 'register') {
+    return 'Choose a stronger password to create the account.';
+  }
+  return error?.message ?? (mode === 'login' ? 'Unable to sign in.' : 'Unable to create the account.');
+};
+
 export function LoginView(props: { onAuthed: () => void; bootstrapError?: string | null }) {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
@@ -37,7 +57,7 @@ export function LoginView(props: { onAuthed: () => void; bootstrapError?: string
       }
       props.onAuthed();
     } catch (err: any) {
-      setError(err?.message ?? 'Unable to sign in.');
+      setError(normalizeAuthError(err, mode));
     } finally {
       setBusy(false);
     }

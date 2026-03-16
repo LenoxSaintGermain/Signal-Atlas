@@ -71,15 +71,15 @@ After one coordinated delivery pass, the operator roadmap should be able to show
 - `90%+` baseline confidence because every Lucid/Jim baseline area has a mapped implementation path
 - `90%+` execution confidence because the remaining high-value queued tasks are closed or intentionally deferred with proof
 
-### Required Workstreams
+### Closure Pass Results
 
 | Workstream | Roadmap Mapping | Why It Must Ship In The Closure Pass |
 | :--- | :--- | :--- |
-| Media pipeline completion | `E09`, `MTL-11` | Jim's operator/admin expectations are not met without queue health, lineage, approvals, and final operator boundary. |
-| Staff control plane | `E10`, `MTL-12` | The OS cannot honestly claim agentic governance until the staff roster, handoff graph, and controls are visible. |
-| Sample persona harness | `E11`, `MTL-13` | Execution confidence will stay low if persona proof still depends on manual setup and recovery. |
-| Lucid module expansion | `E12`, `MTL-14` | The dashboard parity gap remains visible until the added tiles are real backlog scope. |
-| AI Concierge onboarding + booking | `E13`, `MTL-15` | This is still the largest uncovered baseline gap from Jim + Lucid. |
+| Media pipeline completion | `E09`, `MTL-11` | Shipped. Remaining work is proof capture plus scene-level media-orchestration polish. |
+| Staff control plane | `E10`, `MTL-12` | Shipped. Remaining work is deeper operator proof and observability polish. |
+| Sample persona harness | `E11`, `MTL-13` | Shipped. Remaining work is disciplined use during rehearsal and proof capture. |
+| Lucid module expansion | `E12`, `MTL-14` | Shipped. Remaining work is validation coverage across all added tiles. |
+| AI Concierge onboarding + booking | `E13`, `MTL-15` | Shipped. Remaining work is proof capture and final UX hardening. |
 
 ## New Lucid Modules
 

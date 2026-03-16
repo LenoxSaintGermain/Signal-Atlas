@@ -535,7 +535,9 @@ export const generateSuiteDistilledDoc = (
   brief: BriefContent,
   answers: IntakeAnswers
 ): SuiteDistilledContent => {
+  const currentTitle = resolveCurrentTitle(answers);
   const target = resolveTargetRole(answers);
+  const industry = resolveIndustry(answers);
   const learned =
     Array.isArray(brief?.learned) && brief.learned.length
       ? brief.learned
@@ -561,6 +563,54 @@ export const generateSuiteDistilledDoc = (
           { id: 'distilled-3', label: 'Draft a concise positioning statement for stakeholder-facing use.', done: false },
         ];
 
+  const breakdown = Array.isArray(brief?.market_signal?.breakdown) ? brief.market_signal.breakdown : [];
+  const findScore = (id: string, fallback: number) => {
+    const match = breakdown.find((item) => item.id === id);
+    return Number(match?.score ?? fallback);
+  };
+  const demandScore = findScore('market_demand_fit', 68);
+  const proofScore = findScore('proof_density', 42);
+  const narrativeScore = findScore('narrative_clarity', 46);
+
+  const currentState =
+    demandScore >= 70 && proofScore >= 65 && narrativeScore >= 60
+      ? 'Leader'
+      : demandScore >= 65 && (proofScore >= 45 || narrativeScore >= 45)
+        ? 'Challenger'
+        : demandScore >= 50
+          ? 'Specialist'
+          : 'At Risk';
+  const nextStateTarget = currentState === 'Leader' ? 'Leader' : currentState === 'At Risk' ? 'Specialist' : 'Leader';
+  const freshNote = brief?.report_ticker?.source_snapshot_date
+    ? `Snapshot ${brief.report_ticker.source_snapshot_date} · ${brief.report_ticker.source_count || 0} sources · ${brief.report_ticker.update_cadence || 'periodic review'}.`
+    : 'Internal strategy draft awaiting a source-backed market refresh.';
+  const marketReceipt = Array.isArray(brief?.market_receipt) ? brief.market_receipt.filter(Boolean) : [];
+  const observed = Array.isArray(brief?.evidence_ledger?.observed) ? brief.evidence_ledger.observed : [];
+  const inferred = Array.isArray(brief?.evidence_ledger?.inferred) ? brief.evidence_ledger.inferred : [];
+  const external = Array.isArray(brief?.evidence_ledger?.external) ? brief.evidence_ledger.external : [];
+  const evidenceLedger = [
+    ...observed.map((note, index) => ({
+      label: `Observed ${index + 1}`,
+      class: 'observed' as const,
+      note,
+    })),
+    ...inferred.map((note, index) => ({
+      label: `Inferred ${index + 1}`,
+      class: 'inferred' as const,
+      note,
+    })),
+    ...external.map((note, index) => ({
+      label: `External ${index + 1}`,
+      class: 'external' as const,
+      note,
+    })),
+  ];
+  const nextTwoWeeks = [
+    { id: 'distilled-2w-1', label: `Run two selective conversations tied to ${target}.`, done: false, timebox: '72h' as const },
+    { id: 'distilled-2w-2', label: 'Turn one proof point into a recruiter-safe narrative asset.', done: false, timebox: '72h' as const },
+    { id: 'distilled-2w-3', label: 'Review feedback for signal drift and tighten the branch.', done: false, timebox: '72h' as const },
+  ];
+
   return {
     what_i_learned: learned,
     what_needs_to_happen: [
@@ -569,6 +619,130 @@ export const generateSuiteDistilledDoc = (
       'Run one high-signal outreach cycle per week with explicit asks.',
     ],
     next_to_do: next72,
+    title: 'Your Command Center',
+    subtitle: 'A living execution sequence recalibrated by market signal, proof, and momentum.',
+    strategy_status: external.length ? 'market_validated' : 'internal_strategy_draft',
+    command_center_status: proofScore < 45 || narrativeScore < 45 ? 'recalibrating' : 'steady',
+    strategy_thesis:
+      brief?.thesis ||
+      `Your move from ${currentTitle} toward ${target} is viable, but the market will only reward it if the signal becomes easier to price.`,
+    current_position: `Current signal reads as ${currentTitle} in ${industry}, with more strategic value than the market can currently see.`,
+    future_alpha: `Future alpha comes from packaging proof, tightening narrative quality, and using AI to compress the path from evidence to market-ready positioning.`,
+    market_frame: {
+      market_sentiment_summary:
+        marketReceipt[0] ||
+        `The market for ${target} is selective. Clear proof, disciplined scope, and strong narrative packaging outperform broad activity.`,
+      hot_skill_premiums: [
+        `Evidence-led communication for ${target}`,
+        `AI-assisted execution fluency in ${industry}`,
+        'Visible proof density over generalized ambition',
+      ],
+      restructuring_or_cooling_signals: marketReceipt.slice(1, 3).length
+        ? marketReceipt.slice(1, 3)
+        : [
+            'Broad-volume search behavior is losing leverage in selective environments.',
+            'Teams are rewarding operators who can translate execution into board-readable signal.',
+          ],
+      what_changed:
+        proofScore < 45
+          ? 'The opportunity is real, but proof density is still suppressing the price the market will put on the story.'
+          : 'The strategy is no longer about broad exploration. It is about advancing a narrower lane with clearer proof.',
+      freshness_note: freshNote,
+    },
+    positioning_matrix: {
+      current_state: currentState,
+      rationale:
+        currentState === 'Leader'
+          ? 'Demand, proof, and narrative clarity are aligned strongly enough to support a premium push.'
+          : currentState === 'Challenger'
+            ? 'Demand is present, but the story still needs sharper proof and market-safe framing.'
+            : currentState === 'Specialist'
+              ? 'The profile has value, but it currently reads as narrow or under-packaged rather than market-leading.'
+              : 'The market may punish broad positioning until proof and narrative clarity improve.',
+      demand_strength: `${demandScore}/100 demand fit`,
+      proof_strength: `${proofScore}/100 proof density`,
+      narrative_strength: `${narrativeScore}/100 narrative clarity`,
+      next_state_target: nextStateTarget,
+    },
+    career_lane_recommendation: {
+      primary_lane: brief?.recommended_habitat || `Operator-led ${industry} teams moving toward ${target}`,
+      secondary_lane: `Transformation-heavy mid-market environments where ${currentTitle} experience can be repriced`,
+      why_this_lane_now:
+        brief?.primary_opportunity ||
+        `This lane rewards strategic translation, visible ownership, and applied AI leverage more than generic brand signaling alone.`,
+      avoid_for_now: [
+        'Broad-volume application sprints without proof packaging',
+        'Roles that punish range and only reward narrowly credentialed specialists',
+      ],
+    },
+    surgical_ai_playbooks: {
+      proxy_interview_playbook: [
+        `Use AI to simulate a hiring panel for ${target} with one operator, one executive sponsor, and one skeptic.`,
+        'Force the mock panel to challenge missing proof, unclear scope, and weak business language.',
+        'Turn every failed answer into one tighter, stakeholder-safe response.',
+      ],
+      narrative_shaping_playbook: [
+        `Feed AI one evidence point at a time and ask it to rewrite the story for ${target} in recruiter-safe language.`,
+        'Reject output that sounds generic, inflated, or tool-centric.',
+        'Keep only phrasing that clarifies scope, outcomes, and decision impact.',
+      ],
+      recruiter_language_playbook: [
+        'Convert project detail into market-facing verbs: led, translated, shipped, de-risked, scaled.',
+        'Ask AI to remove internal jargon and replace it with hiring-panel legibility.',
+        'Draft one concise positioning statement and one longer executive summary version.',
+      ],
+      evidence_hardening_playbook: [
+        'Use AI to sort outcomes into scope, metrics, stakeholder impact, and decision quality.',
+        'Turn each weak proof point into a gap list: missing metric, missing ownership, or missing business result.',
+        'Promote only the receipts that can survive executive scrutiny.',
+      ],
+    },
+    living_sequence: {
+      current_branch:
+        proofScore < 45
+          ? 'Proof-hardening branch before broad market push.'
+          : 'Selective market-push branch with tighter narrative control.',
+      alternate_branch: 'If the market starts rejecting the story as too technical, shift into executive-framing branch.',
+      unlock_conditions: [
+        'Verified evidence list is complete and quantified.',
+        'One concise positioning statement survives stakeholder review.',
+        'Two external conversations confirm the lane is legible.',
+      ],
+      proof_targets: [
+        'One quantified outcome with scope and business effect.',
+        'One artifact that shows decision quality, not only activity.',
+        'One recruiter-safe version of the career story.',
+      ],
+      recalibration_triggers: [
+        'Feedback says the story is too broad or too technical.',
+        'A target lane consistently responds better than adjacent lanes.',
+        'New market evidence changes the compensation or habitat math.',
+      ],
+      next_72_hours: next72,
+      next_2_weeks: nextTwoWeeks,
+    },
+    advisor_bridge: {
+      what_changed_since_last_review: [
+        'The command center now emphasizes market legibility over generic momentum.',
+        proofScore < 45 ? 'Proof density remains the main suppressor of value.' : 'Narrative and proof are starting to align.',
+      ],
+      needs_advisor_judgment: [
+        `Which version of ${target} is the most credible lane right now?`,
+        'Where should compensation ambition be tightened or stretched based on proof?',
+        'What habitat should be avoided even if title or pay looks attractive?',
+      ],
+      can_be_ai_delegated: [
+        'Mock panel generation and response drills.',
+        'Evidence list restructuring and phrasing alternatives.',
+        'Narrative variants for recruiter, sponsor, and operator audiences.',
+      ],
+      strategic_questions: [
+        'What would make this profile look immediately more expensive to the market?',
+        'Which proof gaps are fatal versus merely inconvenient?',
+        'Should the next sprint prioritize narrative packaging or new evidence creation?',
+      ],
+    },
+    evidence_ledger: evidenceLedger,
   };
 };
 

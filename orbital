@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ORBITAL_DIR="$ROOT_DIR/.context/orbital-agent"
+SKILLS_DIR="$ORBITAL_DIR/skills"
+WORKFLOWS_DIR="$ORBITAL_DIR/workflows"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./orbital list
+  ./orbital skills
+  ./orbital workflows
+  ./orbital plan
+  ./orbital design
+  ./orbital debug
+  ./orbital review
+  ./orbital test
+  ./orbital show skill <name>
+  ./orbital show workflow <name>
+  ./orbital path skill <name>
+  ./orbital path workflow <name>
+  ./orbital search <term>
+
+Examples:
+  ./orbital skills
+  ./orbital plan
+  ./orbital test
+  ./orbital show skill frontend-design
+  ./orbital show workflow upgrade-from-reference
+  ./orbital search planning
+EOF
+}
+
+require_mirror() {
+  if [[ ! -d "$ORBITAL_DIR" ]]; then
+    echo "Orbital mirror not found at $ORBITAL_DIR" >&2
+    exit 1
+  fi
+}
+
+list_skills() {
+  find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print \
+    | sed "s#^$SKILLS_DIR/##" \
+    | sort
+}
+
+list_workflows() {
+  find "$WORKFLOWS_DIR" -maxdepth 1 -type f -print \
+    | sed "s#^$WORKFLOWS_DIR/##" \
+    | sort
+}
+
+resolve_file() {
+  local kind="$1"
+  local name="$2"
+  local file=""
+
+  case "$kind" in
+    skill)
+      file="$SKILLS_DIR/$name/SKILL.md"
+      ;;
+    workflow)
+      [[ "$name" == *.md ]] || name="$name.md"
+      file="$WORKFLOWS_DIR/$name"
+      ;;
+    *)
+      echo "Unknown kind: $kind" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$file" ]]; then
+    echo "Not found: $kind $name" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$file"
+}
+
+show_file() {
+  local file="$1"
+  cat "$file"
+}
+
+search_all() {
+  local term="$1"
+  grep -Rin --color=never "$term" "$ORBITAL_DIR" || true
+}
+
+require_mirror
+
+cmd="${1:-}"
+
+case "$cmd" in
+  list)
+    echo "Skills:"
+    list_skills
+    echo
+    echo "Workflows:"
+    list_workflows
+    ;;
+  skills)
+    list_skills
+    ;;
+  workflows)
+    list_workflows
+    ;;
+  plan)
+    show_file "$(resolve_file workflow plan-feature)"
+    ;;
+  design)
+    show_file "$(resolve_file skill frontend-design)"
+    ;;
+  debug)
+    show_file "$(resolve_file workflow debug-systematic)"
+    ;;
+  review)
+    show_file "$(resolve_file workflow code-review)"
+    ;;
+  test)
+    show_file "$(resolve_file skill webapp-testing)"
+    ;;
+  show)
+    [[ $# -ge 3 ]] || { usage; exit 1; }
+    file="$(resolve_file "$2" "$3")"
+    show_file "$file"
+    ;;
+  path)
+    [[ $# -ge 3 ]] || { usage; exit 1; }
+    resolve_file "$2" "$3"
+    ;;
+  search)
+    [[ $# -ge 2 ]] || { usage; exit 1; }
+    search_all "$2"
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    echo "Unknown command: $cmd" >&2
+    usage
+    exit 1
+    ;;
+esac

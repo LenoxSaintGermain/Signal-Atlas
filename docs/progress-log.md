@@ -4,6 +4,54 @@ This log tracks implementation progress against the V1 MVP backlog plus the queu
 Detailed story-level status and pass-by-pass execution entries now live in `docs/backlog-ledger.md`.
 Update both files in each delivery pass so roadmap visuals and implementation status stay aligned.
 
+## 2026-03-15
+
+### Delivery: Google Workspace Integration — Document Publisher Agent
+
+- Integrated the Google Workspace CLI (`gws`) into the agent orchestration pipeline as a new `document_publisher` agent.
+- Built a template engine (`api/gws/`) that converts all 10 artifact types (Brief, Profile, Plan, Suite Distilled, AI Profile, Gaps, Readiness, CJS Execution, Resume Review, Search Strategy) into polished Google Docs.
+- Service account creates docs in a shared org Drive folder, auto-shares with users by email, and organizes per-client folders.
+- Updates overwrite existing docs in-place, leveraging Google Docs native version history for the "living doc" experience.
+- Doc sync runs non-blocking after DNA Research in all 3 suite generation code paths (Gemini success, deterministic fallback, error fallback).
+- Firestore `doc_registry` subcollection tracks Google Doc IDs, sync status, and versions per client per artifact.
+- Enabled 10 Google Workspace APIs on the GCP project: Docs, Drive, Gmail, Calendar, Sheets, Apps Script, Slides, Meet, Chat, Classroom.
+- Cloud Run env vars set: `GWS_DOCS_ENABLED=true`, `GWS_DRIVE_ROOT_FOLDER_ID` configured.
+- Backlog status: `E14-S02` moved from Deferred to Done.
+
+### Delivery: GWS Phases 1-3 Code Complete + API Deployment
+
+- GWS integration Phases 1-3 (module, templates, pipeline wiring) code complete.
+- Full Google API suite enabled on `ssai-f6191`: Docs, Drive, Gmail, Calendar, Sheets, Apps Script, Slides, Meet, Chat, Classroom.
+- Deployed API revision `career-concierge-api-00054-d2z` to Cloud Run `europe-west1`.
+- Drive root folder configured for shared artifact publishing.
+- GWS CLI auth refreshed for service account operations.
+- Pending: Phase 4 (admin visibility for Workspace automation status and doc registry) and Phase 5 (production env var promotion and Cloud Run deployment hardening).
+- New exploration: Google Workspace CLI (`googleworkspace/cli`) for enhanced shareable doc workflows.
+
+## 2026-03-16
+
+### Delivery: Admin Control Tower Density Overhaul
+
+- **Pro-Density pass**: Reduced all base component padding/font sizes — SectionShell headers collapsed to single-line, Panel headers from text-base to text-xs, FieldCard chrome from ~70px to ~30px per field, MetricCard padding halved.
+- **CSS Grid auto-fit layout**: Summary panels now use `grid-template-columns: repeat(auto-fit, minmax(350px, 1fr))` eliminating forced vertical stacking of Signals and Policy modules.
+- **Condensed Agent Registry**: Governance agent cards converted to 40px-height `<details>` rows with chevron expand for descriptions and scope chips.
+- **Mini-Rail sidebar**: Control Rail collapsed to 56px icon-only sidebar that expands to 224px on hover, reclaiming ~200px horizontal space.
+- **Overflow elimination**: Content area set to `overflow-x-hidden`, all fixed-width constraints replaced with `max-width: 100%` and flex-grow logic.
+- **Textarea compaction**: All prompt overlay min-heights reduced from 144-176px to 80px (min-h-20).
+- **Brand Studio density**: Color swatches shrunk from 40x56px to 28x40px, textarea min-heights reduced, section padding compacted.
+- Estimated ~50% reduction in per-section scroll depth.
+
+### Delivery: Admin Control Tower Density Overhaul
+
+- Compressed all shared admin primitives (SectionShell, Panel, MetricCard, AdminStatCard, FieldCard, ChipToggleGroup, OrderedListField) — reduced heading sizes, tightened padding and margins throughout.
+- Rebuilt the Summary section hero panel: heading from 42px to 2xl, service status grid cells tightened, MetricCards now render in a 2-column responsive grid instead of single-column stack.
+- Merged the Runtime Identity panel from 4 separate bordered boxes into a unified 2-column grid.
+- Converted the agent registry from 4 truncated full-card articles to compact single-line rows showing all agents with hover tooltips for objectives.
+- Converted the approval queue from 3 truncated cards to compact rows showing all items with hover tooltips for summaries.
+- Compressed the main shell header (h2 from 36px to 2xl), converted stat cards to an inline strip, tightened sidebar nav and save rail.
+- Removed footer descriptive copy, kept only action buttons.
+- Backlog status: `E05-S01` density pass complete.
+
 ## 2026-03-11
 
 ### Delivery: Journey Guide Editorial Concierge Pass
@@ -21,6 +69,69 @@ Update both files in each delivery pass so roadmap visuals and implementation st
   - admin `Experience -> Professional DNA` exposes those controls directly
   - the home guide resolves that slot before falling back to the existing hero image/title treatment
 - Softened the presentation from dark terminal styling to a lighter editorial / WSJ-adjacent briefing surface without regressing the act-based interaction model.
+
+## 2026-03-12
+
+### Planning: Suite Distilled Living Strategy Mandate
+
+- Reframed `Suite Distilled` from a shallow recap artifact into a queued `Living Strategy` module upgrade with a stronger executive posture:
+  - `Market Position & AI Arbitrage`
+  - `Strategic Workstreams`
+  - `Advisor Consultation Brief`
+  - `72-Hour and 2-Week Playbook`
+- Defined the required schema and generation-contract changes so the module can be implemented as a real strategic mandate rather than a visual reskin.
+- Added explicit protocol alignment and data-integrity rules:
+  - one dominant thesis block per surface
+  - compact evidence and confidence strips
+  - no fabricated market intelligence
+  - graceful fallback for legacy `suite_distilled` artifacts
+- Captured the implementation target in [suite_distilled_living_strategy_spec.md](/Users/lenoxparis/conductor/workspaces/Signal-Atlas/atlanta/docs/mvp/suite_distilled_living_strategy_spec.md) and mapped it into the backlog as `E04-S04`.
+
+## 2026-03-13
+
+### Planning: ElevenLabs Ghost Agent Lane
+
+- Reframed the current ElevenLabs lane from a hosted widget fallback into a queued Ghost-agent implementation target.
+- Defined the architecture needed for a true agent lane:
+  - SDK-backed `useConversation` client
+  - client tools mapped to intake-safe React actions
+  - visible action feed / HUD
+  - signed-session API path for private agents
+  - admin-configurable Ghost controls and fallback posture
+- Kept the current widget path explicitly as a fallback rather than pretending it can deliver full Ghost behavior.
+- Captured the implementation plan in [elevenlabs_ghost_agent_lane_spec.md](/Users/lenoxparis/conductor/workspaces/Signal-Atlas/atlanta/docs/mvp/elevenlabs_ghost_agent_lane_spec.md) and mapped the build target into backlog story `E15-S07`.
+
+## 2026-03-15
+
+### Planning: Suite Distilled Command Center
+
+- Extended the queued `Suite Distilled` upgrade beyond the `Living Strategy` memo into a predictive command-center surface.
+- Defined the next-level product frame:
+  - macro-to-micro market intelligence
+  - a source-backed career positioning matrix
+  - surgical AI leverage playbooks
+  - a living execution sequence that can branch and recalibrate
+- Added explicit data-integrity and brand rules so the module can feel `WSJ meets analyst brief` without faking real-time market data or borrowing trademarked framework language directly.
+- Captured the enhancement in [suite_distilled_command_center_spec.md](/Users/lenoxparis/conductor/workspaces/Signal-Atlas/atlanta/docs/mvp/suite_distilled_command_center_spec.md) and mapped it into backlog story `E04-S05` as the next evolution after `E04-S04`.
+
+### Delivery: Suite Distilled Living Strategy + Command Center Pass
+
+- Rebuilt `Suite Distilled` from the old two-column recap into a command-center surface:
+  - living-strategy thesis
+  - current position vs future alpha
+  - market frame and freshness note
+  - career positioning matrix
+  - lane recommendation
+  - surgical AI playbooks
+  - living sequence with `72 hours` and `2 weeks`
+  - advisor bridge
+  - evidence ledger
+- Expanded the `suite_distilled` artifact contract and local generation path so new intake runs now emit richer command-center content instead of only `what_i_learned`, `what_needs_to_happen`, and `next_to_do`.
+- Kept backward compatibility:
+  - legacy `suite_distilled` artifacts still render safely
+  - sample persona and seeded demo artifacts now also produce the richer shape
+  - Google Docs export templates now understand the upgraded artifact posture
+- Updated module copy so the tile/shell language no longer describes the module as a simple condensed summary.
 
 ## 2026-03-10
 

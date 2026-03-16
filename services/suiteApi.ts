@@ -1,13 +1,22 @@
 import { auth } from './firebase';
-import { BriefContent, ClientIntent, ClientPreferences, IntakeAnswers, PlanContent } from '../types';
+import {
+  AIProfileContent,
+  BriefContent,
+  ClientIntent,
+  ClientPreferences,
+  GapsContent,
+  IntakeAnswers,
+  PlanContent,
+  ProfileContent,
+} from '../types';
 import { resolveApiOrigin } from './apiOrigin';
 
 export type SuiteArtifacts = {
   brief: BriefContent;
   plan: PlanContent;
-  profile: unknown;
-  ai_profile: unknown;
-  gaps: unknown;
+  profile: ProfileContent;
+  ai_profile: AIProfileContent;
+  gaps: GapsContent;
 };
 
 export const generateSuiteArtifacts = async (payload: {

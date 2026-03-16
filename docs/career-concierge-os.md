@@ -104,6 +104,22 @@ The `Brief` / `Profile` pair now also carries a research-grade Professional DNA 
 - the Brief now degrades safely against older or partially enriched dossier artifacts instead of hard-crashing when newer telemetry fields are missing
 - those UI metrics are source-backed or explicitly inferred from dossier evidence; the system no longer relies on decorative placeholder chart data
 
+`Suite Distilled` is no longer a flat two-column strategic recap:
+
+- the artifact now renders as a lighter editorial command-center surface instead of a simple `what I learned / what needs to happen` layout
+- new intake runs and seeded personas now emit richer `suite_distilled` content with:
+  - strategy thesis
+  - current position vs future alpha
+  - market frame and freshness note
+  - career positioning matrix
+  - lane recommendation
+  - surgical AI playbooks
+  - living sequence (`72 hours` + `2 weeks`)
+  - advisor bridge
+  - evidence ledger
+- legacy `suite_distilled` artifacts still map into the new view safely so older client records do not crash or disappear
+- current recalibration logic is still mostly artifact-driven rather than fully event-driven; the deeper live-feedback branch logic remains backlog work rather than pretending to be complete
+
 The signed-in landing canvas now also carries a persistent `Your Journey Guide` anchor:
 
 - the closed state is a restrained invite rail rather than a large instructional banner

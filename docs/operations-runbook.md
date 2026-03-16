@@ -218,6 +218,23 @@ Current Professional DNA behavior:
   - a compensation ladder, report ticker, source registry, and evidence-node appendix
 - external market context is currently anchored to official public sources embedded in the API layer:
   - BLS Employment Situation
+
+Current Suite Distilled behavior:
+
+- Smart Start / local stub generation now emits a richer `suite_distilled` artifact instead of only three legacy fields
+- the artifact includes:
+  - strategy thesis
+  - current position vs future alpha
+  - market frame
+  - positioning matrix
+  - lane recommendation
+  - surgical AI playbooks
+  - living sequence
+  - advisor bridge
+  - evidence ledger
+- the UI renderer remains backward compatible with old `suite_distilled` records, so reset users, old seeded personas, and older client documents still render without migration
+- demo persona seeding now writes the richer `suite_distilled` shape as well
+- Google Docs export for `suite_distilled` now prefers the command-center sections when present and falls back to the legacy sections otherwise
   - BLS JOLTS
   - BLS Occupational Outlook Handbook
 - admin `Experience -> Professional DNA` now includes dedicated journey-guide media controls:

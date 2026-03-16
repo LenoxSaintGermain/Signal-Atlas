@@ -25,7 +25,7 @@ The Career Concierge OS is an editorial, cinematic workspace designed for concie
 * **Backend API:** Express.js (Node.js) hosted on Google Cloud Run (Region: europe-west1).  
 * **Database:** Firestore (Native mode).  
 * **Authentication:** Firebase Authentication (Email/password, Admin roles via custom claims).  
-* **AI Models:** Google Gemini via `@google/genai` (gemini-3-flash-preview for text, gemini-2.5-flash-image-preview for images, veo-3.1-generate-preview for video).  
+* **AI Models:** Google Gemini via `@google/genai` (`gemini-2.5-pro` for hero text generation, `gemini-2.5-flash-image` for images, `veo-3.1-generate-preview` for video).  
 * **Voice:** Sesame / Gemini Live.  
 * **Orchestration:** N8N/Workflows for agent orchestration, and RAG with vector embeddings for memory.
 
@@ -66,4 +66,3 @@ For the MVP/Investor Demo, the following loop must function flawlessly:
 3. **Artifact Generation:** The system automatically generates the Brief, Plan, Profile, AI Profile, and Gap Analysis.  
 4. **Binge Episode:** A customized micro-drama is generated and displayed.  
 5. **Agent Orchestration:** The Chief of Staff agent successfully produces a summary and logs next steps.
-

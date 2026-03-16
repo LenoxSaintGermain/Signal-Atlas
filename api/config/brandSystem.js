@@ -64,9 +64,9 @@ export const DEFAULT_BRAND_MODULES = {
   suite_distilled: {
     eyebrow: 'Suite Distilled',
     title: 'Distilled',
-    description: 'A condensed strategic summary of what the suite sees and recommends.',
+    description: 'A living strategy and command center that recalibrates your next move.',
     detail_title: 'Suite Distilled',
-    detail_quote: 'Condensed operating context across profile, momentum, and next action.',
+    detail_quote: 'Market frame, execution branches, and advisor-ready strategy in one command surface.',
   },
   profile: {
     eyebrow: 'Assessment',

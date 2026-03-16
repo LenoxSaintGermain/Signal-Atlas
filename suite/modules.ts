@@ -47,7 +47,7 @@ export const SUITE_MODULES: SuiteModule[] = [
     id: 'suite_distilled',
     index: '06',
     title: 'Your Suite, Distilled',
-    subtitle: 'Two-column strategic map: what I learned and what needs to happen.',
+    subtitle: 'A living strategy and command center recalibrated by market signal, proof, and momentum.',
     kind: 'artifact',
     relatedIds: ['brief', 'plan', 'readiness'],
   },

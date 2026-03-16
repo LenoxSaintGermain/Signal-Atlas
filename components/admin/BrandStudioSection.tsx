@@ -109,7 +109,7 @@ const TextAreaField = ({
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full min-h-20 border border-black/10 focus-border-brand-teal outline-none p-3 text-sm bg-white"
+      className="w-full min-h-14 border border-black/10 focus-border-brand-teal outline-none p-2 text-xs bg-white"
     />
   </label>
 );
@@ -130,7 +130,7 @@ const ColorField = ({
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
-        className="h-10 w-14 border border-black/10 bg-transparent p-1"
+        className="h-7 w-10 border border-black/10 bg-transparent p-0.5"
       />
       <input
         value={value}
@@ -192,6 +192,8 @@ function Preview({ brand, selectedModuleId }: { brand: BrandConfig; selectedModu
   const activeModule = getBrandModuleCopy(brand, selectedModuleId);
   const secondaryModule = getBrandModuleCopy(brand, 'plan');
   const accentSoft = hexToRgba(brand.colors.accent, 0.16);
+  const overlaySoft = hexToRgba(brand.colors.overlay_text, 0.08);
+  const inkSoft = hexToRgba(brand.colors.ink, 0.12);
 
   return (
     <div
@@ -226,55 +228,49 @@ function Preview({ brand, selectedModuleId }: { brand: BrandConfig; selectedModu
         <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">Preview</div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.35fr]">
-        <div className="p-5 md:p-6 flex flex-col justify-between min-h-[280px]" style={overlayRailStyle(brand)}>
-          <div>
-            <div className={`uppercase ${subheaderScaleClass[brand.hierarchy.subheader_scale]}`} style={{ color: brand.colors.accent }}>
-              {activeModule.eyebrow}
-            </div>
-            <div className={`mt-3 font-editorial italic leading-none ${headerScaleClass[brand.hierarchy.header_scale]}`}>
-              {activeModule.detail_title}
-            </div>
-            {brand.toggles.show_detail_quotes && (
-              <p
-                className={`mt-5 border-l pl-4 font-editorial italic ${bodyDensityClass[brand.hierarchy.body_density]}`}
-                style={{ borderColor: brand.colors.accent, color: hexToRgba(brand.colors.overlay_text, 0.82) }}
-              >
-                "{activeModule.detail_quote}"
+      <div className="space-y-0">
+        <div className="border-b p-5 md:p-6" style={{ borderColor: brand.colors.grid_line, backgroundColor: brand.colors.surface_background }}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              {brand.toggles.show_suite_kicker && (
+                <div className={`uppercase ${subheaderScaleClass[brand.hierarchy.subheader_scale]}`} style={{ color: brand.colors.accent_dark }}>
+                  {brand.copy.home_kicker}
+                </div>
+              )}
+              <div className={`mt-3 font-editorial italic leading-tight ${headerScaleClass[brand.hierarchy.header_scale]}`}>
+                {brand.copy.home_title}
+              </div>
+              <p className={`mt-4 max-w-xl text-black/60 ${bodyDensityClass[brand.hierarchy.body_density]}`}>
+                {brand.copy.home_description}
               </p>
-            )}
-          </div>
-          <div className="mt-8">
-            <div className="text-[10px] uppercase tracking-[0.2em] opacity-45">{brand.copy.modal_account_label}</div>
-            <div className="mt-2 text-xs opacity-70">client@example.com</div>
-          </div>
-        </div>
-
-        <div className="p-5 md:p-6" style={{ backgroundColor: brand.colors.surface_background, color: brand.colors.ink }}>
-          {brand.toggles.show_suite_kicker && (
-            <div className={`uppercase ${subheaderScaleClass[brand.hierarchy.subheader_scale]}`} style={{ color: brand.colors.accent_dark }}>
-              {brand.copy.home_kicker}
+              {brand.toggles.show_home_callout && (
+                <div
+                  className="mt-5 inline-flex items-center gap-3 border px-4 py-2 text-[10px] uppercase tracking-[0.2em]"
+                  style={{ borderColor: brand.colors.grid_line, backgroundColor: accentSoft }}
+                >
+                  <span style={{ color: brand.colors.accent_dark }}>{brand.copy.home_callout_label}</span>
+                  <span className="text-black/55">{brand.copy.home_callout_value}</span>
+                </div>
+              )}
             </div>
-          )}
-          <div className={`mt-3 font-editorial italic leading-tight ${headerScaleClass[brand.hierarchy.header_scale]}`}>
-            {brand.copy.home_title}
-          </div>
-          <p className={`mt-4 max-w-xl text-black/60 ${bodyDensityClass[brand.hierarchy.body_density]}`}>
-            {brand.copy.home_description}
-          </p>
 
-          {brand.toggles.show_home_callout && (
             <div
-              className="mt-5 inline-flex items-center gap-3 border px-4 py-2 text-[10px] uppercase tracking-[0.2em]"
-              style={{ borderColor: brand.colors.grid_line, backgroundColor: accentSoft }}
+              className="min-w-[180px] border px-4 py-4"
+              style={{
+                borderColor: brand.colors.grid_line,
+                backgroundColor: hexToRgba(brand.colors.accent_dark, 0.08),
+              }}
             >
-              <span style={{ color: brand.colors.accent_dark }}>{brand.copy.home_callout_label}</span>
-              <span className="text-black/55">{brand.copy.home_callout_value}</span>
+              <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: brand.colors.accent_dark }}>
+                Live module
+              </div>
+              <div className="mt-3 text-2xl font-editorial italic leading-none">{activeModule.title}</div>
+              <div className="mt-3 text-xs leading-5 text-black/60">Preview now mirrors the home shell and module overlay instead of the old left-rail proof.</div>
             </div>
-          )}
+          </div>
 
           <div
-            className="mt-6 grid gap-px border"
+            className="mt-6 grid gap-px border md:grid-cols-2"
             style={{
               borderColor: brand.colors.grid_line,
               backgroundColor: brand.colors.grid_line,
@@ -297,14 +293,14 @@ function Preview({ brand, selectedModuleId }: { brand: BrandConfig; selectedModu
                   ) : (
                     <span />
                   )}
-                  {brand.toggles.show_module_status && (
+                  {brand.toggles.show_module_status ? (
                     <div
                       className={`uppercase ${subheaderScaleClass[brand.hierarchy.subheader_scale]}`}
                       style={{ color: brand.colors.accent_dark }}
                     >
                       {brand.copy.module_ready_label}
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <div className="mt-6">
                   <div
@@ -316,14 +312,152 @@ function Preview({ brand, selectedModuleId }: { brand: BrandConfig; selectedModu
                   <div className={`mt-2 font-editorial leading-tight ${titleEmphasisClass[brand.hierarchy.tile_emphasis]}`}>
                     {moduleCopy.title}
                   </div>
-                  {brand.toggles.show_tile_descriptions && (
+                  {brand.toggles.show_tile_descriptions ? (
                     <p className={`mt-3 text-black/60 ${bodyDensityClass[brand.hierarchy.body_density]}`}>
                       {moduleCopy.description}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+
+        <div className="p-5 md:p-6" style={{ backgroundColor: hexToRgba(brand.colors.ink, 0.03), color: brand.colors.ink }}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: brand.colors.accent_dark }}>
+              Module overlay preview
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">Scroll-aware shell</div>
+          </div>
+
+          <div
+            className="overflow-hidden border shadow-[0_18px_40px_-34px_rgba(0,0,0,0.34)]"
+            style={{
+              borderColor: brand.colors.grid_line,
+              backgroundColor: brand.colors.surface_background,
+            }}
+          >
+            <div
+              className="border-b px-4 py-4"
+              style={{
+                ...overlayRailStyle(brand),
+                borderColor: overlaySoft,
+              }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="max-w-2xl">
+                  <div className={`uppercase ${subheaderScaleClass[brand.hierarchy.subheader_scale]}`} style={{ color: brand.colors.accent }}>
+                    {activeModule.eyebrow}
+                  </div>
+                  <div className={`mt-3 font-editorial italic leading-none ${headerScaleClass[brand.hierarchy.header_scale]}`}>
+                    {activeModule.detail_title}
+                  </div>
+                  <p
+                    className={`mt-4 max-w-3xl ${bodyDensityClass[brand.hierarchy.body_density]}`}
+                    style={{ color: hexToRgba(brand.colors.overlay_text, 0.74) }}
+                  >
+                    {activeModule.description}
+                  </p>
+                </div>
+                <div
+                  className="border px-4 py-3 text-right"
+                  style={{
+                    borderColor: overlaySoft,
+                    backgroundColor: hexToRgba(brand.colors.overlay_text, 0.04),
+                    color: hexToRgba(brand.colors.overlay_text, 0.78),
+                  }}
+                >
+                  <div className="text-[10px] uppercase tracking-[0.2em] opacity-50">{brand.copy.modal_account_label}</div>
+                  <div className="mt-2 text-xs">client@example.com</div>
+                </div>
+              </div>
+              {brand.toggles.show_detail_quotes ? (
+                <div
+                  className={`mt-5 border-l pl-4 font-editorial italic ${bodyDensityClass[brand.hierarchy.body_density]}`}
+                  style={{ borderColor: brand.colors.accent, color: hexToRgba(brand.colors.overlay_text, 0.82) }}
+                >
+                  "{activeModule.detail_quote}"
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="p-4 md:p-5" style={{ backgroundColor: brand.colors.surface_background }}>
+                <div
+                  className="relative overflow-hidden border p-5 md:p-6"
+                  style={{
+                    borderColor: inkSoft,
+                    background: `linear-gradient(145deg, ${brand.colors.overlay_background} 0%, ${brand.colors.ink} 100%)`,
+                    color: brand.colors.overlay_text,
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 18% 18%, ${hexToRgba(brand.colors.accent, 0.3)}, transparent 56%)` }} />
+                  <div className="absolute inset-0 opacity-40" style={{ background: `linear-gradient(180deg, transparent 0%, ${hexToRgba(brand.colors.ink, 0.52)} 100%)` }} />
+                  <div className="relative">
+                    <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: brand.colors.accent }}>
+                      Episode stage
+                    </div>
+                    <div className="mt-4 max-w-xl text-3xl font-editorial italic leading-[1.02]">
+                      {activeModule.detail_quote}
+                    </div>
+                    <div
+                      className="mt-6 inline-flex items-center gap-3 border px-4 py-2 text-[10px] uppercase tracking-[0.2em]"
+                      style={{
+                        borderColor: overlaySoft,
+                        backgroundColor: hexToRgba(brand.colors.overlay_text, 0.05),
+                      }}
+                    >
+                      <span>Cold Open</span>
+                      <span style={{ color: hexToRgba(brand.colors.overlay_text, 0.62) }}>Cinematic preview loaded</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t p-4 md:p-5 lg:border-l lg:border-t-0" style={{ borderColor: brand.colors.grid_line }}>
+                <div className="space-y-3">
+                  <div
+                    className="border px-4 py-4"
+                    style={{
+                      borderColor: brand.colors.grid_line,
+                      backgroundColor: hexToRgba(brand.colors.accent_dark, 0.06),
+                    }}
+                  >
+                    <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: brand.colors.accent_dark }}>
+                      Related modules
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {[activeModule, secondaryModule].map((moduleCopy) => (
+                        <span
+                          key={moduleCopy.title}
+                          className="border px-3 py-2 text-[10px] uppercase tracking-[0.18em]"
+                          style={{
+                            borderColor: brand.colors.grid_line,
+                            backgroundColor: brand.colors.surface_background,
+                          }}
+                        >
+                          {moduleCopy.title}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    className="border px-4 py-4"
+                    style={{
+                      borderColor: brand.colors.grid_line,
+                      backgroundColor: brand.colors.surface_background,
+                    }}
+                  >
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">Session</div>
+                    <div className="mt-3 text-sm leading-6 text-black/65">
+                      Client-safe view active. The large editorial header collapses away once the story starts, but the close control remains available.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -368,17 +502,13 @@ export function BrandStudioSection({ config, setConfig }: Props) {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">Brand Studio</div>
-          <h3 className="mt-2 text-3xl font-editorial italic leading-none">Editorial grid hierarchy and branding.</h3>
-        </div>
-        <div className="max-w-xl text-xs leading-relaxed text-gray-600">
-          Ordered from identity to module detail so Jim can tune the shell top-down. The preview mirrors the home grid
-          and module overlay using the same saved config.
+          <h3 className="mt-1 text-sm font-editorial italic leading-none">Brand Studio</h3>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-5">
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-2">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">1. Identity</div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field
@@ -445,7 +575,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
             </div>
           </div>
 
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">2. Color System</div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <ColorField
@@ -503,7 +633,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
             </div>
           </div>
 
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">3. Visual Hierarchy</div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <SelectField
@@ -564,7 +694,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
             </div>
           </div>
 
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">4. Shell Copy</div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field
@@ -622,7 +752,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
             </div>
           </div>
 
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">5. Display Toggles</div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[
@@ -655,7 +785,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
             </div>
           </div>
 
-          <div className="space-y-4 border border-black/10 bg-[#fbfaf7] p-4">
+          <div className="space-y-2 border border-black/10 bg-[#fbfaf7] p-2.5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">6. Module Copy</div>
               <select

@@ -110,11 +110,126 @@ const composeBriefContent = (persona) => {
   };
 };
 
-const composeSuiteDistilledContent = (brief) => ({
-  what_i_learned: brief.learned,
-  what_needs_to_happen: brief.needle,
-  next_to_do: brief.next_72_hours,
-});
+const composeSuiteDistilledContent = (brief, persona) => {
+  const answers = persona.answers || {};
+  const target = targetFromAnswers(answers);
+  const currentRole = roleFromAnswers(answers);
+  const industry = industryFromAnswers(answers);
+
+  return {
+    what_i_learned: brief.learned,
+    what_needs_to_happen: brief.needle,
+    next_to_do: brief.next_72_hours,
+    title: 'Your Command Center',
+    subtitle: 'A living execution sequence recalibrated by market signal, proof, and momentum.',
+    strategy_status: 'internal_strategy_draft',
+    command_center_status: 'recalibrating',
+    strategy_thesis: `${persona.name} can move toward ${target}, but the market will only reward that move if the signal becomes tighter and easier to price.`,
+    current_position: `${persona.name} reads as stronger in execution than in market packaging right now.`,
+    future_alpha: 'Future upside comes from proof density, tighter lane selection, and better narrative control.',
+    market_frame: {
+      market_sentiment_summary: 'Selective hiring rewards proof, scope, and clarity over broad activity.',
+      hot_skill_premiums: [
+        `Proof-led communication for ${target}`,
+        `AI-assisted execution in ${industry}`,
+        'Visible ownership and decision quality',
+      ],
+      restructuring_or_cooling_signals: [
+        'Broad search volume is less effective than evidence-led positioning.',
+        'Ambiguous profiles are slower for the market to price.',
+      ],
+      what_changed: 'This is no longer a volume game. It is a packaging and proof game.',
+      freshness_note: 'Sample-persona internal strategy draft.',
+    },
+    positioning_matrix: {
+      current_state: 'Challenger',
+      rationale: 'There is viable demand, but the market still needs tighter proof and better framing to pay up.',
+      demand_strength: '68/100 demand fit',
+      proof_strength: '43/100 proof density',
+      narrative_strength: '48/100 narrative clarity',
+      next_state_target: 'Leader',
+    },
+    career_lane_recommendation: {
+      primary_lane: `Selective ${target} opportunities where ${currentRole} experience can be repriced`,
+      secondary_lane: 'Transformation-heavy mid-market teams',
+      why_this_lane_now: 'This route rewards visible execution and adaptability more than brand-only signaling.',
+      avoid_for_now: [
+        'Broad-volume applications without proof packaging',
+        'Habitats that punish range and only reward narrow credentials',
+      ],
+    },
+    surgical_ai_playbooks: {
+      proxy_interview_playbook: [
+        `Simulate a hiring panel for ${target} with one skeptic, one operator, and one executive sponsor.`,
+        'Rewrite weak answers until they sound board-safe and precise.',
+      ],
+      narrative_shaping_playbook: [
+        'Convert evidence into recruiter-safe language.',
+        'Strip out jargon and generic ambition.',
+      ],
+      recruiter_language_playbook: [
+        'Translate effort into scope, outcomes, and decision impact.',
+        'Draft short and long versions of the same positioning case.',
+      ],
+      evidence_hardening_playbook: [
+        'Identify missing metrics on every proof point.',
+        'Promote only the receipts that survive executive scrutiny.',
+      ],
+    },
+    living_sequence: {
+      current_branch: 'Proof-hardening branch before broad outreach.',
+      alternate_branch: 'If the story reads as too technical, shift into executive-framing branch.',
+      unlock_conditions: [
+        'One quantified proof point is packaged cleanly.',
+        'One concise positioning statement survives review.',
+        'Two conversations confirm the lane is credible.',
+      ],
+      proof_targets: [
+        'Quantified outcome',
+        'Visible artifact',
+        'Recruiter-safe narrative asset',
+      ],
+      recalibration_triggers: [
+        'Feedback says the story is too broad.',
+        'A narrower lane starts producing better signal.',
+        'New evidence changes the compensation math.',
+      ],
+      next_72_hours: brief.next_72_hours,
+      next_2_weeks: [
+        { id: 'distilled-2w-01', label: 'Run two selective conversations with explicit asks.', done: false },
+        { id: 'distilled-2w-02', label: 'Turn one proof point into a market-facing asset.', done: false },
+        { id: 'distilled-2w-03', label: 'Review feedback and tighten the branch.', done: false },
+      ],
+    },
+    advisor_bridge: {
+      what_changed_since_last_review: [
+        'The right lane is becoming narrower and more selective.',
+        'Proof density remains the main suppressor of value.',
+      ],
+      needs_advisor_judgment: [
+        'Which role framing is most credible right now?',
+        'Where should compensation ambition be tightened or stretched?',
+        'What habitat should be avoided even if title looks attractive?',
+      ],
+      can_be_ai_delegated: [
+        'Mock panels and answer drills.',
+        'Evidence restructuring.',
+        'Narrative variants for different stakeholders.',
+      ],
+      strategic_questions: [
+        'What would make this profile look immediately more expensive?',
+        'Which proof gaps are fatal versus tolerable?',
+        'Should the next sprint focus on packaging or new evidence?',
+      ],
+    },
+    evidence_ledger: [
+      { label: 'Observed 1', class: 'observed', note: brief.learned[0] },
+      { label: 'Observed 2', class: 'observed', note: brief.learned[1] },
+      { label: 'Inferred 1', class: 'inferred', note: brief.needle[0] },
+      { label: 'External 1', class: 'external', note: 'Selective hiring rewards fit, proof, and clarity over broad activity.' },
+    ],
+  };
+};
 
 const composePlanContent = (persona) => {
   const answers = persona.answers || {};
@@ -286,7 +401,7 @@ const buildHydratedArtifacts = (persona) => {
   const brief = composeBriefContent(persona);
   return {
     brief,
-    suite_distilled: composeSuiteDistilledContent(brief),
+    suite_distilled: composeSuiteDistilledContent(brief, persona),
     plan: composePlanContent(persona),
     profile: composeProfileContent(persona),
     ai_profile: composeAIProfileContent(persona),

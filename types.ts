@@ -271,6 +271,65 @@ export interface CompensationPosture {
   negotiation_strategy: string[];
 }
 
+export type SuiteDistilledStrategyStatus = 'internal_strategy_draft' | 'market_validated' | 'advisor_revised';
+export type SuiteDistilledCommandCenterStatus = 'steady' | 'recalibrating' | 'signal_shift' | 'awaiting_proof';
+export type SuiteDistilledMatrixState = 'Leader' | 'Challenger' | 'Specialist' | 'At Risk';
+
+export interface SuiteDistilledMarketFrame {
+  market_sentiment_summary: string;
+  hot_skill_premiums: string[];
+  restructuring_or_cooling_signals: string[];
+  what_changed: string;
+  freshness_note: string;
+}
+
+export interface SuiteDistilledPositioningMatrix {
+  current_state: SuiteDistilledMatrixState;
+  rationale: string;
+  demand_strength: string;
+  proof_strength: string;
+  narrative_strength: string;
+  next_state_target: string;
+}
+
+export interface SuiteDistilledCareerLaneRecommendation {
+  primary_lane: string;
+  secondary_lane?: string;
+  why_this_lane_now: string;
+  avoid_for_now?: string[];
+}
+
+export interface SuiteDistilledSurgicalAiPlaybooks {
+  proxy_interview_playbook: string[];
+  narrative_shaping_playbook: string[];
+  recruiter_language_playbook: string[];
+  evidence_hardening_playbook: string[];
+}
+
+export interface SuiteDistilledLivingSequence {
+  current_branch: string;
+  alternate_branch?: string;
+  unlock_conditions: string[];
+  proof_targets: string[];
+  recalibration_triggers: string[];
+  next_72_hours: DnaUrgencyTask[];
+  next_2_weeks: DnaUrgencyTask[];
+}
+
+export interface SuiteDistilledAdvisorBridge {
+  what_changed_since_last_review: string[];
+  needs_advisor_judgment: string[];
+  can_be_ai_delegated: string[];
+  strategic_questions: string[];
+}
+
+export interface SuiteDistilledEvidenceEntry {
+  label: string;
+  class: DnaEvidenceClass;
+  note: string;
+  source_ref?: string;
+}
+
 export interface ProfileContent {
   strengths: string[];
   patterns: string[];
@@ -325,7 +384,21 @@ export interface ProfileContent {
 export interface SuiteDistilledContent {
   what_i_learned: string[];
   what_needs_to_happen: string[];
-  next_to_do: { id: string; label: string; done: boolean }[];
+  next_to_do: DnaUrgencyTask[];
+  title?: string;
+  subtitle?: string;
+  strategy_status?: SuiteDistilledStrategyStatus;
+  command_center_status?: SuiteDistilledCommandCenterStatus;
+  strategy_thesis?: string;
+  current_position?: string;
+  future_alpha?: string;
+  market_frame?: SuiteDistilledMarketFrame;
+  positioning_matrix?: SuiteDistilledPositioningMatrix;
+  career_lane_recommendation?: SuiteDistilledCareerLaneRecommendation;
+  surgical_ai_playbooks?: SuiteDistilledSurgicalAiPlaybooks;
+  living_sequence?: SuiteDistilledLivingSequence;
+  advisor_bridge?: SuiteDistilledAdvisorBridge;
+  evidence_ledger?: SuiteDistilledEvidenceEntry[];
 }
 
 export interface AIProfileContent {

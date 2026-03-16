@@ -22,6 +22,20 @@ type ClientBeat = {
   tone: BeatTone;
 };
 
+type EpisodeSceneStage = {
+  scene: Scene;
+  mode: 'video' | 'image' | 'placeholder';
+  title: string;
+  subtitle: string;
+  body: string;
+  embed_url?: string;
+  open_url?: string;
+  image_url?: string;
+  poster_url?: string;
+  platform_label?: string;
+  source_label: string;
+};
+
 const FREE_TIER_PLAYLIST: BingeEpisode[] = [
   {
     episode_id: 'free-foundation-01',
@@ -193,6 +207,96 @@ const toneClassName = (tone: BeatTone) => {
   return 'bg-[#f7f3ec] text-[#241f1c] border-[#d8d0c3]';
 };
 
+const SCENE_MEDIA_HINTS: Record<Scene, string[]> = {
+  hook: ['cold_open', 'opening', 'hero', 'hook', 'trailer'],
+  swipe1: ['signal', 'swipe1', 'beat_i', 'beat_1', 'concept'],
+  swipe2: ['consequence', 'swipe2', 'beat_ii', 'beat_2', 'judgment'],
+  swipe3: ['transfer', 'swipe3', 'beat_iii', 'beat_3', 'workflow'],
+  challenge: ['challenge', 'prompt', 'rehearsal', 'exercise'],
+  reward: ['reward', 'resolution', 'cliffhanger', 'unlock', 'continuation'],
+};
+
+const buildPlaceholderStage = (beat: ClientBeat): EpisodeSceneStage => ({
+  scene: beat.id,
+  mode: 'placeholder',
+  title: beat.title,
+  subtitle:
+    beat.id === 'challenge'
+      ? 'Interactive rehearsal card'
+      : beat.id === 'reward'
+        ? 'Resolution card'
+        : 'Cinematic placeholder still',
+  body: beat.body,
+  source_label: 'Designed fallback',
+});
+
+const buildStageFromResolvedMedia = (scene: Scene, beat: ClientBeat, item: ResolvedCuratedMediaItem): EpisodeSceneStage => {
+  if (item.embed_url) {
+    return {
+      scene,
+      mode: 'video',
+      title: item.title || beat.title,
+      subtitle: item.subtitle || 'Curated scene',
+      body: beat.body,
+      embed_url: item.embed_url,
+      open_url: item.open_url,
+      poster_url: item.thumbnail_url || undefined,
+      platform_label: item.platform_resolved,
+      source_label: 'Curated library',
+    };
+  }
+
+  if (item.thumbnail_url) {
+    return {
+      scene,
+      mode: 'image',
+      title: item.title || beat.title,
+      subtitle: item.subtitle || 'Curated still',
+      body: beat.body,
+      image_url: item.thumbnail_url,
+      open_url: item.open_url,
+      poster_url: item.thumbnail_url,
+      platform_label: item.platform_resolved,
+      source_label: 'Curated library',
+    };
+  }
+
+  return buildPlaceholderStage(beat);
+};
+
+const buildStageFromGeneratedAsset = (scene: Scene, beat: ClientBeat, asset: GeneratedMediaPack['assets'][number]): EpisodeSceneStage => {
+  if (asset.kind === 'video' && asset.video_uri) {
+    return {
+      scene,
+      mode: 'video',
+      title: beat.title,
+      subtitle: 'Generated scene pack',
+      body: beat.body,
+      embed_url: asset.video_uri,
+      open_url: asset.video_uri,
+      platform_label: 'generated',
+      source_label: 'Scene pack',
+    };
+  }
+
+  if (asset.kind === 'image' && asset.image_data_url) {
+    return {
+      scene,
+      mode: 'image',
+      title: beat.title,
+      subtitle: 'Generated still',
+      body: beat.body,
+      image_url: asset.image_data_url,
+      open_url: asset.image_data_url,
+      poster_url: asset.image_data_url,
+      platform_label: 'generated',
+      source_label: 'Scene pack',
+    };
+  }
+
+  return buildPlaceholderStage(beat);
+};
+
 export function BingeFeedView(props: {
   onOpenPlan: () => void;
   isFreeTier?: boolean;
@@ -246,7 +350,6 @@ export function BingeFeedView(props: {
     };
   }, []);
 
-  const swipes = useMemo(() => episode?.lesson_swipes ?? [], [episode?.lesson_swipes]);
   const recommendedModels = useMemo(() => episode?.art_direction?.recommended_models ?? [], [episode?.art_direction]);
   const freeTierQueue = useMemo(() => FREE_TIER_PLAYLIST, []);
   const episodeBeats = useMemo(() => buildEpisodeBeats(episode, targetSkill), [episode, targetSkill]);
@@ -263,6 +366,71 @@ export function BingeFeedView(props: {
     if (!activeMediaId) return library.items[0];
     return library.items.find((item) => item.id === activeMediaId) ?? library.items[0];
   }, [library?.items, activeMediaId]);
+  const sceneStages = useMemo<Record<Scene, EpisodeSceneStage>>(() => {
+    const beatsByScene = episodeBeats.reduce((acc, beat) => {
+      acc[beat.id] = beat;
+      return acc;
+    }, {} as Record<Scene, ClientBeat>);
+    const unusedItems = [...(library?.items ?? [])];
+    const generatedVideoAsset = mediaPack?.assets.find((asset) => asset.kind === 'video' && asset.video_uri);
+    const generatedImageAsset = mediaPack?.assets.find((asset) => asset.kind === 'image' && asset.image_data_url);
+
+    const claimLibraryItem = (sceneId: Scene) => {
+      const keywords = SCENE_MEDIA_HINTS[sceneId];
+      const matchIndex = unusedItems.findIndex((item) => {
+        const haystack = [item.title, item.subtitle, ...(item.tags ?? [])].join(' ').toLowerCase();
+        return keywords.some((keyword) => haystack.includes(keyword));
+      });
+
+      if (matchIndex >= 0) {
+        return unusedItems.splice(matchIndex, 1)[0];
+      }
+
+      if (sceneId === 'hook' || sceneId === 'swipe1') {
+        return unusedItems.shift() ?? null;
+      }
+
+      return null;
+    };
+
+    return (['hook', 'swipe1', 'swipe2', 'swipe3', 'challenge', 'reward'] as Scene[]).reduce(
+      (acc, sceneId) => {
+        const beat = beatsByScene[sceneId];
+        if (!beat) {
+          acc[sceneId] = {
+            scene: sceneId,
+            mode: 'placeholder',
+            title: 'Scene unavailable',
+            subtitle: 'Missing beat',
+            body: '',
+            source_label: 'Designed fallback',
+          };
+          return acc;
+        }
+
+        const libraryItem = claimLibraryItem(sceneId);
+        if (libraryItem) {
+          acc[sceneId] = buildStageFromResolvedMedia(sceneId, beat, libraryItem);
+          return acc;
+        }
+
+        if ((sceneId === 'hook' || sceneId === 'reward') && generatedVideoAsset) {
+          acc[sceneId] = buildStageFromGeneratedAsset(sceneId, beat, generatedVideoAsset);
+          return acc;
+        }
+
+        if (sceneId !== 'challenge' && generatedImageAsset) {
+          acc[sceneId] = buildStageFromGeneratedAsset(sceneId, beat, generatedImageAsset);
+          return acc;
+        }
+
+        acc[sceneId] = buildPlaceholderStage(beat);
+        return acc;
+      },
+      {} as Record<Scene, EpisodeSceneStage>
+    );
+  }, [episodeBeats, library?.items, mediaPack?.assets]);
+  const activeSceneStage = useMemo(() => sceneStages[scene] ?? null, [sceneStages, scene]);
 
   const hasCuratedButNoMatch =
     Boolean(library) && (library.total_items ?? 0) > 0 && (library.matched_items ?? 0) === 0;
@@ -279,8 +447,8 @@ export function BingeFeedView(props: {
       ? 'Scene pack ready'
       : 'Ready';
   const featuredBackdrop = useMemo(() => {
-    return activeMedia?.thumbnail_url || imageAsset?.image_data_url || '';
-  }, [activeMedia?.thumbnail_url, imageAsset?.image_data_url]);
+    return activeSceneStage?.poster_url || activeSceneStage?.image_url || activeMedia?.thumbnail_url || imageAsset?.image_data_url || '';
+  }, [activeSceneStage?.poster_url, activeSceneStage?.image_url, activeMedia?.thumbnail_url, imageAsset?.image_data_url]);
   const routeSummary = useMemo(() => {
     if (!library?.context) return null;
     return `${library.context.intake_complete ? 'post-intake' : 'pre-intake'} / ${library.context.intent || 'all intents'} / ${library.context.focus || 'all focuses'} / ${library.context.pace || 'all paces'}`;
@@ -350,12 +518,6 @@ export function BingeFeedView(props: {
   };
 
   const loadCuratedLibrary = async () => {
-    if (isFreeTier) {
-      setLibrary(null);
-      setLibraryError(null);
-      setLibraryLoading(false);
-      return;
-    }
     setLibraryLoading(true);
     setLibraryError(null);
     try {
@@ -406,7 +568,7 @@ export function BingeFeedView(props: {
 
   useEffect(() => {
     load();
-    if (!isFreeTier) loadCuratedLibrary();
+    loadCuratedLibrary();
   }, [isFreeTier, targetSkill]);
 
   useEffect(() => {
@@ -418,12 +580,12 @@ export function BingeFeedView(props: {
   }, [isFreeTier, playlistEpisodeId]);
 
   useEffect(() => {
-    if (!activeMedia?.embed_url) {
+    if (!activeSceneStage || activeSceneStage.mode === 'placeholder') {
       setEmbedLoading(false);
       return;
     }
     setEmbedLoading(true);
-  }, [activeMedia?.id, activeMedia?.embed_url]);
+  }, [activeSceneStage]);
 
   useEffect(() => {
     if (!props.isAdminUser && mode !== 'client') setMode('client');
@@ -653,7 +815,7 @@ export function BingeFeedView(props: {
           </div>
           <div className="mt-3 text-sm leading-relaxed text-gray-600">
             {isFreeTier
-              ? 'This playlist stays fixed for free users so the journey feels simple and demo-ready.'
+              ? 'This playlist stays fixed for free users, but the cinematic stage still loads so the demo feels like a real episode.'
               : inferEpisodeFocus(targetSkill)}
           </div>
         </div>
@@ -701,7 +863,7 @@ export function BingeFeedView(props: {
               <p>{activeBeat?.aside ?? inferEpisodeFocus(targetSkill)}</p>
               <p>
                 {isFreeTier
-                  ? 'Free access stays concise: one fixed playlist, one challenge, one clear upgrade path.'
+                  ? 'Free access keeps the learning path fixed, but the sample cinematic stage still shows how an episode is meant to feel.'
                   : 'The player keeps the production machinery hidden so the user only sees the lesson, not the apparatus.'}
               </p>
             </div>
@@ -711,14 +873,14 @@ export function BingeFeedView(props: {
                 {targetSkill || 'A foundational AI behavior tied to your next career move.'}
               </div>
             </div>
-            {!isFreeTier && activeMedia && (
+            {activeSceneStage && (
               <div className="border-t border-black/10 pt-4">
                 <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Featured scene</div>
                 <div className="mt-3 text-lg font-editorial italic leading-tight">
-                  {activeMedia.title || 'Cinematic scene'}
+                  {activeSceneStage.title || 'Cinematic scene'}
                 </div>
-                {activeMedia.subtitle && (
-                  <div className="mt-2 text-sm leading-relaxed text-gray-600">{activeMedia.subtitle}</div>
+                {activeSceneStage.subtitle && (
+                  <div className="mt-2 text-sm leading-relaxed text-gray-600">{activeSceneStage.subtitle}</div>
                 )}
               </div>
             )}
@@ -762,21 +924,23 @@ export function BingeFeedView(props: {
                   </div>
                 </div>
 
-                {!isFreeTier && activeMedia?.embed_url ? (
+                {activeSceneStage?.mode === 'video' && activeSceneStage.embed_url ? (
                   <div ref={mediaStageRef} className="relative overflow-hidden border border-[#314f56] bg-black">
-                    {activeMedia.platform_resolved === 'direct' ? (
+                    {(activeSceneStage.platform_label || '').toLowerCase() === 'direct' ||
+                    (activeSceneStage.embed_url || '').startsWith('https://storage.googleapis.com') ||
+                    (activeSceneStage.embed_url || '').startsWith('/demo-media/') ? (
                       <video
                         controls
                         preload="metadata"
-                        src={activeMedia.embed_url}
-                        poster={activeMedia.thumbnail_url || undefined}
+                        src={activeSceneStage.embed_url}
+                        poster={activeSceneStage.poster_url || undefined}
                         onLoadedData={() => setEmbedLoading(false)}
                         className="w-full aspect-[10/13] object-cover md:aspect-[16/10]"
                       />
                     ) : (
                       <iframe
-                        src={activeMedia.embed_url}
-                        title={activeMedia.title || 'Episode scene'}
+                        src={activeSceneStage.embed_url}
+                        title={activeSceneStage.title || 'Episode scene'}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                         loading="eager"
@@ -793,12 +957,39 @@ export function BingeFeedView(props: {
                       </div>
                     )}
                   </div>
+                ) : activeSceneStage?.mode === 'image' && activeSceneStage.image_url ? (
+                  <div
+                    ref={mediaStageRef}
+                    className="relative overflow-hidden border border-[#314f56] bg-[#07151a]"
+                  >
+                    <div
+                      className="aspect-[10/13] w-full bg-cover bg-center md:aspect-[16/10]"
+                      style={{ backgroundImage: `url(${activeSceneStage.image_url})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#061319] via-[#061319]/25 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
+                      <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">{activeSceneStage.source_label}</div>
+                      <div className="mt-2 text-lg font-editorial italic text-[#eef4f2]">{activeSceneStage.subtitle}</div>
+                    </div>
+                  </div>
                 ) : (
-                  <div className={`relative overflow-hidden border p-6 md:p-8 ${toneClassName(activeBeat?.tone ?? 'teaching')}`}>
-                    <div className="max-w-2xl">
-                      <div className="text-[10px] uppercase tracking-[0.22em] opacity-70">{activeBeat?.label ?? 'Beat'}</div>
-                      <div className="mt-4 text-3xl md:text-4xl font-editorial italic leading-[1.02]">
-                        {scene === 'reward' ? episode.reward_asset : activeBeat?.body}
+                  <div className="relative overflow-hidden border border-[#314f56] bg-[#08171b] p-6 md:p-8">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(38,200,188,0.18),rgba(8,23,27,0.96)_58%)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.02),transparent_42%,rgba(255,255,255,0.04)_100%)]" />
+                    <div className="relative max-w-2xl">
+                      <div className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#b7cacc]">
+                        <span>{activeSceneStage?.source_label || 'Designed fallback'}</span>
+                        <span className="text-brand-teal">{activeBeat?.label ?? 'Beat'}</span>
+                      </div>
+                      <div className="mt-5 text-3xl md:text-4xl font-editorial italic leading-[1.02] text-[#eef5f1]">
+                        {activeSceneStage?.title || (scene === 'reward' ? episode.reward_asset : activeBeat?.body)}
+                      </div>
+                      <div className="mt-4 max-w-xl text-sm leading-7 text-[#b7cacc]">
+                        {activeSceneStage?.body || activeBeat?.body}
+                      </div>
+                      <div className="mt-8 grid max-w-xl gap-3 border-t border-white/10 pt-4 text-xs uppercase tracking-[0.22em] text-[#8ea3a7] sm:grid-cols-2">
+                        <div>Placeholder still ready</div>
+                        <div>{activeSceneStage?.subtitle || 'Awaiting mapped media'}</div>
                       </div>
                     </div>
                   </div>
@@ -904,15 +1095,16 @@ export function BingeFeedView(props: {
                 {nextBeat?.body ?? 'Move into your plan or next episode to continue the arc.'}
               </div>
             </section>
-            {!isFreeTier && activeMedia && (
+            {!isFreeTier && activeSceneStage && (
               <section className="border border-black/10 bg-white p-5 md:p-6">
                 <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Scene companion</div>
                 <div className="mt-3 text-lg font-editorial italic leading-tight">
-                  {activeMedia.title || 'Related scene'}
+                  {activeSceneStage.title || 'Related scene'}
                 </div>
-                {activeMedia.subtitle && (
-                  <div className="mt-3 text-sm leading-relaxed text-gray-600">{activeMedia.subtitle}</div>
+                {activeSceneStage.subtitle && (
+                  <div className="mt-3 text-sm leading-relaxed text-gray-600">{activeSceneStage.subtitle}</div>
                 )}
+                <div className="mt-3 text-xs uppercase tracking-[0.18em] text-black/40">{activeSceneStage.source_label}</div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -921,14 +1113,16 @@ export function BingeFeedView(props: {
                   >
                     Return to stage
                   </button>
-                  <a
-                    href={activeMedia.open_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-2 border border-black/10 text-[10px] uppercase tracking-[0.22em] hover-border-brand-teal"
-                  >
-                    Open full scene
-                  </a>
+                  {activeSceneStage.open_url ? (
+                    <a
+                      href={activeSceneStage.open_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-2 border border-black/10 text-[10px] uppercase tracking-[0.22em] hover-border-brand-teal"
+                    >
+                      Open full scene
+                    </a>
+                  ) : null}
                 </div>
               </section>
             )}

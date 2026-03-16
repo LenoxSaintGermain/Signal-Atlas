@@ -140,20 +140,18 @@ Deliver end-to-end journeys for all four test users with evidence-backed accepta
 
 ## Execution Order for Demo Readiness
 
-1. Complete `MTL-01` fixtures to lock repeatable test runs.
-2. Close `MTL-02` routing so each persona sees the correct primary journey.
-3. Validate `MTL-04` episode routing against TU1, TU3, and TU4.
-4. Validate shipped `MTL-05` on TU2 and tune output quality.
-5. Validate `MTL-06` for Derrick's constrained free-tier experience.
-6. Finish the remaining `MTL-07` mobile pass before production demo freeze.
-7. Run the voice validation pass with Gemini Live enabled and Sesame off.
-8. Capture final persona proof evidence using the admin harness.
-9. Capture proof for shipped `MTL-10` across TU1, TU3, and TU4 so the final Episodes demo uses the client-facing cinematic player rather than the operator BTS surface.
-10. Capture proof for shipped `MTL-11`, especially queued-job processing, retry, manifest review, and operator/client boundary checks.
-11. Capture proof for shipped `MTL-12`, especially approval, human follow-up routing, and telemetry review in the control plane.
-12. Implement `MTL-13` so persona rehearsal and investor-demo testing no longer depend on manual login, reset, and state-recovery steps.
-13. Capture persona proof for shipped `MTL-15` so public Smart Start entry and booking review are demonstrated, not just implemented.
-14. Capture persona proof for shipped `MTL-14` so each new Lucid tile is exercised during demo rehearsal rather than remaining unvalidated surface area.
+1. Validate `MTL-04` episode routing against TU1, TU3, and TU4.
+2. Validate shipped `MTL-05` on TU2 and tune output quality.
+3. Validate `MTL-06` for Derrick's constrained free-tier experience.
+4. Finish the remaining `MTL-07` mobile pass before production demo freeze.
+5. Run the voice validation pass with Gemini Live enabled and Sesame off.
+6. Capture final persona proof evidence using the admin harness.
+7. Capture proof for shipped `MTL-10` across TU1, TU3, and TU4 so the final Episodes demo uses the client-facing cinematic player rather than the operator BTS surface.
+8. Capture proof for shipped `MTL-11`, especially queued-job processing, retry, manifest review, and operator/client boundary checks.
+9. Capture proof for shipped `MTL-12`, especially approval, human follow-up routing, and telemetry review in the control plane.
+10. Capture proof for shipped `MTL-13` so persona rehearsal and investor-demo testing are demonstrated, not merely available.
+11. Capture persona proof for shipped `MTL-15` so public Smart Start entry and booking review are demonstrated, not just implemented.
+12. Capture persona proof for shipped `MTL-14` so each new Lucid tile is exercised during demo rehearsal rather than remaining unvalidated surface area.
 
 ## Current Implementation Notes
 

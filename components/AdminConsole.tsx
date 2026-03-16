@@ -258,35 +258,35 @@ const PROMPT_OVERLAY_FIELDS = [
     eyebrow: 'Suite generation',
     label: 'Suite prompt appendix',
     description: 'Use for additional system guidance that should affect suite-wide artifact generation.',
-    minHeight: 'min-h-[144px]',
+    minHeight: 'min-h-20',
   },
   {
     key: 'binge_appendix',
     eyebrow: 'Episodes',
     label: 'Binge prompt appendix',
     description: 'Steers the episode rail and learning-session tone without changing the rest of the suite.',
-    minHeight: 'min-h-[144px]',
+    minHeight: 'min-h-20',
   },
   {
     key: 'rom_appendix',
     eyebrow: 'Core ROM',
     label: 'Core ROM overlay',
     description: 'Appends operator posture to the core counselor model when the base ROM needs stronger instruction.',
-    minHeight: 'min-h-[144px]',
+    minHeight: 'min-h-20',
   },
   {
     key: 'live_appendix',
     eyebrow: 'Live voice and video',
     label: 'Live voice / video overlay',
     description: 'Applies only to the live interaction layer for Gemini Live and operator-facing voice behaviors.',
-    minHeight: 'min-h-[144px]',
+    minHeight: 'min-h-20',
   },
   {
     key: 'art_director_appendix',
     eyebrow: 'Art direction',
     label: 'Art director overlay',
     description: 'Controls higher-touch creative framing for visuals, cinematic assets, and experiential scenes.',
-    minHeight: 'min-h-[176px]',
+    minHeight: 'min-h-20',
   },
 ] as const;
 
@@ -398,11 +398,11 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4">
-      <header className="space-y-2">
-        <div className="text-[10px] uppercase tracking-[0.26em] text-brand-teal">{eyebrow}</div>
-        <h3 className="text-[26px] font-editorial italic leading-none text-[#08161a] md:text-[30px]">{title}</h3>
-        <p className="max-w-3xl text-sm leading-6 text-black/58">{description}</p>
+    <section className="space-y-2">
+      <header className="flex items-baseline gap-3">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{eyebrow}</span>
+        <h3 className="text-sm font-editorial italic leading-tight text-[#08161a]">{title}</h3>
+        <span className="hidden text-[10px] leading-tight text-black/45 sm:inline">{description}</span>
       </header>
       {children}
     </section>
@@ -423,17 +423,15 @@ function Panel({
   dense?: boolean;
 }) {
   return (
-    <section className="overflow-hidden border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,247,241,0.98))] shadow-[0_24px_54px_-42px_rgba(0,0,0,0.32)]">
-      <div className={`border-b border-black/10 ${dense ? 'px-4 py-3' : 'px-5 py-4 md:px-6'}`}>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="space-y-1">
-            {eyebrow ? <div className="text-[10px] uppercase tracking-[0.2em] text-brand-teal">{eyebrow}</div> : null}
-            <h4 className="text-xl font-editorial leading-tight text-[#09161a]">{title}</h4>
-          </div>
-          {meta ? <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">{meta}</div> : null}
+    <section className="overflow-hidden border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,247,241,0.98))]">
+      <div className="flex items-center justify-between gap-2 border-b border-black/10 px-3 py-1.5">
+        <div className="flex items-baseline gap-2">
+          {eyebrow ? <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal">{eyebrow}</span> : null}
+          <h4 className="text-xs font-editorial leading-tight text-[#09161a]">{title}</h4>
         </div>
+        {meta ? <span className="text-[9px] uppercase tracking-[0.16em] text-black/40">{meta}</span> : null}
       </div>
-      <div className={dense ? 'p-4' : 'p-5 md:p-6'}>{children}</div>
+      <div className="p-2.5">{children}</div>
     </section>
   );
 }
@@ -454,18 +452,18 @@ function MetricCard({
 }) {
   return (
     <article
-      className={`border p-4 ${
+      className={`border px-2.5 py-1.5 ${
         inverted
           ? 'border-white/12 bg-white/6 text-white'
           : 'border-black/10 bg-[#fbf8f1] text-[#09161a]'
       }`}
     >
-      <div className={`text-[10px] uppercase tracking-[0.24em] ${inverted ? 'text-brand-teal' : 'text-brand-teal'}`}>
+      <div className={`text-[9px] uppercase tracking-[0.18em] ${inverted ? 'text-brand-teal' : 'text-brand-teal'}`}>
         {eyebrow}
       </div>
-      <div className="mt-3 text-2xl font-editorial leading-tight">{title}</div>
-      <p className={`mt-2 text-sm leading-relaxed ${inverted ? 'text-white/70' : 'text-black/60'}`}>{body}</p>
-      <div className={`mt-4 text-[10px] uppercase tracking-[0.22em] ${inverted ? 'text-white/50' : 'text-black/40'}`}>
+      <div className="mt-0.5 text-sm font-editorial leading-tight">{title}</div>
+      <p className={`mt-0.5 text-[11px] leading-snug ${inverted ? 'text-white/70' : 'text-black/60'}`}>{body}</p>
+      <div className={`mt-0.5 text-[9px] uppercase tracking-[0.16em] ${inverted ? 'text-white/50' : 'text-black/40'}`}>
         {meta}
       </div>
     </article>
@@ -482,10 +480,10 @@ function AdminStatCard({
   detail?: string;
 }) {
   return (
-    <div className="border border-black/8 bg-white/62 px-3 py-3 shadow-[0_14px_32px_-28px_rgba(0,0,0,0.22)]">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">{label}</div>
-      <div className="mt-2 text-2xl font-editorial leading-none text-[#09161a]">{value}</div>
-      {detail ? <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-black/35">{detail}</div> : null}
+    <div className="border border-black/8 bg-white/62 px-2 py-1">
+      <div className="text-[9px] uppercase tracking-[0.16em] text-black/40">{label}</div>
+      <div className="text-sm font-editorial leading-none text-[#09161a]">{value}</div>
+      {detail ? <div className="text-[9px] uppercase tracking-[0.14em] text-black/35">{detail}</div> : null}
     </div>
   );
 }
@@ -530,7 +528,7 @@ function TextAreaField({
   label,
   value,
   onChange,
-  minHeight = 'min-h-24',
+  minHeight = 'min-h-16',
 }: {
   label: string;
   value: string;
@@ -595,12 +593,10 @@ function ToggleField({
   hint?: string;
 }) {
   return (
-    <label className="flex items-start gap-3 border border-black/10 bg-[#fcfbf7] px-4 py-3 text-sm">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-1" />
-      <span className="space-y-1">
-        <span className="block text-[#09161a]">{label}</span>
-        {hint ? <span className="block text-xs leading-5 text-black/55">{hint}</span> : null}
-      </span>
+    <label className="flex items-center gap-2 border border-black/10 bg-[#fcfbf7] px-2.5 py-1.5 text-xs">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="text-[#09161a]">{label}</span>
+      {hint ? <span className="text-[10px] text-black/45">{hint}</span> : null}
     </label>
   );
 }
@@ -615,10 +611,12 @@ function GuideCard({
   description: string;
 }) {
   return (
-    <article className="border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,244,236,0.98))] px-4 py-4 shadow-[0_18px_42px_-34px_rgba(0,0,0,0.22)]">
-      <div className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{eyebrow}</div>
-      <h5 className="mt-3 text-lg font-editorial leading-tight text-[#09161a]">{title}</h5>
-      <p className="mt-2 text-sm leading-6 text-black/58">{description}</p>
+    <article className="border border-black/10 bg-[#fcfbf7] px-2.5 py-1.5">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal">{eyebrow}</span>
+        <span className="text-xs font-editorial leading-tight text-[#09161a]">{title}</span>
+      </div>
+      <p className="text-[11px] leading-snug text-black/50">{description}</p>
     </article>
   );
 }
@@ -635,13 +633,13 @@ function FieldCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-black/10 bg-[#fcfbf7] p-4 shadow-[0_16px_36px_-32px_rgba(0,0,0,0.2)]">
-      <div className="space-y-2">
-        {eyebrow ? <div className="text-[10px] uppercase tracking-[0.2em] text-brand-teal">{eyebrow}</div> : null}
-        <div className="text-base font-editorial leading-tight text-[#09161a]">{title}</div>
-        {description ? <p className="text-sm leading-6 text-black/56">{description}</p> : null}
+    <div className="border border-black/10 bg-[#fcfbf7] p-2">
+      <div className="flex items-baseline gap-2">
+        {eyebrow ? <span className="text-[9px] uppercase tracking-[0.16em] text-brand-teal">{eyebrow}</span> : null}
+        <span className="text-xs font-editorial leading-tight text-[#09161a]">{title}</span>
+        {description ? <span className="hidden text-[10px] text-black/45 lg:inline" title={description}>{description}</span> : null}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }
@@ -673,7 +671,7 @@ function ChipToggleGroup({
               key={option.value}
               type="button"
               onClick={() => onToggle(option.value)}
-              className={`border px-3 py-3 text-left transition-colors ${
+              className={`border px-3 py-2 text-left transition-colors ${
                 active
                   ? 'border-brand-teal bg-brand-soft text-brand-teal'
                   : 'border-black/10 bg-white text-[#09161a] hover:border-brand-teal'
@@ -718,7 +716,7 @@ function OrderedListField({
           values.map((value, index) => {
             const option = optionMap.get(value);
             return (
-              <div key={`${value}-${index}`} className="flex items-center gap-3 border border-black/10 bg-white px-3 py-3">
+              <div key={`${value}-${index}`} className="flex items-center gap-3 border border-black/10 bg-white px-3 py-2">
                 <div className="w-7 text-[10px] uppercase tracking-[0.18em] text-black/35">{String(index + 1).padStart(2, '0')}</div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-[#09161a]">
@@ -1224,98 +1222,74 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     if (!overview) return null;
     return (
       <SectionShell {...sectionCopy.summary}>
-        <section className="relative overflow-hidden border border-[#08242a] bg-[radial-gradient(circle_at_top,_rgba(27,208,191,0.16),_transparent_36%),linear-gradient(145deg,#041117_0%,#08242a_56%,#07181d_100%)] p-5 text-white shadow-[0_32px_80px_-52px_rgba(0,0,0,0.52)] md:p-6">
-          <div className="space-y-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl space-y-2">
-                <div className="text-[10px] uppercase tracking-[0.26em] text-brand-teal">Operating Surface</div>
-                <h3 className="text-3xl font-editorial italic leading-none md:text-[42px]">
-                  Premium operator visibility without the clutter.
-                </h3>
-                <p className="text-sm leading-6 text-white/72">
-                  Runtime target, approval load, library posture, and agent policy are kept here as a compact control
-                  layer so the actual editing surfaces stay focused.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[10px] uppercase tracking-[0.18em] text-white/70 sm:min-w-[18rem] lg:grid-cols-3">
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  Gemini {runtime.gemini_configured ? 'configured' : 'missing'}
-                </div>
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  Sesame {runtime.sesame_configured ? 'configured' : 'missing'}
-                </div>
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  ElevenLabs{' '}
-                  {runtime.elevenlabs_api_configured
-                    ? 'configured'
-                    : runtime.elevenlabs_agent_configured
-                      ? 'agent only'
-                      : 'missing'}
-                </div>
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  Manus {runtime.manus_configured ? 'configured' : 'missing'}
-                </div>
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  Storage {runtime.storage_bucket ? 'wired' : 'unset'}
-                </div>
-                <div className="border border-white/10 bg-white/5 px-3 py-3">
-                  Voice {configSummary.voice_enabled ? 'enabled' : 'disabled'}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3">
-              {overviewCards.map((card) => (
-                <MetricCard
-                  key={card.eyebrow}
-                  eyebrow={card.eyebrow}
-                  title={card.title}
-                  body={card.body}
-                  meta={card.meta}
-                  inverted
-                />
-              ))}
-            </div>
+        <section className="border border-[#08242a] bg-[linear-gradient(145deg,#041117_0%,#08242a_56%,#07181d_100%)] px-3 py-2 text-white">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] uppercase tracking-[0.16em] text-white/65">
+            <span className="text-brand-teal font-editorial text-xs">Operating Surface</span>
+            {[
+              { label: 'Gemini', ok: runtime.gemini_configured },
+              { label: 'Sesame', ok: runtime.sesame_configured },
+              { label: 'ElevenLabs', ok: runtime.elevenlabs_api_configured || runtime.elevenlabs_agent_configured },
+              { label: 'Manus', ok: runtime.manus_configured },
+              { label: 'Storage', ok: !!runtime.storage_bucket },
+              { label: 'Voice', ok: configSummary.voice_enabled },
+            ].map((svc) => (
+              <span key={svc.label} className="inline-flex items-center gap-1">
+                <span className={`h-1.5 w-1.5 rounded-full ${svc.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                {svc.label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-1.5 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-1.5">
+            {overviewCards.map((card) => (
+              <MetricCard
+                key={card.eyebrow}
+                eyebrow={card.eyebrow}
+                title={card.title}
+                body={card.body}
+                meta={card.meta}
+                inverted
+              />
+            ))}
           </div>
         </section>
 
-        <div className="grid gap-5">
-          <Panel title="Runtime identity" eyebrow="Environment" meta={`ROM ${runtime.rom_version}`}>
-            <div className="grid gap-4">
-              <div className="space-y-3 border border-black/10 bg-[#f8faf8] p-4">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">API origin</div>
-                <div className="break-all font-mono text-xs text-gray-700">{apiOrigin}</div>
-              </div>
-              <div className="space-y-2 border border-black/10 bg-[#f8faf8] p-4 text-sm text-gray-700">
-                <div>{runtime.service_name}</div>
-                <div>{runtime.project_id}</div>
-                <div>{runtime.region}</div>
-              </div>
-              <div className="space-y-2 border border-black/10 bg-[#f8faf8] p-4 text-sm text-gray-700">
-                <div>Firestore: {runtime.firestore_database_id}</div>
-                <div>Bucket: {runtime.storage_bucket || 'not configured'}</div>
-                <div>Revision: {runtime.revision}</div>
-              </div>
-              <div className="space-y-2 border border-black/10 bg-[#f8faf8] p-4 text-sm text-gray-700">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Admin access</div>
-                <div>
-                  {runtime.admin_email_mode === 'allowlist'
-                    ? `${runtime.admin_email_count} allowlisted admin emails control access.`
-                    : 'Open admin mode is active because no ADMIN_EMAILS allowlist is configured.'}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-2">
+          <details className="border border-black/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,247,241,0.98))]">
+            <summary className="flex cursor-pointer items-center justify-between px-3 py-1.5 text-xs">
+              <span className="flex items-baseline gap-2">
+                <span className="text-[9px] uppercase tracking-[0.16em] text-brand-teal">Env</span>
+                <span className="font-editorial text-[#09161a]">Runtime identity</span>
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">ROM {runtime.rom_version}</span>
+            </summary>
+            <div className="grid grid-cols-2 gap-1 border-t border-black/8 p-2 text-[11px] text-gray-700">
+              {[
+                { label: 'API', value: apiOrigin, full: true },
+                { label: 'Service', value: runtime.service_name },
+                { label: 'Project', value: runtime.project_id },
+                { label: 'Region', value: runtime.region },
+                { label: 'Revision', value: runtime.revision },
+                { label: 'Firestore', value: runtime.firestore_database_id },
+                { label: 'Bucket', value: runtime.storage_bucket || 'not set' },
+                { label: 'Admin', value: runtime.admin_email_mode === 'allowlist' ? `${runtime.admin_email_count} emails` : 'open' },
+              ].map((item) => (
+                <div key={item.label} className={`border border-black/6 bg-[#f8faf8] px-2 py-1 ${(item as any).full ? 'col-span-2' : ''}`}>
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-black/40">{item.label}</span>{' '}
+                  <span className="break-all font-mono">{item.value}</span>
                 </div>
-              </div>
+              ))}
             </div>
-          </Panel>
+          </details>
 
           <Panel title="Live posture" eyebrow="Signals" meta={`${queue.pending_count} pending`}>
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <div className="mb-3 text-[10px] uppercase tracking-[0.18em] text-black/45">Service toggles</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="mb-1 text-[9px] uppercase tracking-[0.14em] text-black/40">Services</div>
+                <div className="flex flex-wrap gap-1">
                   {serviceStates.map((item) => (
                     <span
                       key={item.label}
-                      className={`inline-flex border px-3 py-2 text-[10px] uppercase tracking-[0.18em] ${signalTone(
+                      className={`inline-flex border px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] ${signalTone(
                         item.active
                       )}`}
                     >
@@ -1325,12 +1299,12 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 </div>
               </div>
               <div>
-                <div className="mb-3 text-[10px] uppercase tracking-[0.18em] text-black/45">Prompt layers</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="mb-1 text-[9px] uppercase tracking-[0.14em] text-black/40">Prompts</div>
+                <div className="flex flex-wrap gap-1">
                   {promptStates.map((item) => (
                     <span
                       key={item.label}
-                      className={`inline-flex border px-3 py-2 text-[10px] uppercase tracking-[0.18em] ${signalTone(
+                      className={`inline-flex border px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] ${signalTone(
                         item.active
                       )}`}
                     >
@@ -1343,70 +1317,62 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </Panel>
         </div>
 
-        <div className="grid gap-5">
-          <Panel title="Approval rail preview" eyebrow="Admin Queue" meta={`${queue.items.length} visible items`}>
-            <div className="space-y-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-2">
+          <Panel title="Approval rail" eyebrow="Queue" meta={`${queue.items.length} items`}>
+            <div className="max-h-[240px] space-y-1 overflow-y-auto">
               {queue.warning ? (
-                <div className="border border-amber-500/30 bg-amber-500/8 p-4 text-sm text-amber-800">
-                  Queue visibility is partially unavailable: {queue.warning}
+                <div className="border border-amber-500/30 bg-amber-500/8 px-2.5 py-1.5 text-[11px] text-amber-800">
+                  {queue.warning}
                 </div>
               ) : null}
               {queue.items.length === 0 ? (
-                <div className="border border-black/10 bg-[#f8faf8] p-4 text-sm text-gray-600">
-                  No pending approvals across client ledgers.
+                <div className="border border-black/10 bg-[#f8faf8] px-2.5 py-1.5 text-[11px] text-gray-600">
+                  No pending approvals.
                 </div>
               ) : (
-                queue.items.slice(0, 3).map((item) => (
-                  <article
+                queue.items.map((item) => (
+                  <div
                     key={`${item.client_uid || 'client'}-${item.id}`}
-                    className="space-y-3 border border-black/10 bg-[#fbfcfa] p-4"
+                    title={item.summary}
+                    className="flex items-center gap-2 border border-black/10 bg-[#fbfcfa] px-2 py-1"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="text-[10px] uppercase tracking-[0.22em] text-black/45">
-                          {item.client_name || item.client_email || item.client_uid || 'Unknown client'}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-[0.18em] text-black/35">
-                          {labelize(item.source || item.type)}
-                        </div>
-                      </div>
-                      <span
-                        className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${statusTone(
-                          item.status
-                        )}`}
-                      >
-                        {labelize(item.status)}
-                      </span>
-                    </div>
-                    <h5 className="text-lg font-editorial leading-tight">{item.title}</h5>
-                    <p className="text-sm leading-6 text-gray-700">{item.summary}</p>
-                  </article>
+                    <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-black/40">
+                      {item.client_name || item.client_uid || '—'}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                      {item.title}
+                    </span>
+                    <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] ${statusTone(item.status)}`}>
+                      {labelize(item.status)}
+                    </span>
+                  </div>
                 ))
               )}
             </div>
           </Panel>
 
-          <Panel title="Active staff registry" eyebrow="Policy" meta={`${agents.count} roles`}>
-            <div className="space-y-3">
-              {agents.items.slice(0, 4).map((agent) => (
-                <article key={agent.role_id} className="space-y-3 border border-black/10 bg-[#fbfcfa] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.22em] text-black/45">{agent.role_id}</div>
-                      <h5 className="mt-2 text-lg font-editorial leading-tight">{agent.title}</h5>
-                    </div>
-                    <span
-                      className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
-                        agent.approval_required
-                          ? 'border-amber-500/25 bg-amber-50 text-amber-800'
-                          : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
-                      }`}
-                    >
-                      {agent.approval_required ? 'approval required' : 'direct execution'}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-6 text-gray-700">{agent.objective}</p>
-                </article>
+          <Panel title="Staff registry" eyebrow="Policy" meta={`${agents.count} roles`}>
+            <div className="max-h-[240px] space-y-0.5 overflow-y-auto">
+              {agents.items.map((agent) => (
+                <div
+                  key={agent.role_id}
+                  title={agent.objective}
+                  className="flex h-10 items-center gap-2 border border-black/10 bg-[#fbfcfa] px-2"
+                >
+                  <span className="w-24 shrink-0 truncate text-[9px] uppercase tracking-[0.14em] text-black/40">
+                    {agent.role_id}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                    {agent.title}
+                  </span>
+                  <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] ${
+                    agent.approval_required
+                      ? 'border-amber-500/25 bg-amber-50 text-amber-800'
+                      : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
+                  }`}>
+                    {agent.approval_required ? 'approval' : 'direct'}
+                  </span>
+                </div>
               ))}
             </div>
           </Panel>
@@ -2077,7 +2043,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                           : prev
                       )
                     }
-                    className="min-h-[176px] w-full border border-black/10 bg-white p-3 text-sm leading-relaxed outline-none transition-colors focus:border-brand-teal"
+                    className="min-h-20 w-full border border-black/10 bg-white p-2 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
                   />
                 </FieldCard>
 
@@ -2217,17 +2183,17 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               <div className="border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700">{mediaPipelineError}</div>
             ) : null}
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1.5 xl:grid-cols-4">
               {[
                 { label: 'Total jobs', value: pipelineSummary?.total_jobs ?? 0, meta: `${pipelineSummary?.completed_jobs ?? 0} completed` },
-                { label: 'Needs review', value: pipelineSummary?.manifests_needing_review ?? 0, meta: `${pipelineSummary?.retry_requested_jobs ?? 0} retries requested` },
-                { label: 'Reusable gaps', value: pipelineSummary?.reusable_gap_count ?? 0, meta: `${pipelineSummary?.bespoke_gap_count ?? 0} bespoke gaps` },
+                { label: 'Needs review', value: pipelineSummary?.manifests_needing_review ?? 0, meta: `${pipelineSummary?.retry_requested_jobs ?? 0} retries` },
+                { label: 'Reusable gaps', value: pipelineSummary?.reusable_gap_count ?? 0, meta: `${pipelineSummary?.bespoke_gap_count ?? 0} bespoke` },
                 { label: 'Queue health', value: pipelineSummary?.queued_jobs ?? 0, meta: `${pipelineSummary?.worker_ready_jobs ?? 0} worker ready` },
               ].map((card) => (
-                <div key={card.label} className="border border-black/10 bg-[#fbfcfa] p-4">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">{card.label}</div>
-                  <div className="mt-3 text-3xl font-editorial italic leading-none text-[#09161a]">{card.value}</div>
-                  <div className="mt-2 text-xs text-black/55">{card.meta}</div>
+                <div key={card.label} className="border border-black/10 bg-[#fbfcfa] px-2.5 py-1.5">
+                  <div className="text-[9px] uppercase tracking-[0.14em] text-black/40">{card.label}</div>
+                  <div className="text-base font-editorial italic leading-none text-[#09161a]">{card.value}</div>
+                  <div className="text-[10px] text-black/50">{card.meta}</div>
                 </div>
               ))}
             </div>
@@ -2940,15 +2906,14 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   key={preset.id}
                   type="button"
                   onClick={() => applyVoicePreset(preset)}
-                  className={`border p-4 text-left transition-all ${
+                  className={`border px-2.5 py-1.5 text-left transition-all ${
                     active
-                      ? 'border-brand-teal bg-brand-soft shadow-[0_16px_32px_-24px_rgba(0,0,0,0.32)]'
+                      ? 'border-brand-teal bg-brand-soft'
                       : 'border-black/10 bg-[#fcfcfb] hover:border-brand-teal'
                   }`}
                 >
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Voice preset</div>
-                  <div className="mt-2 text-xl font-editorial italic leading-tight">{preset.label}</div>
-                  <div className="mt-2 text-xs leading-5 text-gray-600">{preset.summary}</div>
+                  <div className="text-xs font-editorial italic leading-tight">{preset.label}</div>
+                  <div className="text-[10px] leading-snug text-gray-500">{preset.summary}</div>
                 </button>
               );
             })}
@@ -2972,22 +2937,23 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               return (
                 <article
                   key={lane.id}
-                  className={`border p-4 ${
+                  className={`border px-2.5 py-1.5 ${
                     isSelected
-                      ? 'border-brand-teal bg-brand-soft shadow-[0_16px_32px_-24px_rgba(0,0,0,0.32)]'
+                      ? 'border-brand-teal bg-brand-soft'
                       : 'border-black/10 bg-[#fcfcfb]'
                   }`}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">{stateLabel}</div>
-                      <div className="mt-2 text-xl font-editorial italic leading-tight">{lane.label}</div>
-                      <div className="mt-2 text-xs leading-5 text-gray-600">{lane.summary}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-baseline gap-2 min-w-0">
+                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isSelected ? 'bg-brand-teal' : 'bg-black/15'}`} />
+                      <span className="text-xs font-editorial italic leading-tight truncate">{lane.label}</span>
+                      <span className="text-[9px] uppercase tracking-[0.12em] text-black/40">{stateLabel}</span>
                     </div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">
-                      {isSelected ? 'current lane' : 'not selected'}
-                    </div>
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-black/35 shrink-0">
+                      {isSelected ? 'active' : ''}
+                    </span>
                   </div>
+                  <div className="ml-3.5 text-[10px] leading-snug text-gray-500">{lane.summary}</div>
                   {lane.id === 'sesame' ? (
                     <div className="mt-4">
                       <ToggleField
@@ -3681,111 +3647,90 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           </Panel>
 
           <Panel title="Approval rail" eyebrow="Queue" meta={`${queue.pending_count} pending`}>
-            <div className="space-y-3">
+            <div className="max-h-[320px] space-y-1 overflow-y-auto">
               {queue.warning ? (
-                <div className="border border-amber-500/30 bg-amber-500/8 p-4 text-sm text-amber-800">
-                  Queue visibility is partially unavailable: {queue.warning}
+                <div className="border border-amber-500/30 bg-amber-500/8 px-2.5 py-1.5 text-[11px] text-amber-800">
+                  {queue.warning}
                 </div>
               ) : null}
               {queue.items.length === 0 ? (
-                <div className="border border-black/10 bg-[#f8faf8] p-4 text-sm text-gray-600">
-                  No pending approvals across client ledgers.
+                <div className="border border-black/10 bg-[#f8faf8] px-2.5 py-1.5 text-[11px] text-gray-600">
+                  No pending approvals.
                 </div>
               ) : (
                 queue.items.map((item) => (
-                  <article
+                  <details
                     key={`${item.client_uid || 'client'}-${item.id}`}
-                    className="space-y-3 border border-black/10 bg-[#fbfcfa] p-4"
+                    className="border border-black/10 bg-[#fbfcfa]"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="text-[10px] uppercase tracking-[0.22em] text-black/45">
-                          {item.client_name || item.client_email || item.client_uid || 'Unknown client'}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-[0.18em] text-black/35">
-                          {labelize(item.source || item.type)}
-                        </div>
-                      </div>
-                      <span
-                        className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${statusTone(
-                          item.status
-                        )}`}
-                      >
+                    <summary className="flex h-10 cursor-pointer items-center gap-2 px-2 text-[11px]">
+                      <span className="text-[9px] text-black/30">&#9656;</span>
+                      <span className="shrink-0 text-[9px] uppercase tracking-[0.12em] text-black/40">
+                        {item.client_name || item.client_uid || '—'}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate font-editorial text-[#09161a]">{item.title}</span>
+                      <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${statusTone(item.status)}`}>
                         {labelize(item.status)}
                       </span>
+                    </summary>
+                    <div className="border-t border-black/6 px-2 py-1.5 text-[11px] space-y-1">
+                      <div className="text-[9px] uppercase tracking-[0.1em] text-black/35">{labelize(item.source || item.type)}</div>
+                      <p className="text-black/65 leading-snug">{item.summary}</p>
+                      {item.next_actions.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {item.next_actions.slice(0, 2).map((action) => (
+                            <div key={action} className="border border-black/6 bg-white px-2 py-1 text-[10px] text-gray-700">
+                              {action}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
-                    <h5 className="text-xl font-editorial leading-tight">{item.title}</h5>
-                    <p className="text-sm leading-6 text-gray-700">{item.summary}</p>
-                    {item.next_actions.length > 0 ? (
-                      <div className="grid gap-2">
-                        {item.next_actions.slice(0, 2).map((action) => (
-                          <div key={action} className="border border-black/8 bg-white px-3 py-2 text-sm text-gray-700">
-                            {action}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </article>
+                  </details>
                 ))
               )}
             </div>
           </Panel>
 
           <Panel title="Agent registry" eyebrow="Staff" meta={`${agents.write_scope_count} write scopes`}>
-            <div className="space-y-3">
+            <div className="max-h-[400px] space-y-0.5 overflow-y-auto">
               {agents.items.map((agent) => (
-                <article key={agent.role_id} className="space-y-4 border border-black/10 bg-[#fbfcfa] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.22em] text-black/45">{agent.role_id}</div>
-                      <h5 className="mt-2 text-xl font-editorial leading-tight">{agent.title}</h5>
+                <details key={agent.role_id} className="border border-black/10 bg-[#fbfcfa]">
+                  <summary className="flex h-10 cursor-pointer items-center gap-2 px-2 text-[11px]">
+                    <span className="text-[9px] text-black/30">&#9656;</span>
+                    <span className="w-28 shrink-0 truncate text-[9px] uppercase tracking-[0.14em] text-black/45">{agent.role_id}</span>
+                    <span className="min-w-0 flex-1 truncate font-editorial text-[#09161a]">{agent.title}</span>
+                    <span
+                      className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${
+                        agent.approval_required
+                          ? 'border-amber-500/25 bg-amber-50 text-amber-800'
+                          : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
+                      }`}
+                    >
+                      {agent.approval_required ? 'approval' : 'direct'}
+                    </span>
+                  </summary>
+                  <div className="border-t border-black/6 px-2 py-1.5 text-[11px] space-y-1.5">
+                    <p className="text-black/65 leading-snug">{agent.objective}</p>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-[9px] uppercase tracking-[0.12em] text-black/40">R:</span>
+                      {agent.reads.map((scope) => (
+                        <span key={scope} className="border border-black/10 bg-white px-1.5 py-0.5 text-[9px] uppercase tracking-[0.1em] text-black/60">
+                          {shortScope(scope)}
+                        </span>
+                      ))}
+                      <span className="ml-2 text-[9px] uppercase tracking-[0.12em] text-black/40">W:</span>
+                      {agent.writes.map((scope) => (
+                        <span key={scope} className="border border-brand-teal/25 bg-brand-soft px-1.5 py-0.5 text-[9px] uppercase tracking-[0.1em] text-brand-teal">
+                          {shortScope(scope)}
+                        </span>
+                      ))}
                     </div>
-                    <div className="space-y-2 text-right">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">{agent.policy_version}</div>
-                      <span
-                        className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
-                          agent.approval_required
-                            ? 'border-amber-500/25 bg-amber-50 text-amber-800'
-                            : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
-                        }`}
-                      >
-                        {agent.approval_required ? 'approval required' : 'direct execution'}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-6 text-gray-700">{agent.objective}</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Read scope</div>
-                      <div className="flex flex-wrap gap-2">
-                        {agent.reads.map((scope) => (
-                          <span
-                            key={scope}
-                            className="border border-black/12 bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-black/65"
-                          >
-                            {shortScope(scope)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Write scope</div>
-                      <div className="flex flex-wrap gap-2">
-                        {agent.writes.map((scope) => (
-                          <span
-                            key={scope}
-                            className="border border-brand-teal/25 bg-brand-soft px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-brand-teal"
-                          >
-                            {shortScope(scope)}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="text-[9px] uppercase tracking-[0.12em] text-black/40">
+                      {agent.policy_version} · {labelize(agent.access_model)}
                     </div>
                   </div>
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">
-                    Access model: {labelize(agent.access_model)}
-                  </div>
-                </article>
+                </details>
               ))}
             </div>
           </Panel>
@@ -3826,167 +3771,144 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-3">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] xl:flex xl:flex-col">
-          <div className="border-b border-black/10 p-5">
-            <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">Admin OS</div>
-            <div className="mt-3 text-[32px] font-editorial italic leading-none text-[#08161a]">Control rail.</div>
-            <p className="mt-3 text-sm leading-6 text-black/56">
-              Use the rail to change lanes. Keep the metrics in the main canvas where they can breathe.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
-                {loading ? 'Loading' : 'Live config'}
-              </span>
-              <span
-                className={`inline-flex border px-3 py-2 text-[10px] uppercase tracking-[0.18em] ${
-                  hasUnsavedChanges
-                    ? 'border-amber-500/25 bg-amber-50 text-amber-800'
-                    : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
-                }`}
-              >
-                {hasUnsavedChanges ? 'Unsaved changes' : 'Saved state'}
-              </span>
-            </div>
+      <div className="relative grid h-[94vh] w-full max-w-[1440px] grid-cols-1 overflow-hidden border border-black/10 bg-[#f3efe6] shadow-[0_40px_120px_-56px_rgba(0,0,0,0.58)] xl:grid-cols-[56px_minmax(0,1fr)]">
+        <aside className="group/rail hidden min-h-0 border-r border-black/10 bg-[linear-gradient(180deg,rgba(244,240,231,0.98),rgba(239,233,223,0.98))] transition-all duration-200 xl:flex xl:w-14 xl:flex-col xl:hover:w-56 xl:hover:shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
+          <div className="border-b border-black/10 px-2 py-2">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-brand-teal">OS</div>
+            <span
+              className={`mt-1 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.14em] ${
+                hasUnsavedChanges
+                  ? 'border-amber-500/25 bg-amber-50 text-amber-800'
+                  : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
+              }`}
+            >
+              {hasUnsavedChanges ? '!' : ''}
+            </span>
           </div>
 
-          <nav className="min-h-0 flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
+          <nav className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
+            <div className="space-y-1">
               {navSections.map((section, index) => (
                 <button
                   key={section.id}
                   type="button"
                   onClick={() => setActiveSection(section.id)}
                   disabled={saving}
-                  className={`w-full border px-4 py-3 text-left transition-all ${
+                  aria-label={section.title}
+                  className={`flex w-full items-center gap-2 border px-2 py-1.5 text-left transition-all ${
                     activeSection === section.id
-                      ? 'border-[#08242a] bg-[#08242a] text-white shadow-[0_18px_36px_-28px_rgba(0,0,0,0.45)]'
-                      : 'border-black/10 bg-white/72 text-[#09161a] hover:border-black/20'
+                      ? 'border-[#08242a] bg-[#08242a] text-white'
+                      : 'border-transparent bg-transparent text-[#09161a] hover:border-black/10 hover:bg-white/60'
                   } disabled:cursor-not-allowed disabled:opacity-55`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div
-                        className={`text-[10px] uppercase tracking-[0.24em] ${
-                          activeSection === section.id ? 'text-brand-teal' : 'text-black/38'
-                        }`}
-                      >
-                        {String(index + 1).padStart(2, '0')} {section.shortLabel}
-                      </div>
-                      <div className="mt-2 text-[18px] font-editorial leading-tight">{section.title}</div>
-                    </div>
-                    <span
-                      className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${
-                        activeSection === section.id ? 'bg-brand-teal' : 'bg-black/10'
-                      }`}
-                    />
-                  </div>
+                  <span
+                    className={`shrink-0 text-[10px] font-mono ${
+                      activeSection === section.id ? 'text-brand-teal' : 'text-black/35'
+                    }`}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="hidden truncate text-[11px] font-editorial leading-tight group-hover/rail:inline">
+                    {section.shortLabel}
+                  </span>
                 </button>
               ))}
             </div>
           </nav>
 
-          <div className="border-t border-black/10 p-4">
-            <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Operator save rail</div>
-            <div className="mt-2 text-sm leading-6 text-black/56">
-              Save only when the active rail and the control-tower summary match the intended runtime posture.
-            </div>
-            <div className="mt-4 grid gap-2">
-              <button
-                onClick={requestReload}
-                disabled={loading || saving}
-                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black disabled:opacity-30"
-              >
-                Reload
-              </button>
-              <button
-                onClick={save}
-                disabled={!isReady || saving || !hasUnsavedChanges}
-                className="btn-brand px-5 py-3 text-[10px] uppercase tracking-[0.25em] transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Saving…' : 'Save Config'}
-              </button>
-              <button
-                onClick={onClose}
-                className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black"
-              >
-                Close
-              </button>
-            </div>
+          <div className="border-t border-black/10 px-1.5 py-2 space-y-1">
+            <button
+              onClick={requestReload}
+              disabled={loading || saving}
+              aria-label="Reload"
+              className="w-full border border-black/10 bg-white px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-black/60 transition-colors hover:border-black/20 disabled:opacity-30"
+            >
+              <span className="group-hover/rail:hidden">R</span>
+              <span className="hidden group-hover/rail:inline">Reload</span>
+            </button>
+            <button
+              onClick={save}
+              disabled={!isReady || saving || !hasUnsavedChanges}
+              aria-label="Save"
+              className="btn-brand w-full px-2 py-1 text-[9px] uppercase tracking-[0.18em] transition-colors disabled:opacity-50"
+            >
+              <span className="group-hover/rail:hidden">{saving ? '…' : 'S'}</span>
+              <span className="hidden group-hover/rail:inline">{saving ? 'Saving…' : 'Save'}</span>
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-full border border-black/10 bg-white px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-black/60 transition-colors hover:border-black/20"
+            >
+              <span className="group-hover/rail:hidden">X</span>
+              <span className="hidden group-hover/rail:inline">Close</span>
+            </button>
           </div>
         </aside>
 
         <div className="min-w-0 flex min-h-0 flex-col">
-          <header className="border-b border-black/10 bg-[rgba(245,242,233,0.94)] px-3 py-3 backdrop-blur md:px-4 md:py-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <div className="text-[10px] uppercase tracking-[0.28em] text-brand-teal">
-                  Admin OS · {sectionMeta.eyebrow} · {String(sectionIndex + 1).padStart(2, '0')}
-                </div>
-                <h2 className="text-[28px] font-editorial italic leading-none text-[#08161a] md:text-[36px]">
+          <header className="border-b border-black/10 bg-[rgba(245,242,233,0.94)] px-3 py-1.5 backdrop-blur">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal shrink-0">
+                  {String(sectionIndex + 1).padStart(2, '0')}
+                </span>
+                <h2 className="truncate text-sm font-editorial italic leading-tight text-[#08161a]">
                   {sectionMeta.title}
                 </h2>
-                <p className="max-w-4xl text-sm leading-6 text-black/60">{sectionMeta.description}</p>
+                <div className="hidden items-baseline gap-3 lg:flex">
+                  {shellStats.map((card) => (
+                    <span key={card.label} className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                      <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">{card.label}</span>
+                      <span className="text-xs font-editorial text-[#09161a]">{card.value}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
-                  {loading ? 'Loading' : 'Live config'}
-                </span>
-                <span className="inline-flex border border-black/10 bg-white/72 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-black/55">
-                  Revision {overview?.runtime.revision ?? '—'}
-                </span>
+              <div className="flex items-center gap-1.5 shrink-0">
                 <span
-                  className={`inline-flex border px-3 py-2 text-[10px] uppercase tracking-[0.18em] ${
+                  className={`inline-flex border px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] ${
                     hasUnsavedChanges
                       ? 'border-amber-500/25 bg-amber-50 text-amber-800'
                       : 'border-emerald-500/25 bg-emerald-50 text-emerald-800'
                   }`}
                 >
-                  {hasUnsavedChanges ? 'Unsaved changes' : 'Saved state'}
+                  {hasUnsavedChanges ? 'unsaved' : 'saved'}
                 </span>
                 <button
                   onClick={onClose}
-                  className="border border-black/10 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black xl:hidden"
+                  aria-label="Close admin"
+                  className="border border-black/10 bg-white px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] text-black/60 transition-colors hover:border-black/20 hover:text-black xl:hidden"
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              {shellStats.map((card) => (
-                <AdminStatCard key={card.label} label={card.label} value={card.value} detail={card.detail} />
-              ))}
-            </div>
-
-            <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 xl:hidden">
+            <nav className="mt-1 flex gap-1 overflow-x-auto xl:hidden">
               {navSections.map((section, index) => (
                 <button
                   key={section.id}
                   type="button"
                   onClick={() => setActiveSection(section.id)}
                   disabled={saving}
-                  className={`whitespace-nowrap border px-3 py-2.5 text-left transition-all ${
+                  className={`whitespace-nowrap border px-2 py-0.5 text-left transition-all ${
                     activeSection === section.id
-                      ? 'border-[#08242a] bg-[#08242a] text-white shadow-[0_16px_30px_-24px_rgba(0,0,0,0.45)]'
+                      ? 'border-[#08242a] bg-[#08242a] text-white'
                       : 'border-black/10 bg-white text-[#09161a] hover:border-black/20'
                   } disabled:cursor-not-allowed disabled:opacity-55`}
                 >
-                  <div
-                    className={`text-[10px] uppercase tracking-[0.24em] ${
-                      activeSection === section.id ? 'text-brand-teal' : 'text-black/40'
-                    }`}
-                  >
-                    {String(index + 1).padStart(2, '0')} {section.shortLabel}
-                  </div>
-                  <div className="mt-2 text-sm font-editorial leading-tight">{section.title}</div>
+                  <span className={`text-[9px] uppercase tracking-[0.16em] ${activeSection === section.id ? 'text-brand-teal' : 'text-black/40'}`}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>{' '}
+                  <span className="text-[10px] font-editorial">{section.shortLabel}</span>
                 </button>
               ))}
             </nav>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-8 md:px-5 md:py-5 md:pb-10">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 pb-4">
           {loading ? (
             <div className="text-[10px] uppercase tracking-[0.3em] opacity-40 animate-pulse">Loading…</div>
           ) : null}
@@ -4015,30 +3937,22 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           ) : null}
           </div>
 
-          <footer className="border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-4 py-3 backdrop-blur md:px-5 xl:hidden">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-[0.22em] text-black/40">Operator save rail</div>
-                <div className="text-sm text-black/58">
-                  Save only after the current section and the control tower read match the intended operating posture.
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
+          <footer className="border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-3 py-1 backdrop-blur xl:hidden">
+            <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={requestReload}
                   disabled={loading || saving}
-                  className="border border-black/10 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-black/60 transition-colors hover:border-black/20 hover:text-black disabled:opacity-30"
+                  className="border border-black/10 bg-white px-3 py-1 text-[9px] uppercase tracking-[0.16em] text-black/60 transition-colors hover:border-black/20 hover:text-black disabled:opacity-30"
                 >
                   Reload
                 </button>
                 <button
                   onClick={save}
                   disabled={!isReady || saving || !hasUnsavedChanges}
-                  className="btn-brand px-5 py-3 text-[10px] uppercase tracking-[0.25em] transition-colors disabled:opacity-50"
+                  className="btn-brand px-4 py-1 text-[9px] uppercase tracking-[0.18em] transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Saving…' : 'Save Config'}
+                  {saving ? 'Saving…' : 'Save'}
                 </button>
-              </div>
             </div>
           </footer>
         </div>
