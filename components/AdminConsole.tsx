@@ -1833,700 +1833,405 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
   const renderMedia = () => {
     if (!config) return null;
     const pipelineSummary = mediaPipeline?.summary;
+    const activeLibraryCount = config.media.curated_library.filter((i) => i.enabled).length;
+
+    /* ── filter chip helper (used across all taxonomy groups in sidebar) ── */
+    const mediaFilterChip = (
+      itemIndex: number,
+      item: CuratedMediaItem,
+      value: string,
+      active: boolean,
+      toggle: () => void,
+    ) => (
+      <button
+        key={value}
+        type="button"
+        onClick={toggle}
+        className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] border transition-colors ${
+          active
+            ? 'border-brand-teal bg-brand-soft text-brand-teal'
+            : 'border-black/10 hover:border-brand-teal'
+        }`}
+      >
+        {labelize(value)}
+      </button>
+    );
+
     return (
       <SectionShell {...sectionCopy.media}>
-        <Panel title="Pipeline monitor" eyebrow="Operator boundary" meta="Lineage stays operator-only">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2 border border-black/10 bg-[#f8faf8] px-2.5 py-1.5">
-              <span className="text-[10px] text-black/50">Operator surface — queue state, prompts, retries stay here.</span>
-              <button
-                type="button"
-                onClick={refreshMediaPipeline}
-                disabled={mediaPipelineBusyKey !== null}
-                className="border border-black/15 px-2.5 py-1 text-[9px] uppercase tracking-[0.16em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-              >
-                Refresh
-              </button>
-            </div>
-
-            {mediaPipelineError ? (
-              <div className="border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700">{mediaPipelineError}</div>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-1.5 xl:grid-cols-4">
-              {[
-                { label: 'Total jobs', value: pipelineSummary?.total_jobs ?? 0, meta: `${pipelineSummary?.completed_jobs ?? 0} completed` },
-                { label: 'Needs review', value: pipelineSummary?.manifests_needing_review ?? 0, meta: `${pipelineSummary?.retry_requested_jobs ?? 0} retries` },
-                { label: 'Reusable gaps', value: pipelineSummary?.reusable_gap_count ?? 0, meta: `${pipelineSummary?.bespoke_gap_count ?? 0} bespoke` },
-                { label: 'Queue health', value: pipelineSummary?.queued_jobs ?? 0, meta: `${pipelineSummary?.worker_ready_jobs ?? 0} worker ready` },
-              ].map((card) => (
-                <div key={card.label} className="border border-black/10 bg-[#fbfcfa] px-2.5 py-1.5">
-                  <div className="text-[9px] uppercase tracking-[0.14em] text-black/40">{card.label}</div>
-                  <div className="text-base admin-mono leading-none text-[#09161a]">{card.value}</div>
-                  <div className="text-[10px] text-black/50">{card.meta}</div>
-                </div>
-              ))}
-            </div>
-
-            {mediaPipeline?.warnings?.length ? (
-              <div className="border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                {mediaPipeline.warnings.slice(0, 2).join(' | ')}
-              </div>
-            ) : null}
+        {/* ── Operator boundary bar + metric cards ── */}
+        <div className="flex items-center justify-between gap-2 border border-black/10 bg-[#f8faf8] px-2.5 py-1">
+          <div className="flex items-center gap-3">
+            <span className="admin-mono text-[9px] uppercase tracking-[0.16em] text-brand-teal">Pipeline Monitor</span>
+            <span className="admin-body text-[10px] italic text-black/45">Queue state, prompts, retries stay here.</span>
           </div>
-        </Panel>
-
-        <div className="grid gap-2">
-          <Panel title="Media routing stack" eyebrow="Generation" meta="Primary configuration">
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-              <SelectField
-                label="Image model"
-                value={config.media.image_model}
-                options={GEMINI_IMAGE_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, image_model: value } } : prev))
-                }
-              />
-              <SelectField
-                label="Video model"
-                value={config.media.video_model}
-                options={GEMINI_VIDEO_MODEL_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onChange={(value) =>
-                  setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, video_model: value } } : prev))
-                }
-              />
-              <TextField
-                label="Image aspect ratio"
-                value={config.media.image_aspect_ratio}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, media: { ...prev.media, image_aspect_ratio: value } } : prev
-                  )
-                }
-              />
-              <TextField
-                label="Video aspect ratio"
-                value={config.media.video_aspect_ratio}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, media: { ...prev.media, video_aspect_ratio: value } } : prev
-                  )
-                }
-              />
-              <TextField
-                label="Video duration (seconds)"
-                type="number"
-                min={4}
-                max={12}
-                value={config.media.video_duration_seconds}
-                onChange={(value) =>
-                  setConfig((prev) =>
-                    prev
-                      ? { ...prev, media: { ...prev.media, video_duration_seconds: Number(value) } }
-                      : prev
-                  )
-                }
-              />
-              <TextField
-                label="Narrative lens"
-                value={config.media.narrative_lens}
-                onChange={(value) =>
-                  setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, narrative_lens: value } } : prev))
-                }
-              />
-            </div>
-            <div className="mt-1.5 text-[10px] text-black/45">
-              Episodes generate one image + one video route per pack. Backend scene-asset plan is a follow-up.
-            </div>
-          </Panel>
-
-          <Panel title="Media posture" eyebrow="Operator switches" meta={`${config.media.curated_library.length} library items`}>
-            <div className="grid gap-1.5">
-              <ToggleField
-                checked={config.media.enabled}
-                onChange={(checked) =>
-                  setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, enabled: checked } } : prev))
-                }
-                label="Agentic media enabled"
-                hint="Global kill switch for generated media."
-              />
-              <ToggleField
-                checked={config.media.external_media_enabled}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, media: { ...prev.media, external_media_enabled: checked } } : prev
-                  )
-                }
-                label="External media library enabled"
-                hint="Allows curated video routes from YouTube, Vimeo, and partner channels."
-              />
-              <ToggleField
-                checked={config.media.video_generate_audio}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, media: { ...prev.media, video_generate_audio: checked } } : prev
-                  )
-                }
-                label="Generate video audio"
-                hint="Includes narration or ambient audio in bespoke video jobs."
-              />
-              <ToggleField
-                checked={config.media.auto_generate_on_episode}
-                onChange={(checked) =>
-                  setConfig((prev) =>
-                    prev ? { ...prev, media: { ...prev.media, auto_generate_on_episode: checked } } : prev
-                  )
-                }
-                label="Auto-generate on episode load"
-                hint="Triggers new media jobs as soon as the episode rail needs them."
-              />
-            </div>
-          </Panel>
+          <div className="flex items-center gap-2">
+            <span className="admin-mono text-[9px] text-black/35">Lineage stays operator-only</span>
+            <button
+              type="button"
+              onClick={refreshMediaPipeline}
+              disabled={mediaPipelineBusyKey !== null}
+              className="border border-black/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
-        <Panel title="Recent pipeline jobs" eyebrow="Queue watch" meta={`${mediaPipeline?.jobs.length ?? 0} recent jobs`}>
-          <div className="space-y-1">
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={processMediaQueueNow}
-                disabled={mediaPipelineBusyKey === 'process:queue'}
-                className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-              >
-                {mediaPipelineBusyKey === 'process:queue' ? 'Processing…' : 'Run queue now'}
-              </button>
+        {mediaPipelineError ? (
+          <div className="border border-red-500/20 bg-red-50 px-3 py-1.5 text-xs text-red-700">{mediaPipelineError}</div>
+        ) : null}
+
+        <div className="grid grid-cols-4 gap-1">
+          {[
+            { label: 'Total jobs', value: pipelineSummary?.total_jobs ?? 0, meta: `${pipelineSummary?.completed_jobs ?? 0} completed` },
+            { label: 'Needs review', value: pipelineSummary?.manifests_needing_review ?? 0, meta: `${pipelineSummary?.retry_requested_jobs ?? 0} retries` },
+            { label: 'Reusable gaps', value: pipelineSummary?.reusable_gap_count ?? 0, meta: `${pipelineSummary?.bespoke_gap_count ?? 0} bespoke` },
+            { label: 'Queue health', value: pipelineSummary?.queued_jobs ?? 0, meta: `${pipelineSummary?.worker_ready_jobs ?? 0} worker ready` },
+          ].map((card) => (
+            <div key={card.label} className="border border-black/10 bg-[#fbfcfa] px-2 py-1">
+              <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40">{card.label}</div>
+              <div className="admin-display text-lg leading-none text-[#09161a]">{card.value}</div>
+              <div className="admin-body text-[10px] italic text-black/45">{card.meta}</div>
             </div>
-            {mediaPipeline?.jobs?.length ? (
-              mediaPipeline.jobs.map((job) => {
+          ))}
+        </div>
+
+        {/* ── Collapsible config rows ── */}
+        <div className="space-y-0.5">
+          {/* Routing */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Routing</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Media routing stack</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-2">
+              <div className="grid grid-cols-3 gap-x-3 gap-y-1">
+                <SelectField
+                  label="Image model"
+                  value={config.media.image_model}
+                  options={GEMINI_IMAGE_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+                  onChange={(value) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, image_model: value } } : prev))}
+                />
+                <SelectField
+                  label="Video model"
+                  value={config.media.video_model}
+                  options={GEMINI_VIDEO_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+                  onChange={(value) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, video_model: value } } : prev))}
+                />
+                <TextField
+                  label="Narrative lens"
+                  value={config.media.narrative_lens}
+                  onChange={(value) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, narrative_lens: value } } : prev))}
+                />
+                <TextField label="Image ratio" value={config.media.image_aspect_ratio}
+                  onChange={(value) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, image_aspect_ratio: value } } : prev)} />
+                <TextField label="Video ratio" value={config.media.video_aspect_ratio}
+                  onChange={(value) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, video_aspect_ratio: value } } : prev)} />
+                <StepperField label="Duration" value={Number(config.media.video_duration_seconds) || 6} min={4} max={12} unit="sec"
+                  onChange={(value) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, video_duration_seconds: value } } : prev)} />
+              </div>
+            </div>
+          </details>
+
+          {/* Posture */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Posture</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Operator switches</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{config.media.enabled ? 'ON' : 'OFF'}</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5 grid gap-1">
+              <ToggleField checked={config.media.enabled} label="Agentic media enabled" hint="Global kill switch."
+                onChange={(checked) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, enabled: checked } } : prev))} />
+              <ToggleField checked={config.media.external_media_enabled} label="External media library" hint="Curated routes from YouTube, Vimeo, partners."
+                onChange={(checked) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, external_media_enabled: checked } } : prev)} />
+              <ToggleField checked={config.media.video_generate_audio} label="Generate video audio" hint="Narration or ambient audio."
+                onChange={(checked) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, video_generate_audio: checked } } : prev)} />
+              <ToggleField checked={config.media.auto_generate_on_episode} label="Auto-generate on episode" hint="Triggers jobs when episode rail loads."
+                onChange={(checked) => setConfig((prev) => prev ? { ...prev, media: { ...prev.media, auto_generate_on_episode: checked } } : prev)} />
+            </div>
+          </details>
+
+          {/* Style */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Style</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Art direction</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-2 grid grid-cols-2 gap-2">
+              <TextAreaField label="Image style direction" value={config.media.image_style} minHeight="min-h-16"
+                onChange={(value) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, image_style: value } } : prev))} />
+              <TextAreaField label="Video style direction" value={config.media.video_style} minHeight="min-h-16"
+                onChange={(value) => setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, video_style: value } } : prev))} />
+            </div>
+          </details>
+
+          {/* Pipeline jobs */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Jobs</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Recent pipeline jobs</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{mediaPipeline?.jobs.length ?? 0} jobs</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5 space-y-1">
+              <div className="flex gap-1.5">
+                <button type="button" onClick={processMediaQueueNow} disabled={mediaPipelineBusyKey === 'process:queue'}
+                  className="border border-black/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] text-[#09161a] hover:border-brand-teal disabled:opacity-50">
+                  {mediaPipelineBusyKey === 'process:queue' ? 'Processing…' : 'Run queue now'}
+                </button>
+              </div>
+              {mediaPipeline?.jobs?.length ? mediaPipeline.jobs.map((job) => {
                 const retryKey = `retry:${job.client_uid}:${job.job_id}`;
                 const processKey = `process:${job.client_uid}:${job.job_id}`;
                 return (
-                  <article key={`${job.client_uid}-${job.job_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
-                          {job.client_name || 'Client'} · {job.episode_id || 'episode'}
-                        </div>
-                        <div className="text-lg admin-display leading-tight text-[#09161a]">Job {job.job_id}</div>
-                        <div className="text-xs text-black/55">
-                          {job.client_email || 'No email'} · {job.runner || 'unknown runner'} · {job.trigger || 'unknown trigger'}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(job.status)}`}>
-                          {job.status.replace(/_/g, ' ')}
-                        </span>
-                        <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(job.review_state)}`}>
-                          {job.review_state.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2 md:grid-cols-5 text-xs text-black/60">
-                      <div>{job.asset_count} assets</div>
-                      <div>{job.queued_asset_count} queued</div>
-                      <div>{job.attempt_count} attempts</div>
-                      <div>{job.retry_requested_count} retries requested</div>
-                      <div>{job.updated_at ? new Date(job.updated_at).toLocaleString() : 'No update time'}</div>
-                    </div>
-
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {job.assets.map((asset, index) => (
-                        <div key={`${job.job_id}-${asset.kind}-${index}`} className="border border-black/10 bg-white px-3 py-3 text-xs text-black/60">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="uppercase tracking-[0.18em] text-black/40">{asset.kind}</span>
-                            <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(asset.status)}`}>
-                              {asset.status}
-                            </span>
-                          </div>
-                          <div className="mt-2 font-mono text-[11px] text-[#09161a]">{asset.model || 'unknown model'}</div>
-                          {asset.storage_path ? <div className="mt-1 font-mono text-[10px] text-black/45">{asset.storage_path}</div> : null}
-                          {asset.note ? <div className="mt-2 leading-5">{humanizePipelineAssetNote(asset.note, asset.kind)}</div> : null}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => processMediaJob(job.client_uid, job.job_id)}
-                        disabled={mediaPipelineBusyKey === processKey || !job.worker_ready}
-                        className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-                      >
-                        {mediaPipelineBusyKey === processKey ? 'Processing…' : 'Process now'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => retryMediaJob(job.client_uid, job.job_id)}
-                        disabled={mediaPipelineBusyKey === retryKey}
-                        className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-                      >
-                        {mediaPipelineBusyKey === retryKey ? 'Requesting…' : 'Request retry'}
-                      </button>
-                    </div>
-                  </article>
+                  <div key={`${job.client_uid}-${job.job_id}`} className="flex items-center gap-2 border border-black/8 bg-white px-2 py-1">
+                    <span className="admin-mono text-[10px] text-[#09161a] min-w-0 flex-1 truncate">
+                      {job.client_name || 'Client'} · {job.episode_id || 'ep'} · {job.asset_count} assets
+                    </span>
+                    <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] ${mediaPipelineTone(job.status)}`}>
+                      {job.status.replace(/_/g, ' ')}
+                    </span>
+                    <button type="button" onClick={() => processMediaJob(job.client_uid, job.job_id)}
+                      disabled={mediaPipelineBusyKey === processKey || !job.worker_ready}
+                      className="admin-mono text-[8px] text-brand-teal hover:underline disabled:opacity-40">run</button>
+                    <button type="button" onClick={() => retryMediaJob(job.client_uid, job.job_id)}
+                      disabled={mediaPipelineBusyKey === retryKey}
+                      className="admin-mono text-[8px] text-black/40 hover:underline disabled:opacity-40">retry</button>
+                  </div>
                 );
-              })
-            ) : (
-              <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
-                No media jobs have been captured yet.
-              </div>
-            )}
-          </div>
-        </Panel>
+              }) : (
+                <div className="admin-body text-[10px] italic text-black/40 py-1">No media jobs captured yet.</div>
+              )}
+            </div>
+          </details>
 
-        <Panel title="Manifest review" eyebrow="Client-safe output" meta={`${mediaPipeline?.manifests.length ?? 0} recent manifests`}>
-          <div className="space-y-1">
-            {mediaPipeline?.manifests?.length ? (
-              mediaPipeline.manifests.map((manifest) => (
-                <article key={`${manifest.client_uid}-${manifest.manifest_id}`} className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div className="space-y-1">
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
-                        {manifest.client_name || 'Client'} · {manifest.episode_id || 'episode'}
-                      </div>
-                      <div className="text-lg admin-display leading-tight text-[#09161a]">
-                        Manifest {manifest.manifest_id}
-                      </div>
-                      <div className="text-xs text-black/55">{manifest.client_email || 'No email'}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(manifest.pipeline_status)}`}>
-                        {manifest.pipeline_status.replace(/_/g, ' ')}
-                      </span>
-                      <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(manifest.review_state)}`}>
-                        {manifest.review_state.replace(/_/g, ' ')}
-                      </span>
+          {/* Manifests */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Manifests</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Client-safe output</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{mediaPipeline?.manifests.length ?? 0}</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5 space-y-1">
+              {mediaPipeline?.manifests?.length ? mediaPipeline.manifests.map((manifest) => (
+                <div key={`${manifest.client_uid}-${manifest.manifest_id}`} className="flex items-center gap-2 border border-black/8 bg-white px-2 py-1">
+                  <span className="admin-mono text-[10px] text-[#09161a] min-w-0 flex-1 truncate">
+                    {manifest.client_name || 'Client'} · {manifest.client_payload_asset_count} assets
+                  </span>
+                  <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] ${mediaPipelineTone(manifest.review_state)}`}>
+                    {manifest.review_state.replace(/_/g, ' ')}
+                  </span>
+                  {(['approved', 'needs_review', 'rejected'] as const).map((d) => {
+                    const k = `review:${manifest.client_uid}:${manifest.manifest_id}:${d}`;
+                    return (
+                      <button key={d} type="button" onClick={() => reviewManifest(manifest.client_uid, manifest.manifest_id, d)}
+                        disabled={mediaPipelineBusyKey === k}
+                        className="admin-mono text-[8px] text-black/40 hover:text-brand-teal hover:underline disabled:opacity-40">
+                        {d === 'needs_review' ? 'review' : d}
+                      </button>
+                    );
+                  })}
+                </div>
+              )) : (
+                <div className="admin-body text-[10px] italic text-black/40 py-1">No manifests persisted yet.</div>
+              )}
+            </div>
+          </details>
+        </div>
+
+        {/* ── Two-column: filter sidebar + media table ── */}
+        <div className="flex gap-2 min-h-0">
+          {/* Left filter sidebar — only visible when editing a media item */}
+          {expandedMediaId ? (() => {
+            const idx = config.media.curated_library.findIndex((i) => i.id === expandedMediaId);
+            const item = config.media.curated_library[idx];
+            if (!item) return null;
+            const filterGroups = [
+              { id: 'reusability_scope', label: 'Reuse Scope', values: ['global', 'industry_pack', 'persona_pack', 'client_specific'] },
+              { id: 'status', label: 'Status', values: ['draft', 'approved', 'retired'] },
+              { id: 'usage_rights', label: 'Usage Rights', values: ['owned', 'licensed', 'partner', 'external_embed'] },
+            ];
+            return (
+              <div className="w-56 shrink-0 space-y-2 overflow-y-auto border-r border-black/8 pr-2">
+                {filterGroups.map((group) => (
+                  <div key={group.id}>
+                    <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40 mb-0.5">{group.label}</div>
+                    <div className="flex flex-wrap gap-1">
+                      {group.values.map((v) => {
+                        const active = item.tags.includes(v);
+                        return mediaFilterChip(idx, item, v, active, () =>
+                          updateMediaItem(idx, (prev) => ({
+                            ...prev,
+                            tags: active ? prev.tags.filter((t) => t !== v) : mergeMediaTags(prev.tags, v),
+                          }))
+                        );
+                      })}
                     </div>
                   </div>
+                ))}
 
-                  <div className="grid gap-2 md:grid-cols-4 text-xs text-black/60">
-                    <div>{manifest.client_payload_asset_count} client-visible assets</div>
-                    <div>{manifest.reusable_gap_count} reusable gaps</div>
-                    <div>{manifest.bespoke_gap_count} bespoke gaps</div>
-                    <div>{manifest.updated_at ? new Date(manifest.updated_at).toLocaleString() : 'No update time'}</div>
-                  </div>
-
-                  <div className="grid gap-1.5 md:grid-cols-2">
-                    <div className="border border-black/10 bg-white px-3 py-3">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Image prompt lineage</div>
-                      <div className="mt-2 text-xs leading-5 text-black/60">{manifest.image_prompt || 'No stored image prompt'}</div>
-                    </div>
-                    <div className="border border-black/10 bg-white px-3 py-3">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Video prompt lineage</div>
-                      <div className="mt-2 text-xs leading-5 text-black/60">{manifest.video_prompt || 'No stored video prompt'}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {(['approved', 'needs_review', 'rejected'] as const).map((decision) => {
-                      const actionKey = `review:${manifest.client_uid}:${manifest.manifest_id}:${decision}`;
+                <div>
+                  <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40 mb-0.5">Journey Surfaces</div>
+                  <div className="flex flex-wrap gap-1">
+                    {JOURNEY_SURFACES.map((s) => {
+                      const active = item.surfaces.includes(s);
                       return (
-                        <button
-                          key={decision}
-                          type="button"
-                          onClick={() => reviewManifest(manifest.client_uid, manifest.manifest_id, decision)}
-                          disabled={mediaPipelineBusyKey === actionKey}
-                          className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-                        >
-                          {mediaPipelineBusyKey === actionKey ? 'Saving…' : decision.replace(/_/g, ' ')}
-                        </button>
+                        <button key={s} type="button"
+                          onClick={() => updateMediaItem(idx, (prev) => ({
+                            ...prev,
+                            surfaces: active ? prev.surfaces.filter((x) => x !== s) : [...prev.surfaces, s],
+                          }))}
+                          className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] border transition-colors ${
+                            active ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 hover:border-brand-teal'
+                          }`}>{s}</button>
                       );
                     })}
                   </div>
-                </article>
-              ))
-            ) : (
-              <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
-                No manifests have been persisted yet.
+                </div>
+
+                <div>
+                  <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40 mb-0.5">Intent</div>
+                  <div className="flex flex-wrap gap-1">
+                    {CLIENT_INTENTS.map((v) => {
+                      const active = item.rule.intents.includes(v);
+                      return (
+                        <button key={v} type="button"
+                          onClick={() => updateMediaItem(idx, (prev) => ({
+                            ...prev,
+                            rule: { ...prev.rule, intents: active ? prev.rule.intents.filter((x) => x !== v) : [...prev.rule.intents, v] },
+                          }))}
+                          className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] border transition-colors ${
+                            active ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 hover:border-brand-teal'
+                          }`}>{labelize(v)}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40 mb-0.5">Focus</div>
+                  <div className="flex flex-wrap gap-1">
+                    {FOCUS_PREFS.map((v) => {
+                      const active = item.rule.focuses.includes(v);
+                      return (
+                        <button key={v} type="button"
+                          onClick={() => updateMediaItem(idx, (prev) => ({
+                            ...prev,
+                            rule: { ...prev.rule, focuses: active ? prev.rule.focuses.filter((x) => x !== v) : [...prev.rule.focuses, v] },
+                          }))}
+                          className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] border transition-colors ${
+                            active ? 'border-brand-teal bg-brand-soft text-brand-teal' : 'border-black/10 hover:border-brand-teal'
+                          }`}>{labelize(v)}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Inline edit fields for selected item */}
+                <div className="space-y-1 pt-1 border-t border-black/8">
+                  <TextField label="Title" value={item.title}
+                    onChange={(value) => updateMediaItem(idx, (prev) => ({ ...prev, title: value }))} />
+                  <TextField label="URL" value={item.source_url}
+                    onChange={(value) => updateMediaItem(idx, (prev) => ({ ...prev, source_url: value }))} />
+                  <div className="grid grid-cols-2 gap-1">
+                    <SelectField label="Platform" value={item.platform} options={EXTERNAL_PLATFORMS}
+                      onChange={(value) => updateMediaItem(idx, (prev) => ({ ...prev, platform: (value as MediaPlatform) || 'auto' }))} />
+                    <SelectField label="Audience" value={item.rule.audience} options={AUDIENCES}
+                      onChange={(value) => updateMediaItem(idx, (prev) => ({ ...prev, rule: { ...prev.rule, audience: (value as MediaAudience) || 'all' } }))} />
+                  </div>
+                  <ToggleField checked={item.enabled} label="Enabled"
+                    onChange={(checked) => updateMediaItem(idx, (prev) => ({ ...prev, enabled: checked }))} />
+                  <button type="button" onClick={() => removeMediaItem(idx)}
+                    className="admin-mono text-[9px] uppercase tracking-[0.16em] text-red-600/80 hover:text-red-700">Remove</button>
+                </div>
               </div>
-            )}
-          </div>
-        </Panel>
+            );
+          })() : null}
 
-        <Panel title="Style direction" eyebrow="Art direction" meta="Narrative language">
-          <div className="grid gap-2">
-            <TextAreaField
-              label="Image style direction"
-              value={config.media.image_style}
-              onChange={(value) =>
-                setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, image_style: value } } : prev))
-              }
-              minHeight="min-h-28"
-            />
-            <TextAreaField
-              label="Video style direction"
-              value={config.media.video_style}
-              onChange={(value) =>
-                setConfig((prev) => (prev ? { ...prev, media: { ...prev.media, video_style: value } } : prev))
-              }
-              minHeight="min-h-28"
-            />
-          </div>
-        </Panel>
-
-        <Panel
-          title="Curated media library"
-          eyebrow="External library"
-          meta={config.media.external_media_enabled ? 'enabled' : 'disabled'}
-        >
-          <div className="mb-5 flex flex-col gap-3 border border-black/10 bg-[#f8faf8] p-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Editorial library strategy</div>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-                Keep canonical visuals, channels, and recurring concept assets here so the player reuses premium
-                material before generating bespoke media.
-              </p>
+          {/* Right: media items table */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="admin-mono text-[10px] text-black/50">
+                {config.media.curated_library.length} media items matching filters
+              </span>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={() => { if (expandedMediaId) setExpandedMediaId(null); else if (config.media.curated_library.length) setExpandedMediaId(config.media.curated_library[0].id); }}
+                  className="admin-mono border border-black/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-[#09161a] hover:border-brand-teal">
+                  {expandedMediaId ? 'Close filters' : 'Select all'}
+                </button>
+                <button type="button" onClick={seedStarterMediaPack}
+                  className="admin-mono border border-black/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-[#09161a] hover:border-brand-teal">
+                  Load starter pack
+                </button>
+                <button type="button" onClick={addMediaItem}
+                  className="admin-mono border border-brand-teal/40 bg-brand-soft px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-brand-teal hover:border-brand-teal">
+                  + Add media
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={seedStarterMediaPack}
-                className="border border-black/15 px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal"
-              >
-                Load starter pack
-              </button>
-              <button
-                type="button"
-                onClick={addMediaItem}
-                className="border border-black/15 px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal"
-              >
-                Add media item
-              </button>
-            </div>
-          </div>
 
-          <div className="space-y-1">
+            {/* Table header */}
+            <div className="flex items-center gap-2 border-b border-black/15 px-2 py-1">
+              <span className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/35 w-8">#</span>
+              <span className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/35 flex-1">Title</span>
+              <span className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/35 w-40 hidden sm:block">URL</span>
+              <span className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/35 w-16 text-right">Status</span>
+            </div>
+
             {config.media.curated_library.length === 0 ? (
-              <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
-                No curated items yet. Add the first reusable concept asset, scene, or reference route here.
+              <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-4 text-center admin-body text-[11px] text-black/45 mt-1">
+                No curated items yet. Add media or load starter pack.
               </div>
             ) : (
-              config.media.curated_library.map((item, index) => {
-                const expanded = expandedMediaId === item.id;
-                return (
-                  <article key={item.id || `media-${index}`} className="border border-black/10 bg-[#fbfcfa]">
+              <div className="space-y-0">
+                {config.media.curated_library.map((item, index) => {
+                  const isSelected = expandedMediaId === item.id;
+                  const tags = item.tags.slice(0, 3).map(labelize).join(' · ');
+                  return (
                     <button
+                      key={item.id || `media-${index}`}
                       type="button"
-                      onClick={() => setExpandedMediaId(expanded ? null : item.id)}
-                      className="flex h-10 w-full items-center gap-2 px-2 text-left transition-colors hover:bg-black/[0.015]"
+                      onClick={() => setExpandedMediaId(isSelected ? null : item.id)}
+                      className={`flex w-full items-center gap-2 px-2 py-1.5 text-left border-b border-black/6 transition-colors hover:bg-black/[0.015] ${
+                        isSelected ? 'bg-brand-soft/30 border-l-2 border-l-brand-teal' : ''
+                      }`}
                     >
-                      <span className="text-[9px] text-black/30">&#9656;</span>
-                      <span className="text-[9px] uppercase tracking-[0.12em] text-black/35 shrink-0">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[11px] admin-body leading-tight text-[#09161a]">
-                        {item.title || 'Untitled'}
-                      </span>
-                      <span className="hidden truncate text-[9px] text-black/40 sm:inline">
-                        {item.source_url || ''}
-                      </span>
-                      <span
-                        className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${
-                          item.enabled
-                            ? 'border-brand-teal/25 bg-brand-soft text-brand-teal'
-                            : 'border-black/10 bg-white text-black/45'
-                        }`}
-                      >
+                      <span className="text-[9px] text-black/25 w-3">&#9656;</span>
+                      <span className="admin-mono text-[10px] text-black/30 w-5">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="admin-body text-[12px] text-[#09161a] truncate">{item.title || 'Untitled'}</div>
+                        <div className="admin-mono text-[9px] text-black/35 truncate">
+                          {[item.rule.audience !== 'all' ? labelize(item.rule.audience) : null, item.platform !== 'auto' ? labelize(item.platform) : null, tags].filter(Boolean).join(' · ')}
+                        </div>
+                      </div>
+                      <span className="admin-mono text-[9px] text-black/35 w-40 hidden sm:block truncate">{item.source_url || ''}</span>
+                      <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.1em] ${
+                        item.enabled
+                          ? 'border-brand-teal/25 bg-brand-soft text-brand-teal'
+                          : 'border-black/10 bg-white text-black/45'
+                      }`}>
                         {item.enabled ? 'live' : 'off'}
                       </span>
                     </button>
-
-                    {expanded ? (
-                      <div className="border-t border-black/10 px-2.5 py-2">
-                        <div className="mb-1.5 flex items-center justify-between gap-2">
-                          <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">Controls</span>
-                          <button
-                            type="button"
-                            onClick={() => removeMediaItem(index)}
-                            className="text-[10px] uppercase tracking-[0.2em] text-red-600/80 transition-colors hover:text-red-700"
-                          >
-                            Remove item
-                          </button>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <div className="space-y-2">
-                            <ToggleField
-                              checked={item.enabled}
-                              onChange={(checked) => updateMediaItem(index, (prev) => ({ ...prev, enabled: checked }))}
-                              label="Enabled"
-                              hint="Keeps this route available to the resolver."
-                            />
-                            <TextField
-                              label="Title"
-                              value={item.title}
-                              onChange={(value) => updateMediaItem(index, (prev) => ({ ...prev, title: value }))}
-                            />
-                            <TextField
-                              label="Subtitle"
-                              value={item.subtitle}
-                              onChange={(value) => updateMediaItem(index, (prev) => ({ ...prev, subtitle: value }))}
-                            />
-                            <TextField
-                              label="Video or playlist URL"
-                              value={item.source_url}
-                              onChange={(value) => updateMediaItem(index, (prev) => ({ ...prev, source_url: value }))}
-                              placeholder="https://www.youtube.com/watch?v=... or playlist URL"
-                            />
-                            <div className="grid gap-2">
-                              <SelectField
-                                label="Platform"
-                                value={item.platform}
-                                options={EXTERNAL_PLATFORMS}
-                                onChange={(value) =>
-                                  updateMediaItem(index, (prev) => ({
-                                    ...prev,
-                                    platform: (value as MediaPlatform) || 'auto',
-                                  }))
-                                }
-                              />
-                              <SelectField
-                                label="Source type"
-                                value={item.source_kind}
-                                options={SOURCE_KINDS}
-                                onChange={(value) =>
-                                  updateMediaItem(index, (prev) => ({
-                                    ...prev,
-                                    source_kind: (value as MediaSourceKind) || 'single',
-                                  }))
-                                }
-                              />
-                              <TextField
-                                label="Priority"
-                                type="number"
-                                min={1}
-                                max={999}
-                                value={item.priority}
-                                onChange={(value) =>
-                                  updateMediaItem(index, (prev) => ({
-                                    ...prev,
-                                    priority: Number(value || 100),
-                                  }))
-                                }
-                              />
-                              <SelectField
-                                label="Audience"
-                                value={item.rule.audience}
-                                options={AUDIENCES}
-                                onChange={(value) =>
-                                  updateMediaItem(index, (prev) => ({
-                                    ...prev,
-                                    rule: {
-                                      ...prev.rule,
-                                      audience: (value as MediaAudience) || 'all',
-                                    },
-                                  }))
-                                }
-                              />
-                            </div>
-                            <TextField
-                              label="Thumbnail URL"
-                              value={item.thumbnail_url}
-                              onChange={(value) =>
-                                updateMediaItem(index, (prev) => ({ ...prev, thumbnail_url: value }))
-                              }
-                            />
-                            <TextField
-                              label="Tags (comma separated)"
-                              value={item.tags.join(', ')}
-                              onChange={(value) =>
-                                updateMediaItem(index, (prev) => ({
-                                  ...prev,
-                                  tags: value
-                                    .split(',')
-                                    .map((entry) => entry.trim())
-                                    .filter(Boolean),
-                                }))
-                              }
-                            />
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">
-                                Taxonomy shortcuts
-                              </div>
-                              <div className="space-y-1 border border-black/10 bg-white p-3">
-                                {MEDIA_LIBRARY_TAXONOMY_GROUPS.map((group) => (
-                                  <div key={group.id} className="space-y-2">
-                                    <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">
-                                      {group.label}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {group.values.map((value) => {
-                                        const active = item.tags.includes(value);
-                                        return (
-                                          <button
-                                            key={value}
-                                            type="button"
-                                            onClick={() =>
-                                              updateMediaItem(index, (prev) => ({
-                                                ...prev,
-                                                tags: active
-                                                  ? prev.tags.filter((entry) => entry !== value)
-                                                  : mergeMediaTags(prev.tags, value),
-                                              }))
-                                            }
-                                            className={`px-3 py-2 text-[10px] uppercase tracking-[0.16em] border transition-colors ${
-                                              active
-                                                ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                                                : 'border-black/10 hover:border-brand-teal'
-                                            }`}
-                                          >
-                                            {labelize(value)}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Journey surfaces</div>
-                              <div className="flex flex-wrap gap-2">
-                                {JOURNEY_SURFACES.map((surface) => {
-                                  const active = item.surfaces.includes(surface);
-                                  return (
-                                    <button
-                                      key={surface}
-                                      type="button"
-                                      onClick={() =>
-                                        updateMediaItem(index, (prev) => ({
-                                          ...prev,
-                                          surfaces: active
-                                            ? prev.surfaces.filter((entry) => entry !== surface)
-                                            : [...prev.surfaces, surface],
-                                        }))
-                                      }
-                                      className={`px-3 py-2 text-[10px] uppercase tracking-[0.16em] border transition-colors ${
-                                        active
-                                          ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                                          : 'border-black/10 hover:border-brand-teal'
-                                      }`}
-                                    >
-                                      {surface}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Intent filters</div>
-                              <div className="flex flex-wrap gap-2">
-                                {CLIENT_INTENTS.map((intent) => {
-                                  const active = item.rule.intents.includes(intent);
-                                  return (
-                                    <button
-                                      key={intent}
-                                      type="button"
-                                      onClick={() =>
-                                        updateMediaItem(index, (prev) => ({
-                                          ...prev,
-                                          rule: {
-                                            ...prev.rule,
-                                            intents: active
-                                              ? prev.rule.intents.filter((entry) => entry !== intent)
-                                              : [...prev.rule.intents, intent],
-                                          },
-                                        }))
-                                      }
-                                      className={`px-3 py-2 text-[10px] uppercase tracking-[0.16em] border transition-colors ${
-                                        active
-                                          ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                                          : 'border-black/10 hover:border-brand-teal'
-                                      }`}
-                                    >
-                                      {intent}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Focus filters</div>
-                              <div className="flex flex-wrap gap-2">
-                                {FOCUS_PREFS.map((focus) => {
-                                  const active = item.rule.focuses.includes(focus);
-                                  return (
-                                    <button
-                                      key={focus}
-                                      type="button"
-                                      onClick={() =>
-                                        updateMediaItem(index, (prev) => ({
-                                          ...prev,
-                                          rule: {
-                                            ...prev.rule,
-                                            focuses: active
-                                              ? prev.rule.focuses.filter((entry) => entry !== focus)
-                                              : [...prev.rule.focuses, focus],
-                                          },
-                                        }))
-                                      }
-                                      className={`px-3 py-2 text-[10px] uppercase tracking-[0.16em] border transition-colors ${
-                                        active
-                                          ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                                          : 'border-black/10 hover:border-brand-teal'
-                                      }`}
-                                    >
-                                      {focus}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Pace filters</div>
-                              <div className="flex flex-wrap gap-2">
-                                {PACE_PREFS.map((pace) => {
-                                  const active = item.rule.paces.includes(pace);
-                                  return (
-                                    <button
-                                      key={pace}
-                                      type="button"
-                                      onClick={() =>
-                                        updateMediaItem(index, (prev) => ({
-                                          ...prev,
-                                          rule: {
-                                            ...prev.rule,
-                                            paces: active
-                                              ? prev.rule.paces.filter((entry) => entry !== pace)
-                                              : [...prev.rule.paces, pace],
-                                          },
-                                        }))
-                                      }
-                                      className={`px-3 py-2 text-[10px] uppercase tracking-[0.16em] border transition-colors ${
-                                        active
-                                          ? 'border-brand-teal bg-brand-soft text-brand-teal'
-                                          : 'border-black/10 hover:border-brand-teal'
-                                      }`}
-                                    >
-                                      {pace}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
-        </Panel>
+        </div>
+
+        {/* ── Sticky footer (echoes mockup) ── */}
+        <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-black/15 bg-[#f4f1eb] px-3 py-1.5 -mx-2 -mb-2">
+          <span className="admin-mono text-[10px] text-black/50">
+            Media Pipeline · {config.media.curated_library.length} items · {activeLibraryCount} active
+          </span>
+        </div>
       </SectionShell>
     );
   };
