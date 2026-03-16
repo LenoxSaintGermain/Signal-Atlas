@@ -425,8 +425,8 @@ function SectionShell({
     <section className="space-y-2">
       <header className="flex items-baseline gap-3">
         <span className="text-[10px] uppercase tracking-[0.22em] text-brand-teal">{eyebrow}</span>
-        <h3 className="text-sm font-editorial italic leading-tight text-[#08161a]">{title}</h3>
-        <span className="hidden text-[10px] leading-tight text-black/45 sm:inline">{description}</span>
+        <h3 className="admin-display text-sm leading-tight text-[#08161a]">{title}</h3>
+        <span className="hidden admin-body text-[10px] leading-tight text-black/45 sm:inline">{description}</span>
       </header>
       {children}
     </section>
@@ -451,7 +451,7 @@ function Panel({
       <div className="flex items-center justify-between gap-2 border-b border-black/10 px-3 py-1.5">
         <div className="flex items-baseline gap-2">
           {eyebrow ? <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal">{eyebrow}</span> : null}
-          <h4 className="text-xs font-editorial leading-tight text-[#09161a]">{title}</h4>
+          <h4 className="admin-display text-xs leading-tight text-[#09161a]">{title}</h4>
         </div>
         {meta ? <span className="text-[9px] uppercase tracking-[0.16em] text-black/40">{meta}</span> : null}
       </div>
@@ -485,7 +485,7 @@ function MetricCard({
       <div className={`text-[9px] uppercase tracking-[0.18em] ${inverted ? 'text-brand-teal' : 'text-brand-teal'}`}>
         {eyebrow}
       </div>
-      <div className="mt-0.5 text-sm font-editorial leading-tight">{title}</div>
+      <div className="mt-0.5 text-sm admin-display leading-tight">{title}</div>
       <p className={`mt-0.5 text-[11px] leading-snug ${inverted ? 'text-white/70' : 'text-black/60'}`}>{body}</p>
       <div className={`mt-0.5 text-[9px] uppercase tracking-[0.16em] ${inverted ? 'text-white/50' : 'text-black/40'}`}>
         {meta}
@@ -506,7 +506,7 @@ function AdminStatCard({
   return (
     <div className="border border-black/8 bg-white/62 px-2 py-1">
       <div className="text-[9px] uppercase tracking-[0.16em] text-black/40">{label}</div>
-      <div className="text-sm font-editorial leading-none text-[#09161a]">{value}</div>
+      <div className="text-sm admin-mono leading-none text-[#09161a]">{value}</div>
       {detail ? <div className="text-[9px] uppercase tracking-[0.14em] text-black/35">{detail}</div> : null}
     </div>
   );
@@ -638,9 +638,9 @@ function GuideCard({
     <article className="border border-black/10 bg-[#fcfbf7] px-2.5 py-1.5">
       <div className="flex items-baseline gap-2">
         <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal">{eyebrow}</span>
-        <span className="text-xs font-editorial leading-tight text-[#09161a]">{title}</span>
+        <span className="text-xs admin-display leading-tight text-[#09161a]">{title}</span>
       </div>
-      <p className="text-[11px] leading-snug text-black/50">{description}</p>
+      <p className="admin-body text-[11px] leading-snug text-black/50">{description}</p>
     </article>
   );
 }
@@ -660,8 +660,8 @@ function FieldCard({
     <div className="border border-black/10 bg-[#fcfbf7] p-2">
       <div className="flex items-baseline gap-2">
         {eyebrow ? <span className="text-[9px] uppercase tracking-[0.16em] text-brand-teal">{eyebrow}</span> : null}
-        <span className="text-xs font-editorial leading-tight text-[#09161a]">{title}</span>
-        {description ? <span className="hidden text-[10px] text-black/45 lg:inline" title={description}>{description}</span> : null}
+        <span className="text-xs admin-display leading-tight text-[#09161a]">{title}</span>
+        {description ? <span className="hidden admin-body text-[10px] text-black/45 lg:inline" title={description}>{description}</span> : null}
       </div>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -711,6 +711,44 @@ function ChipToggleGroup({
   );
 }
 
+function StepperField({
+  label,
+  value,
+  onChange,
+  min = 1,
+  max = 90,
+  step = 1,
+  unit,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="admin-mono text-[10px] text-black/50">{label}</span>
+      <div className="admin-stepper inline-flex items-center gap-0.5">
+        <button type="button" onClick={() => onChange(Math.max(min, value - step))} aria-label={`Decrease ${label}`}>−</button>
+        <input
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => onChange(Math.max(min, Math.min(max, Number(e.target.value) || min)))}
+          aria-label={label}
+        />
+        <button type="button" onClick={() => onChange(Math.min(max, value + step))} aria-label={`Increase ${label}`}>+</button>
+      </div>
+      {unit ? <span className="admin-mono text-[9px] text-black/35">{unit}</span> : null}
+    </div>
+  );
+}
+
 function OrderedListField({
   label,
   description,
@@ -726,51 +764,36 @@ function OrderedListField({
 }) {
   const optionMap = new Map(options.map((option) => [option.value, option]));
   return (
-    <div className="space-y-1">
-      <div className="flex items-baseline gap-2">
-        <span className="text-[10px] text-gray-600">{label}</span>
-        {description ? <span className="text-[9px] text-black/40">{description}</span> : null}
-      </div>
-      <div className="space-y-2">
-        {values.length === 0 ? (
-          <div className="border border-dashed border-black/12 bg-white/70 px-4 py-4 text-sm text-black/45">
-            No enabled sections yet.
-          </div>
-        ) : (
-          values.map((value, index) => {
-            const option = optionMap.get(value);
-            return (
-              <div key={`${value}-${index}`} className="flex items-center gap-3 border border-black/10 bg-white px-3 py-2">
-                <div className="w-7 text-[10px] uppercase tracking-[0.18em] text-black/35">{String(index + 1).padStart(2, '0')}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-[#09161a]">
-                    {option?.label || labelize(value)}
-                  </div>
-                  {option?.description ? <div className="mt-1 text-xs leading-5 text-black/50">{option.description}</div> : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onMove(index, 'up')}
-                    disabled={index === 0}
-                    className="border border-black/10 bg-[#fcfbf7] px-2.5 py-2 text-[10px] uppercase tracking-[0.16em] text-black/55 transition-colors hover:border-brand-teal disabled:opacity-35"
-                  >
-                    Up
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onMove(index, 'down')}
-                    disabled={index === values.length - 1}
-                    className="border border-black/10 bg-[#fcfbf7] px-2.5 py-2 text-[10px] uppercase tracking-[0.16em] text-black/55 transition-colors hover:border-brand-teal disabled:opacity-35"
-                  >
-                    Down
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+    <div className="space-y-0.5">
+      {description ? <div className="admin-body text-[11px] italic text-black/45 mb-1">{description}</div> : null}
+      {values.length === 0 ? (
+        <div className="admin-body italic text-[11px] text-black/35 py-2">No enabled sections.</div>
+      ) : (
+        values.map((value, index) => {
+          const option = optionMap.get(value);
+          return (
+            <div key={`${value}-${index}`} className="group flex h-8 items-center gap-2 border border-black/8 bg-white px-2 hover:border-brand-teal transition-colors cursor-grab">
+              <span className="admin-mono text-[10px] text-black/25 cursor-grab" title="Drag to reorder">⠿</span>
+              <span className="admin-mono text-[10px] text-black/30 w-5">{index + 1}</span>
+              <span className="admin-body text-[12px] text-[#09161a] min-w-0 flex-1 truncate">{option?.label || labelize(value)}</span>
+              <button
+                type="button"
+                onClick={() => onMove(index, 'up')}
+                disabled={index === 0}
+                aria-label={`Move ${option?.label || value} up`}
+                className="admin-mono text-[10px] text-black/30 hover:text-brand-teal disabled:opacity-20 transition-colors px-1"
+              >↑</button>
+              <button
+                type="button"
+                onClick={() => onMove(index, 'down')}
+                disabled={index === values.length - 1}
+                aria-label={`Move ${option?.label || value} down`}
+                className="admin-mono text-[10px] text-black/30 hover:text-brand-teal disabled:opacity-20 transition-colors px-1"
+              >↓</button>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -1248,7 +1271,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
       <SectionShell {...sectionCopy.summary}>
         <section className="border border-[#08242a] bg-[linear-gradient(145deg,#041117_0%,#08242a_56%,#07181d_100%)] px-3 py-2 text-white">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] uppercase tracking-[0.16em] text-white/65">
-            <span className="text-brand-teal font-editorial text-xs">Operating Surface</span>
+            <span className="text-brand-teal admin-display text-xs">Operating Surface</span>
             {[
               { label: 'Gemini', ok: runtime.gemini_configured },
               { label: 'Sesame', ok: runtime.sesame_configured },
@@ -1282,7 +1305,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
             <summary className="flex cursor-pointer items-center justify-between px-3 py-1.5 text-xs">
               <span className="flex items-baseline gap-2">
                 <span className="text-[9px] uppercase tracking-[0.16em] text-brand-teal">Env</span>
-                <span className="font-editorial text-[#09161a]">Runtime identity</span>
+                <span className="admin-display text-[#09161a]">Runtime identity</span>
               </span>
               <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">ROM {runtime.rom_version}</span>
             </summary>
@@ -1363,7 +1386,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                     <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-black/40">
                       {item.client_name || item.client_uid || '—'}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                    <span className="min-w-0 flex-1 truncate text-[11px] admin-body leading-tight text-[#09161a]">
                       {item.title}
                     </span>
                     <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] ${statusTone(item.status)}`}>
@@ -1386,7 +1409,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <span className="w-24 shrink-0 truncate text-[9px] uppercase tracking-[0.14em] text-black/40">
                     {agent.role_id}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                  <span className="min-w-0 flex-1 truncate text-[11px] admin-body leading-tight text-[#09161a]">
                     {agent.title}
                   </span>
                   <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] ${
@@ -1593,22 +1616,24 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                         <span className="text-[9px] text-black/30">&#9656;</span>
                         <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">{field.eyebrow}</span>
-                        <span className="font-editorial text-[#09161a]">{field.label}</span>
+                        <span className="admin-body text-[#09161a]">{field.label}</span>
                         {hasContent && <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-brand-teal">set</span>}
                       </summary>
                       <div className="border-t border-black/6 p-1.5">
-                        <textarea
-                          value={config.prompts[field.key]}
-                          onChange={(event) =>
-                            setConfig((prev) =>
-                              prev
-                                ? { ...prev, prompts: { ...prev.prompts, [field.key]: event.target.value } }
-                                : prev
-                            )
-                          }
-                          placeholder={field.description}
-                          className="w-full min-h-14 border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
-                        />
+                        <div className="admin-prompt-block">
+                          <textarea
+                            value={config.prompts[field.key]}
+                            onChange={(event) =>
+                              setConfig((prev) =>
+                                prev
+                                  ? { ...prev, prompts: { ...prev.prompts, [field.key]: event.target.value } }
+                                  : prev
+                              )
+                            }
+                            placeholder={field.description}
+                            className="admin-body w-full min-h-14 border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
+                          />
+                        </div>
                       </div>
                     </details>
                   );
@@ -1635,7 +1660,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               <div className="grid grid-cols-3 gap-x-2 gap-y-1 mb-2">
                 <SelectField label="Base model" value={config.professional_dna.base_model} options={GEMINI_TEXT_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, base_model: v } } : prev)} />
                 <SelectField label="Research model" value={config.professional_dna.research_model} options={GEMINI_TEXT_MODEL_OPTIONS.map((o) => ({ value: o.id, label: o.label }))} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, research_model: v } } : prev)} />
-                <TextField label="Refresh (days)" type="number" min={1} max={90} step={1} value={config.professional_dna.refresh_window_days} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, refresh_window_days: Math.max(1, Math.min(90, Number(v) || 14)) } } : prev)} />
+                <StepperField label="Refresh" value={config.professional_dna.refresh_window_days} min={1} max={90} step={1} unit="days" onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, refresh_window_days: v } } : prev)} />
               </div>
 
               {/* Collapsible sub-sections */}
@@ -1645,7 +1670,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Hero</span>
-                    <span className="font-editorial text-[#09161a]">Intake hero media</span>
+                    <span className="admin-body text-[#09161a]">Intake hero media</span>
                     <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{config.professional_dna.hero_visible ? 'visible' : 'hidden'}</span>
                   </summary>
                   <div className="border-t border-black/6 p-2 grid grid-cols-2 gap-x-2 gap-y-1">
@@ -1671,7 +1696,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Guide</span>
-                    <span className="font-editorial text-[#09161a]">Journey guide video</span>
+                    <span className="admin-body text-[#09161a]">Journey guide video</span>
                   </summary>
                   <div className="border-t border-black/6 p-2 grid grid-cols-2 gap-x-2 gap-y-1">
                     <SelectField label="Provider" value={config.professional_dna.journey_guide_video_provider ?? 'youtube'} options={[{ value: 'youtube', label: 'YouTube' }, { value: 'vimeo', label: 'Vimeo' }, { value: 'direct', label: 'Direct' }]} onChange={(v) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, journey_guide_video_provider: v === 'vimeo' ? 'vimeo' : v === 'direct' ? 'direct' : 'youtube' } } : prev)} />
@@ -1686,7 +1711,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Voice</span>
-                    <span className="font-editorial text-[#09161a]">Smart Start voice lane</span>
+                    <span className="admin-body text-[#09161a]">Smart Start voice lane</span>
                     <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{(config.professional_dna.voice_agent_enabled ?? true) ? 'active' : 'off'}</span>
                   </summary>
                   <div className="border-t border-black/6 p-2 space-y-1">
@@ -1715,16 +1740,18 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Prompt</span>
-                    <span className="font-editorial text-[#09161a]">DNA operator notes</span>
+                    <span className="admin-body text-[#09161a]">DNA operator notes</span>
                     {config.professional_dna.prompt_appendix?.trim() && <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-brand-teal">set</span>}
                   </summary>
                   <div className="border-t border-black/6 p-1.5">
-                    <textarea
-                      value={config.professional_dna.prompt_appendix}
-                      onChange={(event) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, prompt_appendix: event.target.value } } : prev)}
-                      placeholder="Extra research posture, client-type instructions, or sector-specific criteria"
-                      className="min-h-14 w-full border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
-                    />
+                    <div className="admin-prompt-block">
+                      <textarea
+                        value={config.professional_dna.prompt_appendix}
+                        onChange={(event) => setConfig((prev) => prev ? { ...prev, professional_dna: { ...prev.professional_dna, prompt_appendix: event.target.value } } : prev)}
+                        placeholder="Extra research posture, client-type instructions, or sector-specific criteria"
+                        className="admin-body min-h-14 w-full border border-black/8 bg-white p-1.5 text-xs leading-relaxed outline-none transition-colors focus:border-brand-teal"
+                      />
+                    </div>
                   </div>
                 </details>
 
@@ -1733,7 +1760,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Sections</span>
-                    <span className="font-editorial text-[#09161a]">Dossier sections + order</span>
+                    <span className="admin-body text-[#09161a]">Dossier sections + order</span>
                     <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{knownEnabledSections.length} active</span>
                   </summary>
                   <div className="border-t border-black/6 p-2 space-y-2">
@@ -1774,7 +1801,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex cursor-pointer items-center gap-2 px-2 py-1 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-brand-teal">Domains</span>
-                    <span className="font-editorial text-[#09161a]">Research coverage</span>
+                    <span className="admin-body text-[#09161a]">Research coverage</span>
                     <span className="ml-auto text-[8px] uppercase tracking-[0.1em] text-black/35">{selectedResearchDomains.filter((d) => knownResearchDomains.includes(d)).length} active</span>
                   </summary>
                   <div className="border-t border-black/6 p-2">
@@ -1835,7 +1862,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               ].map((card) => (
                 <div key={card.label} className="border border-black/10 bg-[#fbfcfa] px-2.5 py-1.5">
                   <div className="text-[9px] uppercase tracking-[0.14em] text-black/40">{card.label}</div>
-                  <div className="text-base font-editorial italic leading-none text-[#09161a]">{card.value}</div>
+                  <div className="text-base admin-mono leading-none text-[#09161a]">{card.value}</div>
                   <div className="text-[10px] text-black/50">{card.meta}</div>
                 </div>
               ))}
@@ -1986,7 +2013,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                         <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
                           {job.client_name || 'Client'} · {job.episode_id || 'episode'}
                         </div>
-                        <div className="text-lg font-editorial italic leading-tight text-[#09161a]">Job {job.job_id}</div>
+                        <div className="text-lg admin-display leading-tight text-[#09161a]">Job {job.job_id}</div>
                         <div className="text-xs text-black/55">
                           {job.client_email || 'No email'} · {job.runner || 'unknown runner'} · {job.trigger || 'unknown trigger'}
                         </div>
@@ -2064,7 +2091,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       <div className="text-[10px] uppercase tracking-[0.2em] text-black/40">
                         {manifest.client_name || 'Client'} · {manifest.episode_id || 'episode'}
                       </div>
-                      <div className="text-lg font-editorial italic leading-tight text-[#09161a]">
+                      <div className="text-lg admin-display leading-tight text-[#09161a]">
                         Manifest {manifest.manifest_id}
                       </div>
                       <div className="text-xs text-black/55">{manifest.client_email || 'No email'}</div>
@@ -2194,7 +2221,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       <span className="text-[9px] uppercase tracking-[0.12em] text-black/35 shrink-0">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[11px] font-editorial leading-tight text-[#09161a]">
+                      <span className="min-w-0 flex-1 truncate text-[11px] admin-body leading-tight text-[#09161a]">
                         {item.title || 'Untitled'}
                       </span>
                       <span className="hidden truncate text-[9px] text-black/40 sm:inline">
@@ -2549,7 +2576,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       : 'border-black/10 bg-[#fcfcfb] hover:border-brand-teal'
                   }`}
                 >
-                  <div className="text-xs font-editorial italic leading-tight">{preset.label}</div>
+                  <div className="text-xs admin-body leading-tight">{preset.label}</div>
                   <div className="text-[10px] leading-snug text-gray-500">{preset.summary}</div>
                 </button>
               );
@@ -2583,7 +2610,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-baseline gap-2 min-w-0">
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isSelected ? 'bg-brand-teal' : 'bg-black/15'}`} />
-                      <span className="text-xs font-editorial italic leading-tight truncate">{lane.label}</span>
+                      <span className="text-xs admin-body leading-tight truncate">{lane.label}</span>
                       <span className="text-[9px] uppercase tracking-[0.12em] text-black/40">{stateLabel}</span>
                     </div>
                     <span className="text-[9px] uppercase tracking-[0.12em] text-black/35 shrink-0">
@@ -2731,7 +2758,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
               />
               <div className="border border-black/10 bg-[#fbfcfa] p-4 text-xs leading-5 text-black/65">
                 <div className="text-[10px] uppercase tracking-[0.2em] text-black/45">Selected voice</div>
-                <div className="mt-2 text-lg font-editorial text-[#08161a]">
+                <div className="mt-2 text-lg admin-display text-[#08161a]">
                   {selectedVoiceMeta?.name ?? config.voice.gemini_voice_name}
                 </div>
                 <div className="mt-1">Tone: {selectedVoiceMeta?.tone ?? 'Custom'}</div>
@@ -3030,7 +3057,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">
                         {request.request_kind.replace(/_/g, ' ')}
                       </div>
-                      <h5 className="mt-2 text-xl font-editorial leading-tight">{request.name}</h5>
+                      <h5 className="mt-2 text-xl admin-display leading-tight">{request.name}</h5>
                       <div className="mt-1 text-xs text-black/55">{request.email}{request.company ? ` · ${request.company}` : ''}</div>
                     </div>
                     <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(request.status)}`}>
@@ -3139,7 +3166,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 ].map((card) => (
                   <div key={card.label} className="border border-black/10 bg-[#fbfcfa] p-4">
                     <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">{card.label}</div>
-                    <div className="mt-3 text-3xl font-editorial italic leading-none text-[#09161a]">{card.value}</div>
+                    <div className="mt-3 text-3xl admin-mono leading-none text-[#09161a]">{card.value}</div>
                     <div className="mt-2 text-xs text-black/55">{card.meta}</div>
                   </div>
                 ))}
@@ -3189,7 +3216,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                               <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">
                                 {run.client_name || 'Client'} · {run.intent || 'unknown intent'} · {run.tier || 'unknown tier'}
                               </div>
-                              <div className="text-lg font-editorial italic leading-tight text-[#09161a]">
+                              <div className="text-lg admin-display leading-tight text-[#09161a]">
                                 {run.started_by_role || 'staff'} · {run.run_id}
                               </div>
                               <div className="text-xs text-black/55">{run.summary || 'No summary recorded.'}</div>
@@ -3305,7 +3332,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                       <span className="shrink-0 text-[9px] uppercase tracking-[0.12em] text-black/40">
                         {item.client_name || item.client_uid || '—'}
                       </span>
-                      <span className="min-w-0 flex-1 truncate font-editorial text-[#09161a]">{item.title}</span>
+                      <span className="min-w-0 flex-1 truncate admin-body text-[#09161a]">{item.title}</span>
                       <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${statusTone(item.status)}`}>
                         {labelize(item.status)}
                       </span>
@@ -3336,7 +3363,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <summary className="flex h-10 cursor-pointer items-center gap-2 px-2 text-[11px]">
                     <span className="text-[9px] text-black/30">&#9656;</span>
                     <span className="w-28 shrink-0 truncate text-[9px] uppercase tracking-[0.14em] text-black/45">{agent.role_id}</span>
-                    <span className="min-w-0 flex-1 truncate font-editorial text-[#09161a]">{agent.title}</span>
+                    <span className="min-w-0 flex-1 truncate admin-body text-[#09161a]">{agent.title}</span>
                     <span
                       className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] ${
                         agent.approval_required
@@ -3445,7 +3472,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   >
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <span className="hidden truncate text-[11px] font-editorial leading-tight group-hover/rail:inline">
+                  <span className="hidden truncate text-[11px] admin-body leading-tight group-hover/rail:inline">
                     {section.shortLabel}
                   </span>
                 </button>
@@ -3490,14 +3517,14 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 <span className="text-[9px] uppercase tracking-[0.18em] text-brand-teal shrink-0">
                   {String(sectionIndex + 1).padStart(2, '0')}
                 </span>
-                <h2 className="truncate text-sm font-editorial italic leading-tight text-[#08161a]">
+                <h2 className="truncate text-sm admin-display leading-tight text-[#08161a]">
                   {sectionMeta.title}
                 </h2>
                 <div className="hidden items-baseline gap-3 lg:flex">
                   {shellStats.map((card) => (
                     <span key={card.label} className="inline-flex items-baseline gap-1 whitespace-nowrap">
                       <span className="text-[9px] uppercase tracking-[0.14em] text-black/40">{card.label}</span>
-                      <span className="text-xs font-editorial text-[#09161a]">{card.value}</span>
+                      <span className="text-xs admin-mono text-[#09161a]">{card.value}</span>
                     </span>
                   ))}
                 </div>
@@ -3539,7 +3566,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                   <span className={`text-[9px] uppercase tracking-[0.16em] ${activeSection === section.id ? 'text-brand-teal' : 'text-black/40'}`}>
                     {String(index + 1).padStart(2, '0')}
                   </span>{' '}
-                  <span className="text-[10px] font-editorial">{section.shortLabel}</span>
+                  <span className="text-[10px] admin-body">{section.shortLabel}</span>
                 </button>
               ))}
             </nav>
@@ -3574,7 +3601,7 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
           ) : null}
           </div>
 
-          <footer className="border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-3 py-1 backdrop-blur xl:hidden">
+          <footer className="sticky bottom-0 z-10 border-t border-black/10 bg-[rgba(255,255,255,0.86)] px-3 py-1 backdrop-blur xl:hidden">
             <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={requestReload}

@@ -219,6 +219,54 @@
       .btn-brand:hover {
         filter: brightness(1.04);
       }
+
+      /* Admin Console Typography System — 3 roles */
+      .admin-display {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+      }
+      .admin-body {
+        font-family: 'EB Garamond', Georgia, serif;
+      }
+      .admin-mono {
+        font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      /* Left-border prompt treatment */
+      .admin-prompt-block {
+        border-left: 2px solid var(--brand-teal-dark);
+        padding-left: 12px;
+      }
+      /* Stepper inline control */
+      .admin-stepper button {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: white;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .admin-stepper button:hover {
+        border-color: var(--brand-teal-dark);
+      }
+      .admin-stepper input {
+        width: 48px;
+        text-align: center;
+        border: none;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        background: transparent;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 13px;
+        outline: none;
+      }
+      .admin-stepper input:focus {
+        border-color: var(--brand-teal-dark);
+      }
       
     </style>
   <script type="importmap">

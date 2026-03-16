@@ -502,7 +502,7 @@ export function BrandStudioSection({ config, setConfig }: Props) {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-[10px] uppercase tracking-[0.24em] text-brand-teal">Brand Studio</div>
-          <h3 className="mt-1 text-sm font-editorial italic leading-none">Brand Studio</h3>
+          <h3 className="mt-1 text-sm admin-display leading-none">Brand Studio</h3>
         </div>
       </div>
 
