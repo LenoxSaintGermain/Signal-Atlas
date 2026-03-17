@@ -2710,313 +2710,208 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
     if (!config || !overview) return null;
     return (
       <SectionShell {...sectionCopy.governance}>
-        <Panel title="Access and entitlements" eyebrow="Operator policy" meta="Commercial posture">
-          <div className="grid gap-2">
-            <ToggleField
-              checked={config.operations.onboarding_email_enabled}
-              onChange={(checked) =>
-                setConfig((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        operations: { ...prev.operations, onboarding_email_enabled: checked },
-                      }
-                    : prev
-                )
-              }
-              label="Onboarding email workflow enabled"
-              hint="Keeps post-intake course and follow-up automation live."
-            />
-            <TextField
-              label="Intro course offer label"
-              value={config.operations.intro_course_offer}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, operations: { ...prev.operations, intro_course_offer: value } } : prev
-                )
-              }
-            />
-            <TextField
-              label="Curriculum code"
-              value={config.operations.curriculum_code}
-              onChange={(value) =>
-                setConfig((prev) =>
-                  prev ? { ...prev, operations: { ...prev.operations, curriculum_code: value } } : prev
-                )
-              }
-            />
+        {/* Operator bar */}
+        <div className="flex items-center justify-between gap-2 border border-black/10 bg-[#f8faf8] px-2.5 py-1">
+          <div className="flex items-center gap-3">
+            <span className="admin-mono text-[9px] uppercase tracking-[0.16em] text-brand-teal">Staff Policy</span>
+            <span className="admin-body text-[10px] italic text-black/45">Approvals, entitlements, and orchestration governance.</span>
           </div>
-        </Panel>
+          <button type="button" onClick={refreshOrchestrationOverview}
+            className="border border-black/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-[#09161a] hover:border-brand-teal">
+            Refresh
+          </button>
+        </div>
 
-        <Panel title="Concierge requests" eyebrow="Smart Start ops" meta={`${bookings.pending_count} new`}>
-          <div className="space-y-1">
-            {bookings.items.length === 0 ? (
-              <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-5 text-sm text-black/55">
-                No public concierge or Smart Start requests yet.
-              </div>
-            ) : (
-              bookings.items.map((request) => (
-                <article key={request.id} className="space-y-1 border border-black/10 bg-[#fbfcfa] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">
-                        {request.request_kind.replace(/_/g, ' ')}
-                      </div>
-                      <h5 className="mt-2 text-xl admin-display leading-tight">{request.name}</h5>
-                      <div className="mt-1 text-xs text-black/55">{request.email}{request.company ? ` · ${request.company}` : ''}</div>
-                    </div>
-                    <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(request.status)}`}>
-                      {request.status.replace(/_/g, ' ')}
-                    </span>
-                  </div>
+        {orchestrationError ? (
+          <div className="border border-red-500/20 bg-red-50 px-3 py-1.5 text-xs text-red-700">{orchestrationError}</div>
+        ) : null}
 
-                  <p className="text-sm leading-6 text-black/65">{request.goal || 'No goal captured.'}</p>
-                  <div className="grid gap-2 text-xs text-black/55 md:grid-cols-2">
-                    <div>Service: {request.service_interest ? request.service_interest.replace(/_/g, ' ') : 'Not provided'}</div>
-                    <div>Preferred timing: {request.preferred_timing || 'Not provided'}</div>
-                    <div>
-                      Structured slot:{' '}
-                      {request.preferred_date || request.preferred_time || request.preferred_timezone
-                        ? [request.preferred_date, request.preferred_time, request.preferred_timezone].filter(Boolean).join(' · ')
-                        : 'Not provided'}
-                    </div>
-                    <div>{request.updated_at ? new Date(request.updated_at).toLocaleString() : 'No update time'}</div>
-                  </div>
-                  {request.resume_link ? (
-                    <div className="text-xs text-black/55">
-                      Resume / portfolio:{' '}
-                      <a
-                        href={request.resume_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline decoration-black/20 underline-offset-2"
-                      >
-                        {request.resume_link}
-                      </a>
-                    </div>
-                  ) : null}
-
-                  <div className="flex flex-wrap gap-2">
-                    {(['reviewed', 'scheduled'] as const).map((status) => {
-                      const key = `${request.id}:${status}`;
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => updateConciergeRequestStatus(request.id, status)}
-                          disabled={Boolean(bookingBusyKey)}
-                          className="border border-black/12 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-black/65 transition hover:border-brand-teal disabled:opacity-50"
-                        >
-                          {bookingBusyKey === key ? 'Updating…' : `Mark ${status}`}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </Panel>
-
-        <div className="grid gap-2">
-          <Panel
-            title="Orchestration control plane"
-            eyebrow="Staff policy"
-            meta={`${orchestrationOverview?.summary.run_count ?? 0} tracked runs`}
-          >
-            <div className="space-y-1.5">
-              <div className="flex flex-col gap-3 border border-black/10 bg-[#f8faf8] p-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-black/45">Operating posture</div>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-                    This is the governed staff layer: policy, routes, recent runs, and confidence signals for the current
-                    web OS stack.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={refreshOrchestrationOverview}
-                  className="border border-black/15 px-4 py-3 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal"
-                >
-                  Refresh control plane
-                </button>
-              </div>
-
-              {orchestrationError ? (
-                <div className="border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700">{orchestrationError}</div>
-              ) : null}
-
-              <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-4">
-                {[
-                  {
-                    label: 'Active roles',
-                    value: orchestrationOverview?.summary.role_count ?? 0,
-                    meta: `${(orchestrationOverview?.policy.current_stack ?? []).length} stack anchors`,
-                  },
-                  {
-                    label: 'Tracked runs',
-                    value: orchestrationOverview?.summary.run_count ?? 0,
-                    meta: `${orchestrationOverview?.summary.flagged_runs ?? 0} flagged`,
-                  },
-                  {
-                    label: 'Avg confidence',
-                    value: `${Math.round((orchestrationOverview?.summary.average_confidence ?? 0) * 100)}%`,
-                    meta: `${orchestrationOverview?.summary.low_confidence_runs ?? 0} low-confidence`,
-                  },
-                  {
-                    label: 'Free-tier guard',
-                    value: orchestrationOverview?.policy.free_roles.length ?? 0,
-                    meta: `${orchestrationOverview?.summary.human_followup_runs ?? 0} human follow-up candidates`,
-                  },
-                ].map((card) => (
-                  <div key={card.label} className="border border-black/10 bg-[#fbfcfa] p-4">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">{card.label}</div>
-                    <div className="mt-3 text-3xl admin-mono leading-none text-[#09161a]">{card.value}</div>
-                    <div className="mt-2 text-xs text-black/55">{card.meta}</div>
-                  </div>
-                ))}
-              </div>
-
-              {orchestrationOverview ? (
-                <>
-                  <div className="grid gap-1.5 md:grid-cols-2">
-                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Approval triggers</div>
-                      <div className="flex flex-wrap gap-2">
-                        {orchestrationOverview.policy.approval_triggers.map((trigger) => (
-                          <span
-                            key={trigger}
-                            className="border border-amber-500/20 bg-amber-50 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-amber-800"
-                          >
-                            {labelize(trigger)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="border border-black/10 bg-[#fbfcfa] p-4 space-y-1">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Current stack</div>
-                      <div className="flex flex-wrap gap-2">
-                        {orchestrationOverview.policy.current_stack.map((entry) => (
-                          <span
-                            key={entry}
-                            className="border border-brand-teal/25 bg-brand-soft px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-brand-teal"
-                          >
-                            {labelize(entry)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    {orchestrationOverview.runs.length === 0 ? (
-                      <div className="border border-dashed border-black/15 bg-[#fbfcfa] p-6 text-sm text-black/55">
-                        No orchestration runs recorded yet.
-                      </div>
-                    ) : (
-                      orchestrationOverview.runs.map((run) => (
-                        <article key={`${run.client_uid}-${run.run_id}`} className="space-y-1 border border-black/10 bg-[#fbfcfa] p-4">
-                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div className="space-y-1">
-                              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">
-                                {run.client_name || 'Client'} · {run.intent || 'unknown intent'} · {run.tier || 'unknown tier'}
-                              </div>
-                              <div className="text-lg admin-display leading-tight text-[#09161a]">
-                                {run.started_by_role || 'staff'} · {run.run_id}
-                              </div>
-                              <div className="text-xs text-black/55">{run.summary || 'No summary recorded.'}</div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(run.status)}`}>
-                                {run.status.replace(/_/g, ' ')}
-                              </span>
-                              <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${mediaPipelineTone(run.approval_state)}`}>
-                                {run.approval_state.replace(/_/g, ' ')}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="grid gap-2 md:grid-cols-4 text-xs text-black/60">
-                            <div>Confidence {Math.round((run.confidence || 0) * 100)}%</div>
-                            <div>{run.trigger || 'unknown trigger'}</div>
-                            <div>{run.next_roles.length} next roles</div>
-                            <div>{run.updated_at ? new Date(run.updated_at).toLocaleString() : 'No update time'}</div>
-                          </div>
-
-                          {run.policy_flags.length > 0 ? (
-                            <div className="space-y-2">
-                              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Policy flags</div>
-                              <div className="flex flex-wrap gap-2">
-                                {run.policy_flags.map((flag) => (
-                                  <span
-                                    key={flag}
-                                    className="border border-amber-500/20 bg-amber-50 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-amber-800"
-                                  >
-                                    {labelize(flag)}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          <div className="space-y-2">
-                            <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Next roles</div>
-                            <div className="flex flex-wrap gap-2">
-                              {run.next_roles.map((role) => (
-                                <span
-                                  key={role}
-                                  className="border border-brand-teal/25 bg-brand-soft px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-brand-teal"
-                                >
-                                  {labelize(role)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          {run.recommended_actions.length > 0 ? (
-                            <div className="space-y-2">
-                              <div className="text-[10px] uppercase tracking-[0.18em] text-black/40">Recommended actions</div>
-                              <div className="space-y-1 text-xs leading-5 text-black/60">
-                                {run.recommended_actions.map((action) => (
-                                  <div key={action}>{action}</div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => reviewOrchestrationRun(run.client_uid, run.run_id, 'approved')}
-                              disabled={bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:approved`}
-                              className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-                            >
-                              {bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:approved` ? 'Updating…' : 'Approve run'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => reviewOrchestrationRun(run.client_uid, run.run_id, 'request_human_followup')}
-                              disabled={bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:request_human_followup`}
-                              className="border border-black/15 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[#09161a] transition-colors hover:border-brand-teal disabled:opacity-50"
-                            >
-                              {bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:request_human_followup`
-                                ? 'Routing…'
-                                : run.linked_request_id
-                                  ? 'Follow-up linked'
-                                  : 'Request human follow-up'}
-                            </button>
-                          </div>
-                        </article>
-                      ))
-                    )}
-                  </div>
-                </>
-              ) : null}
+        {/* 4 metric cards */}
+        <div className="grid grid-cols-4 gap-1">
+          {[
+            { label: 'Active roles', value: orchestrationOverview?.summary.role_count ?? agents.count, meta: `${agents.approval_required_count} need approval` },
+            { label: 'Tracked runs', value: orchestrationOverview?.summary.run_count ?? 0, meta: `${orchestrationOverview?.summary.flagged_runs ?? 0} flagged` },
+            { label: 'Avg confidence', value: `${Math.round((orchestrationOverview?.summary.average_confidence ?? 0) * 100)}%`, meta: `${orchestrationOverview?.summary.low_confidence_runs ?? 0} low` },
+            { label: 'Pending', value: queue.pending_count + bookings.pending_count, meta: `${queue.pending_count} approvals · ${bookings.pending_count} requests` },
+          ].map((card) => (
+            <div key={card.label} className="border border-black/10 bg-[#fbfcfa] px-2 py-1">
+              <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40">{card.label}</div>
+              <div className="admin-display text-lg leading-none text-[#09161a]">{card.value}</div>
+              <div className="admin-body text-[10px] italic text-black/45">{card.meta}</div>
             </div>
-          </Panel>
+          ))}
+        </div>
 
-          <Panel title="Approval rail" eyebrow="Queue" meta={`${queue.pending_count} pending`}>
-            <div className="max-h-[320px] space-y-1 overflow-y-auto">
+        {/* Collapsible rows */}
+        <div className="space-y-0.5">
+          {/* Row 1 — ACCESS */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Access</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Entitlements + onboarding</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{config.operations.onboarding_email_enabled ? 'ON' : 'OFF'}</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5">
+              <div className="grid grid-cols-3 gap-2">
+                <ToggleField
+                  checked={config.operations.onboarding_email_enabled}
+                  onChange={(checked) =>
+                    setConfig((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            operations: { ...prev.operations, onboarding_email_enabled: checked },
+                          }
+                        : prev
+                    )
+                  }
+                  label="Onboarding email workflow enabled"
+                  hint="Keeps post-intake course and follow-up automation live."
+                />
+                <TextField
+                  label="Intro course offer label"
+                  value={config.operations.intro_course_offer}
+                  onChange={(value) =>
+                    setConfig((prev) =>
+                      prev ? { ...prev, operations: { ...prev.operations, intro_course_offer: value } } : prev
+                    )
+                  }
+                />
+                <TextField
+                  label="Curriculum code"
+                  value={config.operations.curriculum_code}
+                  onChange={(value) =>
+                    setConfig((prev) =>
+                      prev ? { ...prev, operations: { ...prev.operations, curriculum_code: value } } : prev
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </details>
+
+          {/* Row 2 — REQUESTS */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Requests</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Concierge + Smart Start</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{bookings.pending_count} new</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5">
+              {bookings.items.length === 0 ? (
+                <div className="admin-body text-[10px] italic text-black/40 py-1">No requests yet.</div>
+              ) : (
+                <div className="space-y-0.5">
+                  {bookings.items.map((request) => (
+                    <div key={request.id} className="flex items-center gap-2 border border-black/8 bg-white px-2 py-1">
+                      <span className="admin-mono text-[10px] text-[#09161a] min-w-0 flex-1 truncate">
+                        {request.name} · {request.email}{request.company ? ` · ${request.company}` : ''}
+                      </span>
+                      <span className="admin-body text-[9px] text-black/40 truncate max-w-[120px]">
+                        {request.request_kind.replace(/_/g, ' ')}
+                      </span>
+                      <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] ${mediaPipelineTone(request.status)}`}>
+                        {request.status.replace(/_/g, ' ')}
+                      </span>
+                      {(['reviewed', 'scheduled'] as const).map((status) => (
+                        <button key={status} type="button" onClick={() => updateConciergeRequestStatus(request.id, status)}
+                          disabled={Boolean(bookingBusyKey)}
+                          className="admin-mono text-[8px] text-black/40 hover:text-brand-teal hover:underline disabled:opacity-40">
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+
+          {/* Row 3 — CONTROL */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Control</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Orchestration policy</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{(orchestrationOverview?.policy.current_stack ?? []).length} stack · {(orchestrationOverview?.policy.approval_triggers ?? []).length} triggers</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40">Approval triggers</div>
+                  <div className="flex flex-wrap gap-1">
+                    {(orchestrationOverview?.policy.approval_triggers ?? []).map((trigger) => (
+                      <span key={trigger} className="border border-amber-500/20 bg-amber-50 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-amber-800">
+                        {labelize(trigger)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="admin-mono text-[8px] uppercase tracking-[0.14em] text-black/40">Current stack</div>
+                  <div className="flex flex-wrap gap-1">
+                    {(orchestrationOverview?.policy.current_stack ?? []).map((entry) => (
+                      <span key={entry} className="border border-brand-teal/25 bg-brand-soft px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-brand-teal">
+                        {labelize(entry)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-1 admin-body text-[10px] text-black/45">
+                Free tier: {(orchestrationOverview?.policy.free_roles ?? []).map(labelize).join(', ') || 'none'}
+              </div>
+            </div>
+          </details>
+
+          {/* Row 4 — RUNS */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Runs</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Orchestration history</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{orchestrationOverview?.runs.length ?? 0} runs</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5">
+              {(orchestrationOverview?.runs ?? []).length === 0 ? (
+                <div className="admin-body text-[10px] italic text-black/40 py-1">No runs recorded yet.</div>
+              ) : (
+                <div className="space-y-0.5">
+                  {(orchestrationOverview?.runs ?? []).map((run) => (
+                    <div key={`${run.client_uid}-${run.run_id}`} className="flex items-center gap-2 border border-black/8 bg-white px-2 py-1">
+                      <span className="admin-mono text-[10px] text-[#09161a] min-w-0 flex-1 truncate">
+                        {run.client_name || 'Client'} · {run.started_by_role || 'staff'} · {Math.round((run.confidence || 0) * 100)}%
+                      </span>
+                      <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] ${mediaPipelineTone(run.status)}`}>
+                        {run.status.replace(/_/g, ' ')}
+                      </span>
+                      <span className={`shrink-0 inline-flex border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] ${mediaPipelineTone(run.approval_state)}`}>
+                        {run.approval_state.replace(/_/g, ' ')}
+                      </span>
+                      <button type="button" onClick={() => reviewOrchestrationRun(run.client_uid, run.run_id, 'approved')}
+                        disabled={bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:approved`}
+                        className="admin-mono text-[8px] text-brand-teal hover:underline disabled:opacity-40">approve</button>
+                      <button type="button" onClick={() => reviewOrchestrationRun(run.client_uid, run.run_id, 'request_human_followup')}
+                        disabled={bookingBusyKey === `orchestration:${run.client_uid}:${run.run_id}:request_human_followup`}
+                        className="admin-mono text-[8px] text-black/40 hover:underline disabled:opacity-40">follow-up</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+
+          {/* Row 5 — APPROVALS */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Approvals</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Approval rail</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{queue.pending_count} pending</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5 space-y-1">
               {queue.warning ? (
                 <div className="border border-amber-500/30 bg-amber-500/8 px-2.5 py-1.5 text-[11px] text-amber-800">
                   {queue.warning}
@@ -3059,10 +2954,17 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 ))
               )}
             </div>
-          </Panel>
+          </details>
 
-          <Panel title="Agent registry" eyebrow="Staff" meta={`${agents.write_scope_count} write scopes`}>
-            <div className="max-h-[400px] space-y-0.5 overflow-y-auto">
+          {/* Row 6 — AGENTS */}
+          <details className="group border border-black/8">
+            <summary className="flex h-8 cursor-pointer items-center gap-2 px-2.5 text-left hover:bg-black/[0.015]">
+              <span className="text-[9px] text-black/30 transition-transform group-open:rotate-90">&#9656;</span>
+              <span className="admin-mono text-[9px] uppercase tracking-[0.14em] text-brand-teal">Agents</span>
+              <span className="admin-body text-[11px] text-[#09161a]">Staff registry</span>
+              <span className="ml-auto admin-mono text-[9px] text-black/35">{agents.count} roles · {agents.write_scope_count} writes</span>
+            </summary>
+            <div className="border-t border-black/8 px-2.5 py-1.5 space-y-0.5">
               {agents.items.map((agent) => (
                 <details key={agent.role_id} className="border border-black/10 bg-[#fbfcfa]">
                   <summary className="flex h-10 cursor-pointer items-center gap-2 px-2 text-[11px]">
@@ -3102,7 +3004,14 @@ export function AdminConsole({ open, onClose, onSaved }: Props) {
                 </details>
               ))}
             </div>
-          </Panel>
+          </details>
+        </div>
+
+        {/* Sticky footer */}
+        <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-black/15 bg-[#f4f1eb] px-3 py-1.5 -mx-2 -mb-2">
+          <span className="admin-mono text-[10px] text-black/50">
+            Governance · {agents.count} agents · {queue.pending_count} pending · {orchestrationOverview?.summary.run_count ?? 0} runs
+          </span>
         </div>
       </SectionShell>
     );
