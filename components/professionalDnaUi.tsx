@@ -299,10 +299,10 @@ export const EditorialList = ({
   const dotClass =
     accent === 'amber' ? 'bg-[#b8893a]' : accent === 'red' ? 'bg-[#a25555]' : accent === 'ink' ? 'bg-[#28211E]' : 'bg-[#5FAF95]';
   return (
-    <ul className={`space-y-3 text-sm leading-7 font-body ${theme === 'dark' ? 'text-white/78' : 'text-black/72'}`}>
+    <ul className={`space-y-1 text-xs leading-5 font-body ${theme === 'dark' ? 'text-white/78' : 'text-black/72'}`}>
       {items.map((item, index) => (
-        <li key={`${item}-${index}`} className="flex gap-3">
-          <span className={`mt-[10px] h-1.5 w-1.5 flex-none rounded-full ${dotClass}`} />
+        <li key={`${item}-${index}`} className="flex gap-2">
+          <span className={`mt-[7px] h-1 w-1 flex-none rounded-full ${dotClass}`} />
           <span>{item}</span>
         </li>
       ))}
@@ -312,22 +312,22 @@ export const EditorialList = ({
 
 export const DnaCommandBar = ({ items }: { items: DnaSignalStripItem[] }) => (
   <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)]">
-    <div className="flex flex-wrap items-center gap-x-0 gap-y-4 divide-y divide-white/8 sm:divide-y-0 sm:divide-x sm:divide-white/8">
+    <div className="flex flex-wrap items-center gap-x-0 gap-y-2 divide-y divide-white/8 sm:divide-y-0 sm:divide-x sm:divide-white/8">
       {items.map((item) => {
         const tone = styleTone(item.tone);
         return (
-          <div key={item.id} className="min-w-[160px] flex-1 px-5 py-4 sm:px-6">
-            <div className="flex items-center gap-2">
-              {item.id === 'live_dossier' ? <span className="h-2.5 w-2.5 rounded-full bg-[#8DD9BF] shadow-[0_0_12px_rgba(141,217,191,0.5)]" /> : null}
-              <div className="text-[10px] uppercase tracking-[0.3em] text-white/45 font-data">{item.label}</div>
+          <div key={item.id} className="min-w-[100px] flex-1 px-3 py-2 sm:px-4">
+            <div className="flex items-center gap-1.5">
+              {item.id === 'live_dossier' ? <span className="h-2 w-2 rounded-full bg-[#8DD9BF] shadow-[0_0_12px_rgba(141,217,191,0.5)]" /> : null}
+              <div className="text-[9px] uppercase tracking-[0.26em] text-white/45 font-data">{item.label}</div>
             </div>
-            <div className="mt-3 flex items-baseline gap-3">
-              <div className="text-3xl font-data tracking-tight text-white">{item.value}</div>
-              <span className={`border px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] ${tone.border} ${tone.text}`}>
+            <div className="mt-1.5 flex items-baseline gap-2">
+              <div className="text-lg font-data tracking-tight text-white">{item.value}</div>
+              <span className={`border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.18em] ${tone.border} ${tone.text}`}>
                 {item.tone}
               </span>
             </div>
-            {item.detail ? <div className="mt-2 text-xs leading-5 text-white/68 font-body">{item.detail}</div> : null}
+            {item.detail ? <div className="mt-1 text-[10px] leading-4 text-white/68 font-body">{item.detail}</div> : null}
           </div>
         );
       })}
@@ -349,21 +349,21 @@ const buildPolyline = (points: { score: number }[], width = 420, height = 180, p
 export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) => {
   const polyline = buildPolyline(signal.trajectory);
   return (
-    <section className="border border-[#28211E]/12 bg-[#28211E] p-6 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] md:p-8">
-      <div className="flex items-start justify-between gap-6">
+    <section className="border border-[#28211E]/12 bg-[#28211E] p-3 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] sm:p-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-[#8DD9BF] font-data">Career Market Signal</div>
-          <div className="mt-4 text-5xl font-data tracking-tight text-white">+{signal.composite_score}</div>
-          <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45 font-data">{signal.momentum_label}</div>
+          <div className="text-[9px] uppercase tracking-[0.26em] text-[#8DD9BF] font-data">Career Market Signal</div>
+          <div className="mt-2 text-2xl font-data tracking-tight text-white">+{signal.composite_score}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/45 font-data">{signal.momentum_label}</div>
         </div>
-        <div className="max-w-[250px] text-right text-xs leading-5 text-white/68 font-body">
+        <div className="max-w-[200px] text-right text-[10px] leading-4 text-white/68 font-body">
           <div>{signal.trajectory_type === 'history' ? 'Historical trajectory' : 'Projection path'}</div>
-          <div className="mt-2">{signal.trajectory_basis}</div>
+          <div className="mt-1">{signal.trajectory_basis}</div>
         </div>
       </div>
 
-      <div className="mt-6 border border-white/8 bg-white/[0.03] p-4">
-        <svg viewBox="0 0 420 180" className="h-[180px] w-full">
+      <div className="mt-3 border border-white/8 bg-white/[0.03] p-2">
+        <svg viewBox="0 0 420 120" className="h-[120px] w-full">
           <defs>
             <linearGradient id="dna-signal-fill" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="rgba(141,217,191,0.35)" />
@@ -371,28 +371,28 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
             </linearGradient>
           </defs>
           {[25, 50, 75].map((grid) => {
-            const y = 180 - 18 - ((grid / 100) * (180 - 36));
-            return <line key={grid} x1="18" x2="402" y1={y} y2={y} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 6" />;
+            const y = 120 - 12 - ((grid / 100) * (120 - 24));
+            return <line key={grid} x1="12" x2="408" y1={y} y2={y} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 6" />;
           })}
           {polyline ? (
             <>
               <polyline
-                points={`${polyline} 402,162 18,162`}
+                points={`${polyline} 408,108 12,108`}
                 fill="url(#dna-signal-fill)"
                 opacity="0.7"
               />
-              <polyline points={polyline} fill="none" stroke="#8DD9BF" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" />
+              <polyline points={polyline} fill="none" stroke="#8DD9BF" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" />
             </>
           ) : null}
           {signal.trajectory.map((point, index) => {
-            const x = 18 + (index * (420 - 36)) / Math.max(signal.trajectory.length - 1, 1);
-            const y = 180 - 18 - ((clampScore(point.score) / 100) * (180 - 36));
-            return <rect key={point.label} x={x - 4} y={y - 4} width="8" height="8" fill="#f7f1e8" stroke="#8DD9BF" strokeWidth="2" />;
+            const x = 12 + (index * (420 - 24)) / Math.max(signal.trajectory.length - 1, 1);
+            const y = 120 - 12 - ((clampScore(point.score) / 100) * (120 - 24));
+            return <rect key={point.label} x={x - 3} y={y - 3} width="6" height="6" fill="#f7f1e8" stroke="#8DD9BF" strokeWidth="1.5" />;
           })}
         </svg>
-        <div className="mt-3 grid grid-cols-4 gap-3 text-[10px] uppercase tracking-[0.22em] text-white/50 font-data">
+        <div className="mt-2 grid grid-cols-4 gap-2 text-[9px] uppercase tracking-[0.18em] text-white/50 font-data">
           {signal.trajectory.map((point) => (
-            <div key={point.label} className="flex flex-col gap-1">
+            <div key={point.label} className="flex flex-col gap-0.5">
               <span>{point.label}</span>
               <span className="text-white/82">{point.score}</span>
             </div>
@@ -400,19 +400,19 @@ export const DnaMarketSignalPanel = ({ signal }: { signal: DnaMarketSignal }) =>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-3 grid gap-1.5 md:grid-cols-2 xl:grid-cols-4">
         {signal.breakdown.map((item) => {
           const tone = styleTone(item.tone);
           return (
-            <div key={item.id} className={`border p-4 ${tone.border} ${tone.surface}`}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] uppercase tracking-[0.22em] text-black/45 font-data">{item.label}</div>
-                <span className={`px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${tone.text}`}>{item.score}</span>
+            <div key={item.id} className={`border p-2.5 ${tone.border} ${tone.surface}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[9px] uppercase tracking-[0.2em] text-black/45 font-data">{item.label}</div>
+                <span className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.16em] ${tone.text}`}>{item.score}</span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden bg-black/10">
+              <div className="mt-1.5 h-1.5 overflow-hidden bg-black/10">
                 <div className={`h-full ${tone.accent}`} style={{ width: `${item.score}%` }} />
               </div>
-              <div className="mt-3 text-xs leading-5 text-black/62 font-body">{item.rationale}</div>
+              <div className="mt-1.5 text-[10px] leading-4 text-black/62 font-body">{item.rationale}</div>
             </div>
           );
         })}
@@ -428,41 +428,39 @@ export const DnaDemandAnalysisPanel = ({
   summary: string;
   environments: DnaMarketDemandEnvironment[];
 }) => (
-  <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
-    <div className="flex items-start justify-between gap-6">
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">Market Demand Analysis</div>
-        <div className="mt-3 max-w-3xl text-lg leading-8 text-[#09161a] font-editorial">{summary}</div>
-      </div>
+  <section className="border border-black/10 bg-[#FBF8F2] p-3 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] sm:p-4">
+    <div>
+      <div className="text-[9px] uppercase tracking-[0.26em] text-black/42 font-data">Market Demand Analysis</div>
+      <div className="mt-1.5 max-w-3xl text-sm leading-5 text-[#09161a] font-editorial">{summary}</div>
     </div>
-    <div className="mt-8 space-y-5">
+    <div className="mt-3 space-y-2">
       {environments.map((environment) => (
-        <div key={environment.id} className="border border-black/10 bg-white p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <div key={environment.id} className="border border-black/10 bg-white p-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <div className="text-base text-[#09161a] font-editorial">{environment.label}</div>
-              <div className="mt-1 text-[11px] uppercase tracking-[0.22em] text-black/40 font-data">{environment.hiring_posture}</div>
+              <div className="text-sm text-[#09161a] font-editorial">{environment.label}</div>
+              <div className="mt-0.5 text-[9px] uppercase tracking-[0.2em] text-black/40 font-data">{environment.hiring_posture}</div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-black/40 font-data">Comp Band</div>
-              <div className="mt-1 text-sm text-black/72 font-body">{environment.compensation_band}</div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-black/40 font-data">Comp Band</div>
+              <div className="mt-0.5 text-xs text-black/72 font-body">{environment.compensation_band}</div>
             </div>
           </div>
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-black/45 font-data">
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-black/45 font-data">
               <span>Demand</span>
               <span>{environment.demand_score}</span>
             </div>
-            <div className="relative mt-2 h-3 bg-[#ddd5c6]">
+            <div className="relative mt-1 h-2 bg-[#ddd5c6]">
               <div className="h-full bg-[#28211E]" style={{ width: `${environment.demand_score}%` }} />
-              <div className="absolute inset-y-[-4px] w-[2px] bg-[#b8893a]" style={{ left: `${environment.fit_score}%` }} />
+              <div className="absolute inset-y-[-3px] w-[2px] bg-[#b8893a]" style={{ left: `${environment.fit_score}%` }} />
             </div>
-            <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-black/40 font-data">
+            <div className="mt-1 flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-black/40 font-data">
               <span>Fit</span>
               <span>{environment.fit_score}</span>
             </div>
           </div>
-          <div className="mt-4 text-sm leading-7 text-black/70 font-body">{environment.rationale}</div>
+          <div className="mt-2 text-xs leading-5 text-black/70 font-body">{environment.rationale}</div>
         </div>
       ))}
     </div>
@@ -478,21 +476,21 @@ export const DnaCompensationLadderPanel = ({
   ladder: DnaCompensationLadderRung[];
   receipt: string[];
 }) => (
-  <section className="border border-[#28211E]/12 bg-[#28211E] p-6 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] md:p-8">
-    <div className="text-[10px] uppercase tracking-[0.3em] text-[#8DD9BF] font-data">{title}</div>
-    <div className="mt-6 grid gap-4 md:grid-cols-3">
+  <section className="border border-[#28211E]/12 bg-[#28211E] p-3 text-[#f7f1e8] shadow-[0_26px_70px_-52px_rgba(40,33,30,0.85)] sm:p-4">
+    <div className="text-[9px] uppercase tracking-[0.26em] text-[#8DD9BF] font-data">{title}</div>
+    <div className="mt-3 grid gap-1.5 md:grid-cols-3">
       {ladder.map((rung) => (
-        <div key={rung.id} className="border border-white/10 bg-white/[0.04] p-4">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-white/56 font-data">{rung.label}</div>
-          <div className="mt-3 text-4xl font-data tracking-tight text-white">{rung.grade}</div>
-          <div className="mt-3 text-sm leading-6 text-white/76 font-body">{rung.detail}</div>
+        <div key={rung.id} className="border border-white/10 bg-white/[0.04] p-2.5">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-white/56 font-data">{rung.label}</div>
+          <div className="mt-1.5 text-xl font-data tracking-tight text-white">{rung.grade}</div>
+          <div className="mt-1.5 text-xs leading-5 text-white/76 font-body">{rung.detail}</div>
         </div>
       ))}
     </div>
     {receipt.length ? (
-      <div className="mt-6 border border-white/10 bg-white/[0.03] p-5">
-        <div className="text-[10px] uppercase tracking-[0.22em] text-white/45 font-data">Needle Movers</div>
-        <div className="mt-4">
+      <div className="mt-3 border border-white/10 bg-white/[0.03] p-3">
+        <div className="text-[9px] uppercase tracking-[0.2em] text-white/45 font-data">Needle Movers</div>
+        <div className="mt-2">
           <EditorialList items={receipt} theme="dark" />
         </div>
       </div>
@@ -507,19 +505,17 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
   const gridClass = tasks.length >= 3 ? 'xl:grid-cols-3' : tasks.length === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1';
 
   return (
-    <section className="border border-black/10 bg-[#FBF8F2] p-6 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] md:p-8">
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-black/42 font-data">72-Hour War Room</div>
-          <div className="mt-3 text-3xl text-[#09161a] font-editorial">Move before the market rewrites the receipt.</div>
-        </div>
+    <section className="border border-black/10 bg-[#FBF8F2] p-3 shadow-[0_18px_50px_-44px_rgba(40,33,30,0.35)] sm:p-4">
+      <div>
+        <div className="text-[9px] uppercase tracking-[0.26em] text-black/42 font-data">72-Hour War Room</div>
+        <div className="mt-1.5 text-base text-[#09161a] font-editorial">Move before the market rewrites the receipt.</div>
       </div>
-      <div className={`mt-6 grid gap-4 ${gridClass}`}>
+      <div className={`mt-3 grid gap-1.5 ${gridClass}`}>
         {tasks.map((task) => (
-          <div key={task.id} className={`border border-black/10 border-l-4 bg-white p-5 ${accentForTimebox(task.timebox)}`}>
-            <div className="text-[10px] uppercase tracking-[0.24em] text-black/45 font-data">{labelForTimebox(task.timebox)}</div>
-            <div className="mt-3 text-lg leading-8 text-[#09161a] font-editorial">{task.label}</div>
-            {task.rationale ? <div className="mt-3 text-sm leading-6 text-black/68 font-body">{task.rationale}</div> : null}
+          <div key={task.id} className={`border border-black/10 border-l-4 bg-white p-3 ${accentForTimebox(task.timebox)}`}>
+            <div className="text-[9px] uppercase tracking-[0.22em] text-black/45 font-data">{labelForTimebox(task.timebox)}</div>
+            <div className="mt-1.5 text-sm leading-5 text-[#09161a] font-editorial">{task.label}</div>
+            {task.rationale ? <div className="mt-1.5 text-xs leading-5 text-black/68 font-body">{task.rationale}</div> : null}
           </div>
         ))}
       </div>
@@ -528,18 +524,18 @@ export const DnaWarRoom = ({ tasks }: { tasks: DnaUrgencyTask[] }) => {
 };
 
 export const DnaEvidenceNodeGrid = ({ nodes }: { nodes: DnaEvidenceNode[] }) => (
-  <div className="grid gap-4 lg:grid-cols-3">
+  <div className="grid gap-1.5 lg:grid-cols-3">
     {nodes.map((node) => (
-      <div key={node.id} className="border border-black/10 bg-white p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-black/42 font-data">{node.class}</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-data">{node.confidence}</div>
+      <div key={node.id} className="border border-black/10 bg-white p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-black/42 font-data">{node.class}</div>
+          <div className="text-[9px] uppercase tracking-[0.16em] text-black/35 font-data">{node.confidence}</div>
         </div>
-        <div className="mt-3 text-xl leading-7 text-[#09161a] font-editorial">{node.title}</div>
-        <div className="mt-2 text-[11px] uppercase tracking-[0.22em] text-black/42 font-data">{node.source_label}</div>
-        <div className="mt-3 text-sm leading-7 text-black/72 font-body">{node.statement}</div>
+        <div className="mt-1.5 text-sm leading-5 text-[#09161a] font-editorial">{node.title}</div>
+        <div className="mt-1 text-[9px] uppercase tracking-[0.2em] text-black/42 font-data">{node.source_label}</div>
+        <div className="mt-1.5 text-xs leading-5 text-black/72 font-body">{node.statement}</div>
         {node.source_url ? (
-          <a href={node.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-[10px] uppercase tracking-[0.22em] text-[#0f5d53] font-data">
+          <a href={node.source_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[9px] uppercase tracking-[0.2em] text-[#0f5d53] font-data">
             Source
           </a>
         ) : null}
@@ -549,8 +545,8 @@ export const DnaEvidenceNodeGrid = ({ nodes }: { nodes: DnaEvidenceNode[] }) => 
 );
 
 export const DnaTickerBar = ({ ticker }: { ticker: DnaReportTicker }) => (
-  <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] px-5 py-4 text-[#f7f1e8] shadow-[0_18px_50px_-44px_rgba(40,33,30,0.4)]">
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] uppercase tracking-[0.26em] text-white/58 font-data">
+  <div className="overflow-hidden border border-[#28211E]/12 bg-[#28211E] px-3 py-2 text-[#f7f1e8] shadow-[0_18px_50px_-44px_rgba(40,33,30,0.4)]">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] uppercase tracking-[0.22em] text-white/58 font-data">
       <span>Report generated {ticker.generated_at}</span>
       <span>Model {ticker.model_version}</span>
       <span>Evidence nodes {ticker.evidence_nodes}</span>
