@@ -11,7 +11,7 @@ import { BriefView } from './components/BriefView';
 import { PlanView } from './components/PlanView';
 import { JsonDoc } from './components/JsonDoc';
 import { ProfileView } from './components/ProfileView';
-import { AIProfileView } from './components/AIProfileView';
+import { MissionControlView } from './components/MissionControlView';
 import { GapsView } from './components/GapsView';
 import { SuiteDistilledView } from './components/SuiteDistilledView';
 import { ReadinessView } from './components/ReadinessView';
@@ -1556,7 +1556,15 @@ const App: React.FC = () => {
                     <ProfileView profile={artifact.content} />
                   )}
                   {artifact && artifact.type === 'ai_profile' && openModule.id === 'ai_profile' && artifact.content && (
-                    <AIProfileView aiProfile={artifact.content} />
+                    <MissionControlView
+                      aiProfile={artifact.content}
+                      onAccept={(id) => console.log('mission:accept', id)}
+                      onRevise={(id, note) => console.log('mission:revise', id, note)}
+                      onDismiss={(id) => console.log('mission:dismiss', id)}
+                      onUndo={(id) => console.log('mission:undo', id)}
+                      onDispatch={(agent) => console.log('mission:dispatch', agent)}
+                      onStanceChange={(stance) => console.log('mission:stance', stance)}
+                    />
                   )}
                   {artifact && artifact.type === 'gaps' && openModule.id === 'gaps' && artifact.content && (
                     <GapsView gaps={artifact.content} />
