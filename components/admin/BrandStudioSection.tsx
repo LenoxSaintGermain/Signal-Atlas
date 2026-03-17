@@ -25,7 +25,7 @@ const LABELS: Record<SuiteModuleId, string> = {
   brief: '05 Brief',
   suite_distilled: '06 Distilled',
   profile: '07 Profile',
-  ai_profile: '08 AI Profile',
+  ai_profile: '08 Mission Control',
   gaps: '09 Gaps',
   readiness: '10 AI Readiness',
   my_concierge: '11 MyConcierge',

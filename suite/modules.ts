@@ -62,10 +62,10 @@ export const SUITE_MODULES: SuiteModule[] = [
   {
     id: 'ai_profile',
     index: '08',
-    title: 'Your AI Profile',
-    subtitle: 'How you should use AI, based on how you work and decide.',
+    title: 'Mission Control',
+    subtitle: 'Your SWAT team is already working. Steer from here.',
     kind: 'artifact',
-    relatedIds: ['plan', 'gaps', 'readiness'],
+    relatedIds: ['brief', 'profile', 'plan', 'gaps', 'readiness'],
   },
   {
     id: 'gaps',

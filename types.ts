@@ -401,10 +401,45 @@ export interface SuiteDistilledContent {
   evidence_ledger?: SuiteDistilledEvidenceEntry[];
 }
 
+export interface SwatAgent {
+  codename: string;
+  title: string;
+  status: 'working' | 'idle' | 'awaiting_review';
+  current_mission_id: string | null;
+  last_active_at: string;
+}
+
+export interface MissionProposedChange {
+  field: string;
+  before: string;
+  after: string;
+}
+
+export interface Mission {
+  id: string;
+  agent_codename: string;
+  title: string;
+  target_artifact: string;
+  status: 'in_progress' | 'ready_for_review' | 'auto_applied' | 'accepted' | 'dismissed';
+  confidence: number;
+  rationale: string;
+  proposed_changes: MissionProposedChange[];
+  created_at: string;
+  resolved_at: string | null;
+  user_note: string | null;
+}
+
 export interface AIProfileContent {
   positioning: string;
   how_to_use_ai: string[];
   guardrails: string[];
+  stance?: 'delegator' | 'copilot';
+  confidence_thresholds?: {
+    auto_apply: number;
+    review: number;
+  };
+  squad?: SwatAgent[];
+  missions?: Mission[];
 }
 
 export interface GapsContent {
