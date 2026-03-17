@@ -215,14 +215,19 @@ export const DEFAULT_BRAND_CONFIG = {
 export const cloneBrandConfig = () => JSON.parse(JSON.stringify(DEFAULT_BRAND_CONFIG));
 
 export const getBrandModuleCopy = (brandConfig, moduleId) => {
+  const defaults = DEFAULT_BRAND_MODULES[moduleId];
   const selected = brandConfig?.modules?.[moduleId];
   if (selected && typeof selected === 'object') {
     return {
-      ...DEFAULT_BRAND_MODULES[moduleId],
+      ...defaults,
       ...selected,
+      // Code defaults always win for identity fields (prevents stale Firestore overrides)
+      title: defaults.title,
+      detail_title: defaults.detail_title,
+      eyebrow: defaults.eyebrow,
     };
   }
-  return { ...DEFAULT_BRAND_MODULES[moduleId] };
+  return { ...defaults };
 };
 
 export const hexToRgba = (hex, alpha) => {
