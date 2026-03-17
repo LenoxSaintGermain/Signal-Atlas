@@ -40,10 +40,10 @@ function LegacyAIProfileView({ data }: { data: AIProfileContent }) {
   return (
     <div className="space-y-6">
       <div>
-        <div className="admin-mono text-[10px] uppercase tracking-[0.18em] text-brand-teal mb-2">Your AI Profile</div>
-        <h2 className="admin-display text-2xl leading-tight text-[#08161a]">How you should use AI.</h2>
+        <div className="admin-mono text-[10px] uppercase tracking-[0.18em] text-brand-teal mb-2">Mission Control</div>
+        <h2 className="admin-display text-2xl leading-tight text-[#08161a]">Your operating stance.</h2>
         <p className="admin-body text-[12px] text-black/55 mt-2 max-w-2xl">
-          This is your operating stance. Less &ldquo;tools&rdquo;. More leverage, constraints, and truth.
+          Less &ldquo;tools&rdquo;. More leverage, constraints, and truth. Your SWAT team is being assembled.
         </p>
       </div>
       <section className="border border-black/8 p-4">

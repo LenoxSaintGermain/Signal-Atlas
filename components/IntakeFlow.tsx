@@ -537,7 +537,7 @@ export function IntakeFlow(props: {
         upsertArtifact(props.uid, 'suite_distilled', 'Your Suite, Distilled', generateSuiteDistilledDoc(brief, nextAnswers)),
         upsertArtifact(props.uid, 'plan', 'Your Plan', plan),
         upsertArtifact(props.uid, 'profile', 'Your Profile', profile),
-        upsertArtifact(props.uid, 'ai_profile', 'Your AI Profile', aiProfile),
+        upsertArtifact(props.uid, 'ai_profile', 'Mission Control', aiProfile),
         upsertArtifact(props.uid, 'gaps', 'Your Gaps', gaps),
         upsertArtifact(props.uid, 'readiness', 'AI Readiness Assessment', generateReadinessDoc(nextAnswers)),
         upsertArtifact(props.uid, 'cjs_execution', 'ConciergeJobSearch Execution', generateCjsExecutionDoc(nextAnswers, nextIntent)),

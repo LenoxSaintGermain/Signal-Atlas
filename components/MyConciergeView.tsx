@@ -99,7 +99,7 @@ const buildResponse = (client: ClientDoc, mode: ConciergeMode, question: string)
       nextActions: [
         'Audit three recurring workflows for Copilot or AI-assisted automation potential.',
         'Draft a one-page pilot proposal tied to a current team bottleneck.',
-        'Use Episodes and Your AI Profile as the rehearsal lane before pitching upward.',
+        'Use Episodes and Mission Control as the rehearsal lane before pitching upward.',
       ],
     };
   }

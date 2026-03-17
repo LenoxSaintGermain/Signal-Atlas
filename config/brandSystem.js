@@ -76,11 +76,11 @@ export const DEFAULT_BRAND_MODULES = {
     detail_quote: 'A concise read on who you are when your work is under pressure.',
   },
   ai_profile: {
-    eyebrow: 'AI Assessment',
-    title: 'Your AI Profile',
-    description: 'How AI should support your working style, judgment, and execution.',
-    detail_title: 'Your AI Profile',
-    detail_quote: 'A practical map for where AI amplifies you without adding noise.',
+    eyebrow: 'Operations Board',
+    title: 'Mission Control',
+    description: 'Your SWAT team is already working. Steer from here.',
+    detail_title: 'Mission Control',
+    detail_quote: 'Five specialists assigned to your career operation — already briefed on your signal, your gaps, and your market.',
   },
   gaps: {
     eyebrow: 'AI Gap Analysis',
