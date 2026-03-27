@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 08 — Your AI Profile · SWAT Operations Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #F2EDE3;
+  --bg-card:    #EDE7DA;
+  --bg-input:   #E6DFD1;
+  --bg-hover:   #E0D8C8;
+  --teal:       #2B6B5E;
+  --teal-mid:   #3D8B7A;
+  --teal-dim:   rgba(43,107,94,0.1);
+  --teal-light: rgba(43,107,94,0.06);
+  --teal-border:rgba(43,107,94,0.28);
+  --ink:        #1A1814;
+  --mid:        #5C5648;
+  --muted:      #9A9186;
+  --rule:       rgba(26,24,20,0.1);
+  --rule-mid:   rgba(26,24,20,0.18);
+  --amber:      #8C5E1A;
+  --amber-bg:   rgba(140,94,26,0.09);
+  --amber-dim:  rgba(140,94,26,0.2);
+  --danger:     #7A2A1E;
+  --danger-bg:  rgba(122,42,30,0.07);
+  --green:      #2B5E3A;
+  --green-bg:   rgba(43,94,58,0.09);
+  --dark-bg:    #1A1814;
+  --dark-card:  #242018;
+  --dark-mid:   rgba(242,237,227,0.55);
+  --dark-muted: rgba(242,237,227,0.3);
+  --dark-rule:  rgba(242,237,227,0.1);
+  --serif:      'Playfair Display', Georgia, serif;
+  --body:       'EB Garamond', Georgia, serif;
+  --mono:       'IBM Plex Mono', 'Courier New', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--dark-bg); color: var(--bg); font-family: var(--body); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+
+/* ─── DARK HEADER CHROME ───────────────────────────── */
+.chrome-top {
+  background: var(--dark-bg);
+  border-bottom: 1px solid var(--dark-rule);
+  padding: 0 28px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chrome-breadcrumb {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--dark-muted);
+  letter-spacing: .12em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chrome-breadcrumb span { color: var(--bg); }
+.btn-close {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--dark-rule);
+  color: var(--dark-mid);
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-close:hover { border-color: var(--bg); color: var(--bg); }
+
+/* Module header */
+.module-header {
+  background: var(--dark-bg);
+  padding: 14px 28px 0;
+}
+.module-meta {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--dark-muted);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.module-meta-teal { color: var(--teal-mid); font-weight: 700; letter-spacing: .16em; }
+.module-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--bg);
+  letter-spacing: -.3px;
+  margin-bottom: 6px;
+}
+.module-subtitle {
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--dark-muted);
+  font-style: italic;
+  margin-bottom: 16px;
+}
+.account-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dark-muted);
+  letter-spacing: .1em;
+  border: 1px solid var(--dark-rule);
+  padding: 4px 12px;
+}
+
+/* Tab nav */
+.tab-nav {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-top: 1px solid var(--dark-rule);
+  margin-top: 4px;
+}
+.tab-item {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 12px 18px;
+  cursor: pointer;
+  color: var(--dark-muted);
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-item:hover { color: var(--bg); }
+.tab-item.active { color: var(--teal-mid); border-bottom-color: var(--teal-mid); }
+.tab-framing-desc {
+  font-family: var(--body);
+  font-size: 12px;
+  color: var(--dark-muted);
+  font-style: italic;
+  letter-spacing: 0;
+  font-weight: 400;
+  text-transform: none;
+}
+
+/* ─── MAIN CONTENT ZONE ────────────────────────────── */
+.content-zone {
+  background: var(--bg);
+  min-height: calc(100vh - 200px);
+  padding: 0 0 80px;
+}
+
+/* ─── OPERATING STANCE BAR ─────────────────────────── */
+.stance-bar {
+  padding: 12px 28px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.stance-label {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stance-desc {
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--mid);
+  font-style: italic;
+}
+.stance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.stance-opt {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  transition: all .15s;
+  border-right: 1px solid var(--rule);
+}
+.stance-opt:last-child { border-right: none; }
+.stance-opt:hover { color: var(--teal); background: var(--teal-light); }
+.stance-opt.active { background: var(--teal-dim); color: var(--teal); }
+
+/* Confidence threshold */
+.confidence-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.confidence-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.confidence-track {
+  width: 140px;
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 0;
+  position: relative;
+  cursor: pointer;
+}
+.confidence-fill {
+  height: 100%;
+  background: var(--teal);
+  transition: width .2s;
+}
+.confidence-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--teal);
+  background: var(--bg);
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+  cursor: pointer;
+  transition: left .2s;
+}
+.confidence-val {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal);
+  min-width: 28px;
+}
+
+/* ─── SECTION HEADERS ──────────────────────────────── */
+.section-block {
+  padding: 20px 28px 0;
+}
+.section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-eyebrow::after {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 1px;
+  background: var(--teal);
+  opacity: .4;
+}
+.section-title-lg {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -.1px;
+}
+.section-hint {
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ─── AGENT GRID ───────────────────────────────────── */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 0 28px 20px;
+}
+
+.agent-card {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 16px 14px;
+  cursor: pointer;
+  transition: all .18s;
+  position: relative;
+  overflow: hidden;
+}
+.agent-card:hover {
+  border-color: var(--teal-border);
+  background: var(--bg-hover);
+}
+.agent-card.active {
+  border-color: var(--teal-border);
+  background: var(--teal-light);
+}
+.agent-card.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--teal);
+}
+
+/* Status indicator */
+.agent-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.agent-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.agent-dot.working { background: var(--teal); animation: breathe 2s ease-in-out infinite; }
+.agent-dot.queued { background: var(--amber); }
+.agent-dot.waiting { background: var(--muted); }
+@keyframes breathe { 0%,100%{opacity:.4}50%{opacity:1} }
+
+.agent-trigger-badge {
+  font-family: var(--mono);
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  background: var(--bg);
+}
+.agent-trigger-badge.auto { border-color: var(--teal-border); color: var(--teal); background: var(--teal-light); }
+.agent-trigger-badge.pending { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-bg); }
+
+.agent-codename {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+.agent-specialty {
+  font-family: var(--body);
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.4;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+.agent-reads {
+  margin-bottom: 6px;
+}
+.agent-field-label {
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+  display: block;
+}
+.agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.agent-chip {
+  font-family: var(--mono);
+  font-size: 7px;
+  padding: 2px 5px;
+  border: 1px solid var(--rule);
+  color: var(--mid);
+  background: var(--bg);
+}
+.agent-chip.teal { border-color: var(--teal-border); color: var(--teal); background: var(--teal-light); }
+
+.agent-trigger {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+.agent-trigger-text {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: .04em;
+  line-height: 1.5;
+}
+
+/* ─── MISSION QUEUE ────────────────────────────────── */
+.mission-zone { padding: 0 28px; }
+
+.mission-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  border: 1px solid var(--rule);
+  margin-bottom: 6px;
+  transition: all .15s;
+  cursor: pointer;
+  background: var(--bg-card);
+}
+.mission-row:hover { border-color: var(--teal-border); background: var(--bg-hover); }
+.mission-row.approved { border-color: rgba(43,94,58,0.2); }
+.mission-row.needs-approval { border-left: 3px solid var(--amber); }
+.mission-row.running { border-left: 3px solid var(--teal); }
+
+.mission-agent-col {
+  width: 130px;
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-right: 1px solid var(--rule);
+}
+.mission-agent-name {
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 3px;
+  line-height: 1.2;
+}
+.mission-agent-state {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.state-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mission-body {
+  flex: 1;
+  padding: 12px 16px;
+}
+.mission-title {
+  font-family: var(--body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.mission-detail {
+  font-family: var(--body);
+  font-size: 12.5px;
+  color: var(--mid);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.mission-right {
+  width: 120px;
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-left: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mission-badge {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.badge-running { color: var(--teal); border-color: var(--teal-border); background: var(--teal-light); }
+.badge-approval { color: var(--amber); border-color: var(--amber-dim); background: var(--amber-bg); }
+.badge-complete { color: var(--green); border-color: rgba(43,94,58,0.25); background: var(--green-bg); }
+.badge-queued { color: var(--muted); border-color: var(--rule); }
+
+.mission-approve-btn {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--teal);
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.mission-approve-btn:hover { background: var(--teal-mid); }
+.mission-approve-btn:active { transform: scale(.97); }
+.mission-skip-btn {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.mission-skip-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ─── POSITIONING CARD ─────────────────────────────── */
+.positioning-card {
+  margin: 0 28px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--teal);
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.pos-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--teal);
+  min-width: 90px;
+  padding-top: 3px;
+  flex-shrink: 0;
+}
+.pos-text {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+/* ─── USE/GUARDRAILS TWO-COL ────────────────────────── */
+.two-col-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 28px 20px;
+}
+.col-block {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+}
+.col-block-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.col-block-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.numbered-list { display: flex; flex-direction: column; gap: 8px; }
+.numbered-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.num-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--teal);
+  min-width: 16px;
+  margin-top: 2px;
+}
+.num-text {
+  font-family: var(--body);
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* ─── PROGRESS BAR ─────────────────────────────────── */
+.progress-mini {
+  width: 100%;
+  height: 2px;
+  background: var(--rule);
+  margin-top: 4px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--teal);
+  transition: width 1s ease;
+}
+
+/* ─── SAVE BAR ──────────────────────────────────────── */
+.save-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--dark-bg);
+  border-top: 1px solid var(--dark-rule);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+.save-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dark-muted);
+  letter-spacing: .1em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.save-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal-mid);
+  animation: breathe 2.5s ease-in-out infinite;
+}
+.btn-save {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: var(--teal);
+  color: white;
+  border: none;
+  padding: 9px 22px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-save:hover { background: var(--teal-mid); }
+.btn-discard {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--dark-muted);
+  border: 1px solid var(--dark-rule);
+  padding: 8px 16px;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all .12s;
+}
+.btn-discard:hover { border-color: var(--bg); color: var(--bg); }
+
+/* ─── MODAL ─────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,.75);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg);
+  width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: fadeUp .22s ease;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  background: var(--dark-bg);
+}
+.modal-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bg);
+}
+.modal-tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--teal-mid);
+  letter-spacing: .14em;
+  margin-bottom: 4px;
+  display: block;
+  text-transform: uppercase;
+}
+.modal-close {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dark-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px solid var(--dark-rule);
+  transition: all .12s;
+}
+.modal-close:hover { color: var(--bg); border-color: var(--bg); }
+.modal-body { padding: 20px 22px; }
+.modal-section-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-section-label::after { content:''; flex:1; height:1px; background:var(--rule); }
+.modal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.modal-row:last-child { border-bottom: none; }
+.modal-row-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  min-width: 110px;
+}
+.modal-row-val {
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--ink);
+  flex: 1;
+}
+.modal-row-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.modal-chip {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  color: var(--mid);
+}
+.modal-chip.teal { border-color: var(--teal-border); color: var(--teal); background: var(--teal-light); }
+</style>
+</head>
+<body>
+
+<!-- DARK HEADER -->
+<div class="chrome-top">
+  <div class="chrome-breadcrumb">
+    08 / 18 · <span>Your AI Profile</span>
+  </div>
+  <button class="btn-close">Close</button>
+</div>
+
+<div class="module-header">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="module-meta">
+        <span>08 / 18 MODULE</span>
+        <span>ARTIFACT UNLOCKED</span>
+        <span class="module-meta-teal">AI ASSESSMENT</span>
+      </div>
+      <div class="module-title">Your AI Profile</div>
+      <div class="module-subtitle">Your personal SWAT team. Briefed on your signal, gaps, and market. They're working.</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dark-muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">Account</div>
+      <div class="account-badge">operator@thirdsignal.ai</div>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <div class="tab-item active">Framing <span class="tab-framing-desc">Your mission board.</span></div>
+    <div class="tab-item" onclick="switchTab(this)">Your Plan</div>
+    <div class="tab-item" onclick="switchTab(this)">Your Gaps</div>
+    <div class="tab-item" onclick="switchTab(this)">AI Readiness</div>
+    <div class="tab-item" onclick="switchTab(this)">Operator-Aware View</div>
+  </div>
+</div>
+
+<!-- CONTENT ZONE -->
+<div class="content-zone">
+
+  <!-- OPERATING STANCE BAR -->
+  <div class="stance-bar">
+    <div>
+      <div class="stance-label">Operating Stance</div>
+      <div class="stance-desc">Controls what agents auto-apply vs. surface for your approval.</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div class="stance-toggle">
+        <button class="stance-opt active" onclick="setStance(this)">Co-Pilot</button>
+        <button class="stance-opt" onclick="setStance(this)">Delegator</button>
+        <button class="stance-opt" onclick="setStance(this)">Review-All</button>
+      </div>
+      <div class="confidence-wrap">
+        <div class="confidence-label">Auto-Apply Threshold</div>
+        <div class="confidence-track" id="conf-track" onclick="setConfidence(event)">
+          <div class="confidence-fill" id="conf-fill" style="width:72%;"></div>
+          <div class="confidence-thumb" id="conf-thumb" style="left:72%;"></div>
+        </div>
+        <div class="confidence-val" id="conf-val">72%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITIONING -->
+  <div style="padding:20px 28px 14px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+      <div>
+        <div style="font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--teal);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:6px;">Your AI Profile <span style="display:inline-block;width:20px;height:1px;background:var(--teal);opacity:.4;vertical-align:middle;"></span></div>
+        <div style="font-family:var(--serif);font-size:20px;font-weight:900;color:var(--ink);letter-spacing:-.1px;">How you should use AI.</div>
+      </div>
+      <div style="font-family:var(--body);font-size:13px;color:var(--muted);font-style:italic;">This is your operating stance. Less "tools". More leverage, constraints, and truth.</div>
+    </div>
+  </div>
+
+  <div class="positioning-card">
+    <div class="pos-label">Positioning</div>
+    <div class="pos-text">Strategic co-pilot for executive-grade communication and decision modeling.</div>
+  </div>
+
+  <!-- AGENT GRID HEADER -->
+  <div class="section-block">
+    <div class="section-row">
+      <div>
+        <div style="font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--teal);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:6px;">SWAT Operations Board <span style="display:inline-block;width:20px;height:1px;background:var(--teal);opacity:.4;vertical-align:middle;"></span></div>
+        <div style="font-family:var(--serif);font-size:18px;font-weight:900;color:var(--ink);">Five specialists. Already briefed.</div>
+      </div>
+      <div style="font-family:var(--body);font-size:13px;color:var(--muted);font-style:italic;">Your job is to steer.</div>
+    </div>
+  </div>
+
+  <!-- AGENT GRID -->
+  <div class="agent-grid">
+
+    <!-- Signal Strategist -->
+    <div class="agent-card active" onclick="openAgentDetail('signal-strategist')">
+      <div class="agent-status">
+        <div class="agent-dot working"></div>
+        <div class="agent-trigger-badge auto">Auto</div>
+      </div>
+      <div class="agent-codename">Signal Strategist</div>
+      <div class="agent-specialty">Positioning, narrative, differentiation</div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Reads</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">brief</span>
+          <span class="agent-chip teal">profile</span>
+          <span class="agent-chip">dna_research</span>
+        </div>
+      </div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Enriches</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">brief</span>
+          <span class="agent-chip teal">profile</span>
+        </div>
+      </div>
+      <div class="agent-trigger">
+        <div class="agent-trigger-text">Suite generated · DNA refreshed · intake updated</div>
+        <div class="progress-mini"><div class="progress-fill" style="width:85%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Gap Closer -->
+    <div class="agent-card" onclick="openAgentDetail('gap-closer')">
+      <div class="agent-status">
+        <div class="agent-dot queued"></div>
+        <div class="agent-trigger-badge pending">Review</div>
+      </div>
+      <div class="agent-codename">Gap Closer</div>
+      <div class="agent-specialty">Targeted micro-plans, skill acquisition</div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Reads</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">gaps</span>
+          <span class="agent-chip teal">plan</span>
+          <span class="agent-chip">readiness</span>
+        </div>
+      </div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Enriches</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">gaps</span>
+          <span class="agent-chip teal">plan</span>
+        </div>
+      </div>
+      <div class="agent-trigger">
+        <div class="agent-trigger-text">Gaps unactioned 7d+ · readiness score changes</div>
+        <div class="progress-mini"><div class="progress-fill" style="width:40%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Intel Analyst -->
+    <div class="agent-card" onclick="openAgentDetail('intel-analyst')">
+      <div class="agent-status">
+        <div class="agent-dot waiting"></div>
+        <div class="agent-trigger-badge">Idle</div>
+      </div>
+      <div class="agent-codename">Intel Analyst</div>
+      <div class="agent-specialty">Company/market research, opportunity surfacing</div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Reads</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">dna_research</span>
+          <span class="agent-chip">profile</span>
+        </div>
+      </div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Enriches</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">brief</span>
+          <span class="agent-chip teal">gaps</span>
+        </div>
+      </div>
+      <div class="agent-trigger">
+        <div class="agent-trigger-text">DNA refresh · 7d+ since last intel · user request</div>
+        <div class="progress-mini"><div class="progress-fill" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Comms Officer -->
+    <div class="agent-card" onclick="openAgentDetail('comms-officer')">
+      <div class="agent-status">
+        <div class="agent-dot working"></div>
+        <div class="agent-trigger-badge auto">Auto</div>
+      </div>
+      <div class="agent-codename">Comms Officer</div>
+      <div class="agent-specialty">High-stakes drafts in user's voice</div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Reads</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">brief</span>
+          <span class="agent-chip teal">profile</span>
+          <span class="agent-chip">brand config</span>
+        </div>
+      </div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Enriches</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">assets</span>
+          <span class="agent-chip teal">plan</span>
+        </div>
+      </div>
+      <div class="agent-trigger">
+        <div class="agent-trigger-text">User-initiated · plan has pending deliverables</div>
+        <div class="progress-mini"><div class="progress-fill" style="width:60%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Readiness Coach -->
+    <div class="agent-card" onclick="openAgentDetail('readiness-coach')">
+      <div class="agent-status">
+        <div class="agent-dot queued"></div>
+        <div class="agent-trigger-badge pending">Queued</div>
+      </div>
+      <div class="agent-codename">Readiness Coach</div>
+      <div class="agent-specialty">Scenario drills, pressure testing, scoring</div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Reads</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">readiness</span>
+          <span class="agent-chip teal">gaps</span>
+          <span class="agent-chip">profile</span>
+        </div>
+      </div>
+      <div class="agent-reads">
+        <span class="agent-field-label">Enriches</span>
+        <div class="agent-chips">
+          <span class="agent-chip teal">readiness</span>
+          <span class="agent-chip teal">gaps</span>
+        </div>
+      </div>
+      <div class="agent-trigger">
+        <div class="agent-trigger-text">Readiness score &lt;70% · interview prep needed</div>
+        <div class="progress-mini"><div class="progress-fill" style="width:20%;"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /agent-grid -->
+
+  <!-- MISSION QUEUE HEADER -->
+  <div class="section-block" style="padding-top:8px;">
+    <div class="section-row">
+      <div>
+        <div style="font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:6px;">Active Mission Queue <span style="display:inline-block;width:20px;height:1px;background:var(--rule);vertical-align:middle;"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-family:var(--mono);font-size:8.5px;color:var(--muted);">3 active · 1 awaiting approval</span>
+        <button style="font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--rule);background:transparent;color:var(--mid);padding:5px 12px;cursor:pointer;" onclick="approveAll()">Approve All →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MISSION ROWS -->
+  <div class="mission-zone">
+
+    <div class="mission-row running">
+      <div class="mission-agent-col">
+        <div class="mission-agent-name">Signal Strategist</div>
+        <div class="mission-agent-state" style="color:var(--teal);">
+          <div class="state-dot" style="background:var(--teal);animation:breathe 2s ease-in-out infinite;"></div>
+          Running
+        </div>
+      </div>
+      <div class="mission-body">
+        <div class="mission-title">Refreshing positioning narrative from updated DNA research</div>
+        <div class="mission-detail">Brief section 2 · DNA research updated 4 hours ago · auto-triggered by DNA refresh event</div>
+      </div>
+      <div class="mission-right">
+        <div class="mission-badge badge-running">Running</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);">Auto · 85% conf</div>
+      </div>
+    </div>
+
+    <div class="mission-row needs-approval" id="approval-row">
+      <div class="mission-agent-col">
+        <div class="mission-agent-name">Gap Closer</div>
+        <div class="mission-agent-state" style="color:var(--amber);">
+          <div class="state-dot" style="background:var(--amber);"></div>
+          Awaiting
+        </div>
+      </div>
+      <div class="mission-body">
+        <div class="mission-title">Propose 3 micro-actions for Leadership Communication gap</div>
+        <div class="mission-detail">Gaps section 4 unactioned 9 days · confidence 64% — below your 72% threshold, needs your approval</div>
+      </div>
+      <div class="mission-right" style="justify-content:space-between;">
+        <div class="mission-badge badge-approval">Approval Needed</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button class="mission-approve-btn" onclick="approveMission(this)">Approve →</button>
+          <button class="mission-skip-btn" onclick="skipMission(this)">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mission-row running">
+      <div class="mission-agent-col">
+        <div class="mission-agent-name">Comms Officer</div>
+        <div class="mission-agent-state" style="color:var(--teal);">
+          <div class="state-dot" style="background:var(--teal);animation:breathe 2s ease-in-out infinite;"></div>
+          Running
+        </div>
+      </div>
+      <div class="mission-body">
+        <div class="mission-title">Drafting executive summary asset for pending plan deliverable</div>
+        <div class="mission-detail">Assets · Plan section has 2 pending deliverables · applying brand voice + Robert Frost restraint constraint</div>
+      </div>
+      <div class="mission-right">
+        <div class="mission-badge badge-running">Running</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);">Auto · 91% conf</div>
+      </div>
+    </div>
+
+    <div class="mission-row" style="opacity:.5;">
+      <div class="mission-agent-col">
+        <div class="mission-agent-name">Readiness Coach</div>
+        <div class="mission-agent-state" style="color:var(--muted);">
+          <div class="state-dot" style="background:var(--muted);"></div>
+          Queued
+        </div>
+      </div>
+      <div class="mission-body">
+        <div class="mission-title">Schedule pressure-test scenario drill for Director-level interview</div>
+        <div class="mission-detail">Readiness score 68% · below 70% threshold · queued behind 2 running jobs</div>
+      </div>
+      <div class="mission-right">
+        <div class="mission-badge badge-queued">Queued</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);">Auto · 78% conf</div>
+      </div>
+    </div>
+
+  </div><!-- /mission-zone -->
+
+  <!-- USE AI FOR + GUARDRAILS -->
+  <div style="padding: 24px 28px 12px;">
+    <div style="font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:14px;">Operating Rules <span style="display:inline-block;width:20px;height:1px;background:var(--rule);vertical-align:middle;"></span> <span style="font-weight:400;font-family:var(--body);font-style:italic;text-transform:none;letter-spacing:0;">Set by your profile · applied to all agents</span></div>
+  </div>
+
+  <div class="two-col-block">
+    <div class="col-block">
+      <div class="col-block-label">Use AI For</div>
+      <div class="numbered-list">
+        <div class="numbered-item">
+          <span class="num-badge">01</span>
+          <span class="num-text">Use for sharpening the brevity of internal memos.</span>
+        </div>
+        <div class="numbered-item">
+          <span class="num-badge">02</span>
+          <span class="num-text">Model potential outcomes of strategic decisions.</span>
+        </div>
+        <div class="numbered-item">
+          <span class="num-badge">03</span>
+          <span class="num-text">Draft high-stakes communication artifacts for refinement.</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-block">
+      <div class="col-block-label">Guardrails</div>
+      <div class="numbered-list">
+        <div class="numbered-item">
+          <span class="num-badge" style="color:var(--danger);">01</span>
+          <span class="num-text">Maintain human nuance in sensitive leadership contexts.</span>
+        </div>
+        <div class="numbered-item">
+          <span class="num-badge" style="color:var(--danger);">02</span>
+          <span class="num-text">Avoid generic AI phrasing in executive updates.</span>
+        </div>
+        <div class="numbered-item">
+          <span class="num-badge" style="color:var(--danger);">03</span>
+          <span class="num-text">Ensure all outputs reflect the Robert Frost restraint.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content-zone -->
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <div class="save-status">
+    <div class="save-dot"></div>
+    Module 08 · SWAT Board · 2 agents running · 1 awaiting approval
+  </div>
+  <div>
+    <button class="btn-discard">Discard</button>
+    <button class="btn-save" onclick="showSaved(this)">Save Configuration</button>
+  </div>
+</div>
+
+<!-- AGENT DETAIL MODAL -->
+<div class="modal-overlay" id="agent-modal" onclick="closeModalIfBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-tag" id="modal-tag">Signal Strategist</div>
+        <div class="modal-title" id="modal-title">Specialty & Configuration</div>
+      </div>
+      <div class="modal-close" onclick="closeModal()">Close ×</div>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+const AGENTS = {
+  'signal-strategist': {
+    codename: 'Signal Strategist',
+    specialty: 'Positioning, narrative, differentiation',
+    status: 'Running — 85% confidence',
+    reads: ['brief', 'profile', 'dna_research'],
+    enriches: ['brief', 'profile'],
+    triggers: ['Suite generated', 'DNA refreshed', 'Intake updated'],
+    stance: 'Auto-applies above confidence threshold',
+    description: 'Reads your latest brief and DNA research to keep your positioning narrative sharp and differentiated. Fires automatically when suite is regenerated or DNA is refreshed.'
+  },
+  'gap-closer': {
+    codename: 'Gap Closer',
+    specialty: 'Targeted micro-plans, skill acquisition',
+    status: 'Awaiting approval — 64% confidence',
+    reads: ['gaps', 'plan', 'readiness'],
+    enriches: ['gaps', 'plan'],
+    triggers: ['Gaps unactioned 7d+', 'Readiness score changes'],
+    stance: 'Below threshold — requires your approval',
+    description: 'Surfaces targeted micro-actions for unaddressed gaps. Fires when gaps have been unactioned for 7+ days or when readiness score changes meaningfully.'
+  },
+  'intel-analyst': {
+    codename: 'Intel Analyst',
+    specialty: 'Company/market research, opportunity surfacing',
+    status: 'Idle — waiting for trigger',
+    reads: ['dna_research', 'profile'],
+    enriches: ['brief', 'gaps'],
+    triggers: ['DNA refresh', '7d+ since last intel', 'User request'],
+    stance: 'Manual or timed trigger',
+    description: 'Surfaces market intelligence and company research relevant to your target roles. Fires on DNA refresh cycles or when 7+ days have passed since last intel run.'
+  },
+  'comms-officer': {
+    codename: 'Comms Officer',
+    specialty: 'High-stakes drafts in user\'s voice',
+    status: 'Running — 91% confidence',
+    reads: ['brief', 'profile', 'brand config'],
+    enriches: ['assets', 'plan'],
+    triggers: ['User-initiated', 'Plan has pending deliverables'],
+    stance: 'Auto-applies above confidence threshold',
+    description: 'Drafts communications in your voice, informed by your brand config and Robert Frost restraint constraint. Fires when plan section has pending deliverables.'
+  },
+  'readiness-coach': {
+    codename: 'Readiness Coach',
+    specialty: 'Scenario drills, pressure testing, scoring',
+    status: 'Queued — 78% confidence',
+    reads: ['readiness', 'gaps', 'profile'],
+    enriches: ['readiness', 'gaps'],
+    triggers: ['Readiness score <70%', 'Interview prep needed'],
+    stance: 'Auto-applies above confidence threshold',
+    description: 'Runs scenario drills and pressure tests calibrated to your target role level. Fires when readiness score drops below 70% or when interview prep is flagged.'
+  }
+};
+
+function switchTab(el) {
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+function setStance(btn) {
+  document.querySelectorAll('.stance-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setConfidence(e) {
+  const track = document.getElementById('conf-track');
+  const rect = track.getBoundingClientRect();
+  const pct = Math.min(100, Math.max(0, Math.round((e.clientX - rect.left) / rect.width * 100)));
+  document.getElementById('conf-fill').style.width = pct + '%';
+  document.getElementById('conf-thumb').style.left = pct + '%';
+  document.getElementById('conf-val').textContent = pct + '%';
+}
+function openAgentDetail(id) {
+  const a = AGENTS[id];
+  if (!a) return;
+  document.getElementById('modal-tag').textContent = a.codename;
+  document.getElementById('modal-title').textContent = a.specialty;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-row"><div class="modal-row-label">Status</div><div class="modal-row-val" style="color:var(--teal);font-family:var(--mono);font-size:12px;">${a.status}</div></div>
+    <div class="modal-row"><div class="modal-row-label">Description</div><div class="modal-row-val" style="font-style:italic;">${a.description}</div></div>
+    <div class="modal-section-label">Data Access</div>
+    <div class="modal-row">
+      <div class="modal-row-label">Reads</div>
+      <div class="modal-row-chips">${a.reads.map(r=>`<span class="modal-chip teal">${r}</span>`).join('')}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-row-label">Enriches</div>
+      <div class="modal-row-chips">${a.enriches.map(r=>`<span class="modal-chip teal">${r}</span>`).join('')}</div>
+    </div>
+    <div class="modal-section-label">Trigger Events</div>
+    ${a.triggers.map(t=>`<div class="modal-row"><div class="modal-row-val">${t}</div></div>`).join('')}
+    <div class="modal-section-label">Operating Stance</div>
+    <div class="modal-row"><div class="modal-row-val">${a.stance}</div></div>
+  `;
+  document.getElementById('agent-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('agent-modal').classList.remove('open'); }
+function closeModalIfBg(e) { if (e.target === document.getElementById('agent-modal')) closeModal(); }
+function approveMission(btn) {
+  const row = btn.closest('.mission-row');
+  row.classList.remove('needs-approval');
+  row.style.borderLeft = '3px solid var(--teal)';
+  row.querySelector('.mission-agent-state').style.color = 'var(--teal)';
+  row.querySelector('.mission-agent-state').innerHTML = `<div class="state-dot" style="width:5px;height:5px;border-radius:50%;background:var(--teal);animation:breathe 2s ease-in-out infinite;flex-shrink:0;"></div> Running`;
+  row.querySelector('.mission-badge').className = 'mission-badge badge-running';
+  row.querySelector('.mission-badge').textContent = 'Running';
+  row.querySelector('.mission-right').lastElementChild.remove();
+  row.querySelector('.mission-right').innerHTML += '<div style="font-family:var(--mono);font-size:8px;color:var(--muted);">Auto · 64% conf</div>';
+  document.querySelector('.save-status').innerHTML = '<div class="save-dot"></div> Module 08 · SWAT Board · 3 agents running · 0 awaiting approval';
+}
+function skipMission(btn) {
+  const row = btn.closest('.mission-row');
+  row.style.opacity = '.3';
+  setTimeout(() => row.style.display = 'none', 400);
+}
+function approveAll() {
+  const pending = document.querySelectorAll('.mission-row.needs-approval');
+  pending.forEach(row => {
+    const approveBtn = row.querySelector('.mission-approve-btn');
+    if (approveBtn) approveMission(approveBtn);
+  });
+}
+function showSaved(btn) {
+  const orig = btn.textContent;
+  btn.textContent = 'Saved ✓';
+  btn.style.background = '#2B8A6E';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1800);
+}
+</script>
+</body>
+</html>

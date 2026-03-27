@@ -70,8 +70,8 @@ export const SUITE_MODULES: SuiteModule[] = [
   {
     id: 'gaps',
     index: '09',
-    title: 'Your Gaps',
-    subtitle: 'What’s missing, what’s noisy, and what to tighten first.',
+    title: 'The Gap Stack',
+    subtitle: 'The shortest set of gaps that unlocks the next level.',
     kind: 'artifact',
     relatedIds: ['plan', 'readiness'],
   },

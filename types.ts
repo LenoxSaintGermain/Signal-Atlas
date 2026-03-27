@@ -442,10 +442,37 @@ export interface AIProfileContent {
   missions?: Mission[];
 }
 
+export type GapSeverity = 'critical' | 'high' | 'medium' | 'low' | 'closed';
+export type GapCategory = 'near_term' | 'target_role' | 'constraint';
+
+export interface Gap {
+  id: string;
+  title: string;
+  detail: string;
+  category: GapCategory;
+  severity: GapSeverity;
+  urgency: number;
+  days_unactioned: number;
+  agent_codename?: string;
+  agent_status?: 'investigating' | 'recommendation_ready' | 'addressed';
+  addressed: boolean;
+  addressed_at?: string;
+}
+
+export interface ReadinessSegments {
+  awareness: number;
+  skill_building: number;
+  application: number;
+  mastery: number;
+}
+
 export interface GapsContent {
   near_term: string[];
   for_target_role: string[];
   constraints: string[];
+  gap_stack?: Gap[];
+  readiness_score?: number;
+  readiness_segments?: ReadinessSegments;
 }
 
 export interface ReadinessContent {

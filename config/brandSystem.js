@@ -83,11 +83,11 @@ export const DEFAULT_BRAND_MODULES = {
     detail_quote: 'Five specialists assigned to your career operation — already briefed on your signal, your gaps, and your market.',
   },
   gaps: {
-    eyebrow: 'AI Gap Analysis',
-    title: 'Your Gaps',
-    description: 'Readiness deltas, friction points, and what to tighten first.',
-    detail_title: 'Your Gaps',
-    detail_quote: 'The capability gaps that matter most right now.',
+    eyebrow: 'Gap Stack',
+    title: 'The Gap Stack',
+    description: 'The shortest set of gaps that unlocks the next level.',
+    detail_title: 'The Gap Stack',
+    detail_quote: 'Not a list of flaws. Gravity-weighted priorities that move the needle.',
   },
   readiness: {
     eyebrow: 'AI Insight Report',
