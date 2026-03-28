@@ -650,7 +650,7 @@ export function IntakeFlow(props: {
             ) : null}
 
             {props.voiceConfig.elevenlabs_enabled && voiceLaneChoice === 'elevenlabs' ? (
-              <ElevenLabsConvaiPanel agentId={props.voiceConfig.elevenlabs_agent_id} />
+              <ElevenLabsConvaiPanel agentId={props.voiceConfig.elevenlabs_agent_id} userUid={props.uid} />
             ) : (
               <GeminiLivePanel
                 onStateChange={(state) => setVoiceSessionState(state)}

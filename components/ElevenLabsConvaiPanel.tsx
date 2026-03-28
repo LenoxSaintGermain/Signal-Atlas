@@ -18,9 +18,11 @@ const ELEVENLABS_WIDGET_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed
  */
 export function ElevenLabsConvaiPanel({
   agentId,
+  userUid,
   ghostCallbacks,
 }: {
   agentId: string;
+  userUid?: string;
   ghostCallbacks?: GhostCallbacks;
 }) {
   const [ready, setReady] = useState(false);
@@ -81,8 +83,12 @@ export function ElevenLabsConvaiPanel({
 
   const widget = useMemo(() => {
     if (!ready || !agentId) return null;
-    return React.createElement('elevenlabs-convai', { 'agent-id': agentId });
-  }, [agentId, ready]);
+    const attrs: Record<string, string> = { 'agent-id': agentId };
+    if (userUid) {
+      attrs['dynamic-variables'] = JSON.stringify({ uid: userUid });
+    }
+    return React.createElement('elevenlabs-convai', attrs);
+  }, [agentId, userUid, ready]);
 
   return (
     <section className="relative overflow-hidden border border-[#08242a] bg-[radial-gradient(circle_at_top,_rgba(27,208,191,0.15),_transparent_36%),linear-gradient(145deg,#041117_0%,#08242a_56%,#07181d_100%)] p-5 text-white shadow-[0_28px_70px_-48px_rgba(0,0,0,0.52)] md:p-6">
