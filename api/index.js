@@ -42,6 +42,8 @@ import {
 } from './config/geminiModels.js';
 import { STARTER_MEDIA_LIBRARY_PACK } from './config/starterMediaLibrary.js';
 import { syncArtifactsToGoogleDocs } from './gws/syncArtifacts.js';
+import { buildGhostBriefing, GHOST_SYSTEM_PROMPT, GHOST_CLIENT_TOOLS, GHOST_SERVER_TOOLS } from './config/ghostPrompt.js';
+import { listFolderContents } from './gws/gwsClient.js';
 
 const app = express();
 
@@ -842,6 +844,7 @@ const sesameApiKey = process.env.SESAME_API_KEY || null;
 const elevenlabsApiKey = process.env.ELEVENLABS_API_KEY || null;
 const elevenlabsAgentId = process.env.ELEVENLABS_AGENT_ID || null;
 const elevenlabsAgentBranchId = process.env.ELEVENLABS_AGENT_BRANCH_ID || null;
+const ghostWebhookSecret = process.env.GHOST_WEBHOOK_SECRET || null;
 const manusApiKey = process.env.MANUS_API_KEY || null;
 const manusApiUrl = process.env.MANUS_API_URL || 'https://open.manus.ai';
 const sesameAuthHeader = process.env.SESAME_AUTH_HEADER || 'Authorization';
@@ -6051,6 +6054,122 @@ app.get('/v1/agents/registry', requireAuth, async (_req, res) => {
     agents: AGENT_REGISTRY,
   });
 });
+
+// ── Ghost Voice Agent Server Tools ──────────────────────────────────────────
+
+/**
+ * Middleware: authenticate Ghost server tool calls.
+ * ElevenLabs sends X-Ghost-Secret header; direct frontend calls use Firebase auth.
+ */
+const requireGhostAuth = async (req, res, next) => {
+  const webhookSecret = req.headers['x-ghost-secret'];
+  if (webhookSecret && ghostWebhookSecret && webhookSecret === ghostWebhookSecret) {
+    // ElevenLabs server tool call — uid comes from request body
+    req.ghostUid = req.body?.uid;
+    if (!req.ghostUid) return res.status(400).json({ error: 'missing_uid' });
+    return next();
+  }
+  // Fall back to Firebase auth
+  return requireAuth(req, res, () => {
+    req.ghostUid = req.user.uid;
+    next();
+  });
+};
+
+app.post('/v1/ghost/briefing', requireGhostAuth, async (req, res) => {
+  try {
+    const uid = req.ghostUid;
+    const clientSnap = await db.collection('clients').doc(uid).get();
+    const clientData = clientSnap.exists ? clientSnap.data() : {};
+
+    // Fetch gaps artifact for top gaps
+    const gapsSnap = await db.collection('clients').doc(uid).collection('artifacts').doc('gaps').get();
+    const gapsData = gapsSnap.exists ? gapsSnap.data() : {};
+    const nearTerm = gapsData.content?.near_term || [];
+    const forTarget = gapsData.content?.for_target_role || [];
+
+    // Fetch readiness artifact for tier + score
+    const readinessSnap = await db.collection('clients').doc(uid).collection('artifacts').doc('readiness').get();
+    const readinessData = readinessSnap.exists ? readinessSnap.data() : {};
+
+    // Fetch ai_profile for stance + missions
+    const aiSnap = await db.collection('clients').doc(uid).collection('artifacts').doc('ai_profile').get();
+    const aiData = aiSnap.exists ? aiSnap.data() : {};
+
+    const briefing = buildGhostBriefing({
+      displayName: clientData.display_name || clientData.email || 'Unknown',
+      tier: readinessData.content?.tier_recommendation || null,
+      topGaps: [...nearTerm, ...forTarget].slice(0, 3),
+      stance: aiData.content?.stance || 'copilot',
+      activeMissions: (aiData.content?.missions || []).filter((m) => m.status === 'in_progress' || m.status === 'ready_for_review').length,
+      readinessScore: readinessData.content?.readiness_score ?? null,
+    });
+
+    return res.json({ briefing, system_prompt: GHOST_SYSTEM_PROMPT });
+  } catch (err) {
+    console.error('ghost_briefing_error', err);
+    return res.status(500).json({ error: 'briefing_failed' });
+  }
+});
+
+app.post('/v1/ghost/artifact', requireGhostAuth, async (req, res) => {
+  try {
+    const uid = req.ghostUid;
+    const artifactType = req.body?.type;
+    const validTypes = ['brief', 'profile', 'plan', 'gaps', 'readiness', 'ai_profile', 'suite_distilled', 'cjs_execution', 'resume_review', 'my_concierge'];
+    if (!artifactType || !validTypes.includes(artifactType)) {
+      return res.status(400).json({ error: 'invalid_artifact_type', valid: validTypes });
+    }
+
+    const snap = await db.collection('clients').doc(uid).collection('artifacts').doc(artifactType).get();
+    if (!snap.exists) {
+      return res.json({ artifact: null, message: `No ${artifactType} artifact found for this candidate.` });
+    }
+
+    return res.json({ artifact: { type: artifactType, content: snap.data().content, updated_at: snap.data().updated_at || null } });
+  } catch (err) {
+    console.error('ghost_artifact_error', err);
+    return res.status(500).json({ error: 'artifact_fetch_failed' });
+  }
+});
+
+app.post('/v1/ghost/drive', requireGhostAuth, async (req, res) => {
+  try {
+    const uid = req.ghostUid;
+    const clientSnap = await db.collection('clients').doc(uid).get();
+    const clientData = clientSnap.exists ? clientSnap.data() : {};
+    const folderId = clientData.drive_folder_id;
+
+    if (!folderId) {
+      return res.json({ documents: [], message: 'No Google Drive folder exists for this candidate yet.' });
+    }
+
+    const files = await listFolderContents(folderId);
+    const query = (req.body?.query || '').toLowerCase();
+    const filtered = query
+      ? files.filter((f) => f.name.toLowerCase().includes(query))
+      : files;
+
+    return res.json({
+      documents: filtered.map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.mimeType,
+        url: f.webViewLink || `https://docs.google.com/document/d/${f.id}`,
+        modified: f.modifiedTime || null,
+      })),
+    });
+  } catch (err) {
+    console.error('ghost_drive_error', err);
+    return res.status(500).json({ error: 'drive_fetch_failed' });
+  }
+});
+
+app.get('/v1/ghost/tools', requireAuth, async (_req, res) => {
+  return res.json({ client_tools: GHOST_CLIENT_TOOLS, server_tools: GHOST_SERVER_TOOLS });
+});
+
+// ── End Ghost Voice Agent ───────────────────────────────────────────────────
 
 app.get('/v1/cjs/assets', requireAuth, async (req, res) => {
   try {
